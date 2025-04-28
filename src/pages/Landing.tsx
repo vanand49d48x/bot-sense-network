@@ -54,7 +54,7 @@ const Landing = () => {
       <section className="py-16 bg-muted">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">⚡ Why RoboMetrics?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <FeatureCard 
               icon={<Activity />}
               title="Real-Time Robot Telemetry Dashboard"
@@ -68,14 +68,16 @@ const Landing = () => {
               title="Easy Robot API Integration"
               subtitle="Arduino, ESP32, Raspberry Pi, ROS"
             />
-            <FeatureCard 
-              icon={<MapPin />}
-              title="Live Map Tracking for Mobile Robots"
-            />
-            <FeatureCard 
-              icon={<Bell />}
-              title="Smart Notifications for Critical Events"
-            />
+            <div className="lg:col-span-3 md:col-span-2 flex justify-center gap-8 w-full">
+              <FeatureCard 
+                icon={<MapPin />}
+                title="Live Map Tracking for Mobile Robots"
+              />
+              <FeatureCard 
+                icon={<Bell />}
+                title="Smart Notifications for Critical Events"
+              />
+            </div>
           </div>
         </div>
       </section>
