@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -68,7 +69,7 @@ const Landing = () => {
               title="Easy Robot API Integration"
               subtitle="Arduino, ESP32, Raspberry Pi, ROS"
             />
-            <div className="lg:col-span-3 md:col-span-2 flex justify-center gap-8 w-full">
+            <div className="lg:col-span-3 md:col-span-2 grid grid-cols-2 gap-8 w-full">
               <FeatureCard 
                 icon={<MapPin />}
                 title="Live Map Tracking for Mobile Robots"
