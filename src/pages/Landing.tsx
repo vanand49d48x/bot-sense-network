@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -86,7 +85,7 @@ const Landing = () => {
       {/* Features Section - Center justified */}
       <section className="py-16 container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center">🔥 Features</h2>
-        <div className="grid md:grid-cols-2 gap-16 mt-12 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-16 mt-12 max-w-3xl mx-auto">
           <div className="flex flex-col items-center text-center">
             <h3 className="text-2xl font-semibold mb-6">Telemetry Monitoring:</h3>
             <ul className="space-y-4">
@@ -110,16 +109,16 @@ const Landing = () => {
           </div>
           <div className="flex flex-col items-center text-center">
             <h3 className="text-2xl font-semibold mb-6">Custom Alerts:</h3>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-muted-foreground mb-4">
               Get email or app alerts for low battery or sensor warnings.
             </p>
             
-            <h3 className="text-2xl font-semibold mb-6">Fleet Management:</h3>
-            <p className="text-muted-foreground mb-6">
+            <h3 className="text-2xl font-semibold my-6">Fleet Management:</h3>
+            <p className="text-muted-foreground mb-4">
               Monitor hundreds of robots in one unified dashboard.
             </p>
             
-            <h3 className="text-2xl font-semibold mb-6">Open APIs:</h3>
+            <h3 className="text-2xl font-semibold my-6">Open APIs:</h3>
             <p className="text-muted-foreground">
               Easy integration with any robot type.
             </p>
