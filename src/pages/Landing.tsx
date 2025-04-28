@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -81,32 +80,32 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - Center justified */}
       <section className="py-16 container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center">🔥 Features</h2>
-        <div className="grid md:grid-cols-2 gap-16 mt-12">
-          <div>
+        <div className="grid md:grid-cols-2 gap-16 mt-12 max-w-4xl mx-auto">
+          <div className="flex flex-col items-center text-center">
             <h3 className="text-2xl font-semibold mb-6">Telemetry Monitoring:</h3>
             <ul className="space-y-4">
-              <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3 justify-center">
                 <Battery className="text-primary h-6 w-6" />
                 <span>Battery %</span>
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3 justify-center">
                 <Activity className="text-primary h-6 w-6" />
                 <span>Status</span>
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3 justify-center">
                 <MapPin className="text-primary h-6 w-6" />
                 <span>Location</span>
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3 justify-center">
                 <AlertTriangle className="text-primary h-6 w-6" />
                 <span>Health</span>
               </li>
             </ul>
           </div>
-          <div>
+          <div className="flex flex-col items-center text-center">
             <h3 className="text-2xl font-semibold mb-6">Custom Alerts:</h3>
             <p className="text-muted-foreground mb-6">
               Get email or app alerts for low battery or sensor warnings.
