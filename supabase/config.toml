@@ -2,3 +2,5 @@
 project_id = "uwmbdporlrduzthgdmcg"
 
 [functions.robot-simulator]
+
+[functions.telemetry]
