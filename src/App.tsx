@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import IntegrationGuide from "./pages/IntegrationGuide";
+import Landing from "./pages/Landing";
 
 const queryClient = new QueryClient();
 
@@ -35,23 +36,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route 
-              path="/" 
+              path="/dashboard" 
               element={
                 <ProtectedRoute>
                   <Index />
                 </ProtectedRoute>
               } 
             />
-            <Route
-              path="/integration"
-              element={
-                <ProtectedRoute>
-                  <IntegrationGuide />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/integration" element={<IntegrationGuide />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
