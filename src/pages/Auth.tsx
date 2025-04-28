@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { Robot } from "lucide-react";
+import { Bot } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = React.useState("");
@@ -54,7 +54,7 @@ const Auth = () => {
       <div className="w-full max-w-md p-4">
         <div className="mb-6 text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <Robot className="h-6 w-6 text-primary" />
+            <Bot className="h-6 w-6 text-primary" />
             <span className="text-2xl font-bold">RoboMetrics</span>
           </Link>
         </div>

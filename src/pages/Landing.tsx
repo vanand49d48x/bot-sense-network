@@ -1,8 +1,9 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Battery, AlertTriangle, MapPin, Shield, Activity, 
-         Robot, Rocket, Clock, Mail, Map, Bell } from "lucide-react";
+         Bot, Rocket, Clock, Mail, Map, Bell } from "lucide-react";
 
 const Landing = () => {
   return (
@@ -11,7 +12,7 @@ const Landing = () => {
       <header className="border-b border-border/40 p-4">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Robot className="h-6 w-6 text-primary" />
+            <Bot className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">RoboMetrics</span>
           </div>
           <div className="flex gap-4">
@@ -131,7 +132,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="bg-card p-8 rounded-lg shadow-sm flex flex-col items-center text-center">
               <div className="bg-primary/10 p-4 rounded-full mb-4">
-                <Robot className="h-8 w-8 text-primary" />
+                <Bot className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Register your robot</h3>
               <p className="text-muted-foreground">Create an account and add your robot to the dashboard</p>
@@ -214,7 +215,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Robot className="h-5 w-5 text-primary" />
+              <Bot className="h-5 w-5 text-primary" />
               <span className="font-semibold">RoboMetrics</span>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -236,7 +237,7 @@ const FeatureCard = ({ icon, title, subtitle }: {
     <div className="bg-card p-6 rounded-lg shadow-sm">
       <div className="flex items-start gap-4">
         <div className="bg-primary/10 p-2 rounded-md">
-          {React.cloneElement(icon as React.ReactElement, { className: "h-6 w-6 text-primary" })}
+          {icon}
         </div>
         <div>
           <h3 className="font-semibold mb-1">{title}</h3>
