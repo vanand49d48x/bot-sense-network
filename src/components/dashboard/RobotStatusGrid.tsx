@@ -1,6 +1,6 @@
 
 import { RobotStatusCard } from "./RobotStatusCard";
-import { Robot } from "@/types/robot";
+import { Robot } from "@/hooks/useRobots";
 
 interface RobotStatusGridProps {
   robots: Robot[];

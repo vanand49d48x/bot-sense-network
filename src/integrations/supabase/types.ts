@@ -9,7 +9,157 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          resolved: boolean | null
+          resolved_at: string | null
+          robot_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          robot_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          robot_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_robot_id_fkey"
+            columns: ["robot_id"]
+            isOneToOne: false
+            referencedRelation: "robots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      robots: {
+        Row: {
+          battery_level: number | null
+          created_at: string
+          description: string | null
+          id: string
+          last_ping: string | null
+          location: Json | null
+          name: string
+          status: string
+          temperature: number | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          battery_level?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_ping?: string | null
+          location?: Json | null
+          name: string
+          status?: string
+          temperature?: number | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          battery_level?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_ping?: string | null
+          location?: Json | null
+          name?: string
+          status?: string
+          temperature?: number | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      telemetry: {
+        Row: {
+          battery_level: number | null
+          created_at: string
+          error_codes: string[] | null
+          id: string
+          location: Json | null
+          motor_status: Json | null
+          robot_id: string
+          temperature: number | null
+        }
+        Insert: {
+          battery_level?: number | null
+          created_at?: string
+          error_codes?: string[] | null
+          id?: string
+          location?: Json | null
+          motor_status?: Json | null
+          robot_id: string
+          temperature?: number | null
+        }
+        Update: {
+          battery_level?: number | null
+          created_at?: string
+          error_codes?: string[] | null
+          id?: string
+          location?: Json | null
+          motor_status?: Json | null
+          robot_id?: string
+          temperature?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telemetry_robot_id_fkey"
+            columns: ["robot_id"]
+            isOneToOne: false
+            referencedRelation: "robots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

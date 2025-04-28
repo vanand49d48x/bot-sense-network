@@ -1,64 +1,48 @@
 
-import { useState, useEffect } from "react";
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
 import { MapView } from "./MapView";
-import { robotService } from "@/services/robotService";
-import { Robot } from "@/types/robot";
-import { useToast } from "@/hooks/use-toast";
+import { AddRobotModal } from "./AddRobotModal";
+import { useRobots } from "@/hooks/useRobots";
+import { useAuth } from "@/context/AuthContext";
 
 export function Dashboard() {
-  const [robots, setRobots] = useState<Robot[]>([]);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Initial data load
-    const initialData = robotService.getRobots();
-    setRobots(initialData);
-    
-    // Check for warnings
-    initialData.forEach(robot => {
-      if (robot.status === 'warning' && robot.batteryLevel < 20) {
-        toast({
-          title: "Low Battery Warning",
-          description: `${robot.name} battery level is below 20%`,
-          variant: "destructive",
-        });
-      }
-    });
-    
-    // Set up polling for updates
-    const interval = setInterval(() => {
-      const updatedRobots = robotService.getRobots();
-      setRobots(updatedRobots);
-      
-      // Check for new warnings
-      updatedRobots.forEach(robot => {
-        const prevRobot = robots.find(r => r.id === robot.id);
-        if (
-          robot.status === 'warning' && 
-          robot.batteryLevel < 20 && 
-          (prevRobot?.batteryLevel || 0) >= 20
-        ) {
-          toast({
-            title: "Low Battery Warning",
-            description: `${robot.name} battery level is below 20%`,
-            variant: "destructive",
-          });
-        }
-      });
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [toast, robots]);
+  const { robots, loading } = useRobots();
+  const { user } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-pulse-slow">Loading robots data...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <DashboardHeader />
-      <StatCards robots={robots} />
-      <MapView robots={robots} />
-      <RobotStatusGrid robots={robots} />
+      <div className="flex justify-between items-center">
+        <DashboardHeader />
+        <AddRobotModal />
+      </div>
+      
+      {robots.length > 0 ? (
+        <>
+          <StatCards robots={robots} />
+          <MapView robots={robots} />
+          <RobotStatusGrid robots={robots} />
+        </>
+      ) : (
+        <div className="mt-8 text-center p-12 border border-dashed rounded-lg">
+          <h3 className="text-lg font-medium mb-2">No robots registered yet</h3>
+          <p className="text-muted-foreground mb-4">
+            Add your first robot to start monitoring its status and telemetry.
+          </p>
+          <AddRobotModal />
+        </div>
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Robot } from "@/types/robot";
+import { Robot } from "@/hooks/useRobots";
 
 interface StatCardsProps {
   robots: Robot[];
@@ -28,7 +28,7 @@ export function StatCards({ robots }: StatCardsProps) {
     {
       title: "Online",
       value: onlineRobots,
-      description: `${Math.round((onlineRobots / totalRobots) * 100)}% of fleet`,
+      description: `${totalRobots ? Math.round((onlineRobots / totalRobots) * 100) : 0}% of fleet`,
       icon: Battery,
       className: "text-robot-online",
     },
