@@ -44,6 +44,8 @@ export function useRobots() {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
+          console.log("Robots change detected:", payload.eventType);
+          
           if (payload.eventType === 'INSERT') {
             setRobots(prev => [...prev, payload.new as SupabaseRobot]);
           } else if (payload.eventType === 'UPDATE') {
