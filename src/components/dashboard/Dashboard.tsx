@@ -10,13 +10,14 @@ import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
 export function Dashboard() {
   const { robots: supabaseRobots, loading } = useRobots();
   const { user } = useAuth();
+  const [realtimeConfigured, setRealtimeConfigured] = useState(false);
   
   // Map Supabase robots to application Robot type
   const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
@@ -27,12 +28,25 @@ export function Dashboard() {
     const setupRealtime = async () => {
       try {
         // Run SQL commands to ensure tables are setup for realtime
-        // Using type assertion with Record<string, any> to fix TypeScript error
-        await supabase.rpc('enable_realtime_for_table', { table_name: 'robots' });
-        await supabase.rpc('enable_realtime_for_table', { table_name: 'telemetry' });
-        //await supabase.rpc('enable_realtime_for_table', { table_name: 'robots' } as Record<string, any>);
-        //await supabase.rpc('enable_realtime_for_table', { table_name: 'telemetry' } as Record<string, any>);
-        console.log('Realtime enabled for database tables');
+        console.log("Setting up realtime functionality for tables...");
+        
+        // Use the correct type assertion for both calls
+        const robotsResult = await supabase.rpc('enable_realtime_for_table', { table_name: 'robots' } as Record<string, any>);
+        const telemetryResult = await supabase.rpc('enable_realtime_for_table', { table_name: 'telemetry' } as Record<string, any>);
+        
+        if (robotsResult.error) {
+          console.error('Error enabling realtime for robots table:', robotsResult.error);
+        } else {
+          console.log('Realtime enabled for robots table');
+        }
+        
+        if (telemetryResult.error) {
+          console.error('Error enabling realtime for telemetry table:', telemetryResult.error);
+        } else {
+          console.log('Realtime enabled for telemetry table');
+        }
+        
+        setRealtimeConfigured(true);
       } catch (error) {
         console.error('Error setting up realtime:', error);
         // This might fail if the RPC doesn't exist yet, but that's ok
@@ -42,42 +56,72 @@ export function Dashboard() {
     setupRealtime();
   }, []);
   
-  // Set up realtime subscription for robot updates
+  // Set up realtime subscription for robot and telemetry updates
   useEffect(() => {
-    // Subscribe to realtime changes on the robots table
-    const robotsChannel = supabase
-      .channel('robots-updates')
+    if (!realtimeConfigured) return;
+    
+    console.log("Setting up realtime subscriptions...");
+    
+    // Create a single channel for all robot-related updates
+    const channel = supabase
+      .channel('robot-updates')
+      // Subscribe to robot changes
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
           console.log('Robot update received:', payload);
+          
+          // Handle different event types
           if (payload.eventType === 'UPDATE') {
             toast('Robot status updated', {
               description: `${payload.new.name}'s status has been updated`,
               duration: 3000,
             });
+          } else if (payload.eventType === 'INSERT') {
+            toast('New robot added', {
+              description: `${payload.new.name} has been added to your fleet`,
+              duration: 3000,
+            });
+          } else if (payload.eventType === 'DELETE') {
+            toast('Robot removed', {
+              description: `A robot has been removed from your fleet`,
+              duration: 3000,
+            });
           }
         }
       )
-      .subscribe();
-    
-    // Subscribe to realtime changes on the telemetry table
-    const telemetryChannel = supabase
-      .channel('telemetry-updates')
+      // Subscribe to telemetry changes
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'telemetry' }, 
         (payload) => {
           console.log('New telemetry received:', payload);
+          const robotId = payload.new.robot_id;
+          
+          // Find the robot name
+          const robot = supabaseRobots.find(r => r.id === robotId);
+          if (robot) {
+            toast('New telemetry data', {
+              description: `${robot.name} has sent new telemetry data`,
+              duration: 2000,
+            });
+          }
         }
       )
-      .subscribe();
-
+      .subscribe((status) => {
+        console.log(`Realtime subscription status: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to realtime updates');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to realtime updates');
+        }
+      });
+    
     // Cleanup subscriptions when component unmounts
     return () => {
-      supabase.removeChannel(robotsChannel);
-      supabase.removeChannel(telemetryChannel);
+      console.log("Cleaning up realtime subscriptions");
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [realtimeConfigured, supabaseRobots]);
   
   if (loading) {
     return (

@@ -19,12 +19,15 @@ export function useRobots() {
     const fetchRobots = async () => {
       try {
         setLoading(true);
+        console.log("Fetching robots data...");
+        
         const { data, error } = await supabase
           .from('robots')
           .select('*');
 
         if (error) throw error;
         
+        console.log("Robots data fetched:", data?.length || 0, "robots");
         setRobots(data || []);
         
         // Fetch API key from profiles
@@ -71,12 +74,12 @@ export function useRobots() {
     fetchRobots();
     
     // Set up realtime subscription for robot updates
-    const robotsSubscription = supabase
+    const robotsChannel = supabase
       .channel('robots-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
-          console.log("Robots change detected:", payload.eventType, payload);
+          console.log("Robots change detected in useRobots hook:", payload.eventType, payload);
           
           if (payload.eventType === 'INSERT') {
             setRobots(prev => [...prev, payload.new as SupabaseRobot]);
@@ -90,10 +93,12 @@ export function useRobots() {
             );
           }
         })
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`useRobots hook subscription status: ${status}`);
+      });
 
     return () => {
-      supabase.removeChannel(robotsSubscription);
+      supabase.removeChannel(robotsChannel);
     };
   }, [session, toast]);
 
