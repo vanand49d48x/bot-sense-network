@@ -98,8 +98,16 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
           icon={createStatusIcon(robot.status)}
         >
           <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-            <div className="text-xs font-medium">
-              {robot.name} ({robot.status})
+            <div className="text-sm p-1">
+              <strong>{robot.name}</strong><br />
+              Model: {robot.model}<br />
+              Battery: {robot.batteryLevel}%<br />
+              Temp: {robot.temperature}°C<br />
+              Status: <span className={`
+                ${robot.status === 'online' ? 'text-green-600 font-medium' :
+                  robot.status === 'warning' ? 'text-yellow-600 font-medium' : 'text-red-600 font-medium'}
+              `}>{robot.status}</span><br />
+              Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
             </div>
           </Tooltip>
           <Popup>
