@@ -12,8 +12,8 @@ const generateRandomData = (): Robot[] => {
       batteryLevel: 87,
       temperature: 32,
       location: {
-        lat: 37.7749,
-        lng: -122.4194,
+        latitude: 37.7749,
+        longitude: -122.4194,
       },
       ipAddress: "192.168.1.101",
       errorCount: 0,
@@ -27,8 +27,8 @@ const generateRandomData = (): Robot[] => {
       batteryLevel: 65,
       temperature: 28,
       location: {
-        lat: 37.7833,
-        lng: -122.4167,
+        latitude: 37.7833,
+        longitude: -122.4167,
       },
       ipAddress: "192.168.1.102",
       errorCount: 0,
@@ -42,8 +42,8 @@ const generateRandomData = (): Robot[] => {
       batteryLevel: 22,
       temperature: 37,
       location: {
-        lat: 37.7695,
-        lng: -122.4143,
+        latitude: 37.7695,
+        longitude: -122.4143,
       },
       ipAddress: "192.168.1.103",
       errorCount: 2,
@@ -57,8 +57,8 @@ const generateRandomData = (): Robot[] => {
       batteryLevel: 0,
       temperature: 0,
       location: {
-        lat: 37.7700,
-        lng: -122.4120,
+        latitude: 37.7700,
+        longitude: -122.4120,
       },
       ipAddress: "192.168.1.104",
       errorCount: 5,
@@ -115,8 +115,8 @@ const updateRobotData = () => {
       const latChange = (Math.random() - 0.5) * 0.001;
       const lngChange = (Math.random() - 0.5) * 0.001;
       newRobot.location = {
-        lat: robot.location.lat + latChange,
-        lng: robot.location.lng + lngChange
+        latitude: robot.location.latitude + latChange,
+        longitude: robot.location.longitude + lngChange
       };
     }
     

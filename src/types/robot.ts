@@ -8,8 +8,8 @@ export interface Robot {
   batteryLevel: number;
   temperature: number;
   location?: {
-    lat: number;
-    lng: number;
+    latitude: number;
+    longitude: number;
   };
   ipAddress: string;
   errorCount: number;

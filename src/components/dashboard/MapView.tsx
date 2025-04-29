@@ -18,8 +18,7 @@ export function MapView({ robots }: MapViewProps) {
 
   // Filter robots that have location data
   const robotsWithLocation = robots.filter(robot => {
-    const location = robot.location as { latitude?: number, longitude?: number } | null;
-    return location && typeof location.latitude === 'number' && typeof location.longitude === 'number';
+    return robot.location && typeof robot.location.latitude === 'number' && typeof robot.location.longitude === 'number';
   });
 
   if (robotsWithLocation.length === 0) {
@@ -42,7 +41,6 @@ export function MapView({ robots }: MapViewProps) {
           <div className="relative h-64 bg-muted/30 rounded-md overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center opacity-20 text-7xl font-bold">MAP VIEW</div>
             {robotsWithLocation.map((robot) => {
-              const location = robot.location as { latitude: number, longitude: number };
               return (
                 <div 
                   key={robot.id}
@@ -52,8 +50,8 @@ export function MapView({ robots }: MapViewProps) {
                   }`}
                   style={{
                     // This is just a placeholder positioning - in a real app, we'd convert GPS to pixels
-                    left: `${((location.longitude || 0) + 122.42) * 30}%`,
-                    top: `${(37.78 - (location.latitude || 0)) * 30}%`
+                    left: `${((robot.location?.longitude || 0) + 122.42) * 30}%`,
+                    top: `${(37.78 - (robot.location?.latitude || 0)) * 30}%`
                   }}
                 >
                   {robot.status === 'online' && (
