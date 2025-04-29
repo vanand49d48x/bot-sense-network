@@ -45,34 +45,43 @@ serve(async (req) => {
       );
     }
 
-    // Verify the robot exists and the API key matches
-    // First try to find it using the direct UUID
-    let robotQuery = supabaseClient
-      .from("robots")
-      .select("id, api_key")
-      .eq("id", robotId);
-      
-    let { data: robot, error: robotError } = await robotQuery.single();
+    // Find the user who owns the API key
+    const { data: profileData, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("id")
+      .eq("api_key", apiKey)
+      .single();
 
-    // If the UUID doesn't match directly, try to map it using a more flexible format
+    if (profileError || !profileData) {
+      return new Response(
+        JSON.stringify({ error: "Invalid API key" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // Verify the robot exists and belongs to the user
+    let { data: robot, error: robotError } = await supabaseClient
+      .from("robots")
+      .select("id, user_id")
+      .eq("id", robotId)
+      .eq("user_id", profileData.id)
+      .single();
+
     if (!robot) {
-      // Let's log the error for diagnosis
-      console.log(`Could not find robot with direct ID: ${robotId}`);
-      
-      // Get all robots and check if any match the ID pattern
+      // Try to find any robot with this ID
       const { data: allRobots, error: listError } = await supabaseClient
         .from("robots")
-        .select("id, api_key");
+        .select("id, user_id");
         
       if (!listError && allRobots?.length > 0) {
-        // Try to find a robot that matches by name
+        // Try to find a robot that matches
         robot = allRobots.find(r => r.id === robotId);
         
-        if (!robot) {
+        if (!robot || robot.user_id !== profileData.id) {
           return new Response(
             JSON.stringify({ 
-              error: "Invalid robot ID", 
-              details: "Please use one of the following IDs: " + allRobots.map(r => r.id).join(", ")
+              error: "Invalid robot ID or you don't have access to this robot", 
+              details: "Please use one of your robot IDs"
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
           );
@@ -83,14 +92,6 @@ serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
         );
       }
-    }
-
-    // Check if API key matches
-    if (robot.api_key !== apiKey) {
-      return new Response(
-        JSON.stringify({ error: "Invalid API key" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
     }
 
     // Process and validate telemetry data
@@ -105,12 +106,11 @@ serve(async (req) => {
 
     // Prepare telemetry object with only the fields that exist in the database
     const telemetry = {
-      robot_id: robot.id,
+      robot_id: robotId,
       battery_level: batteryLevel || null,
       temperature: temperature || null,
       location: locationData || null,
-      // Note: We're not adding 'status' here since it doesn't exist in the telemetry table
-      // Instead, we'll use it to update the robot's status below
+      // We'll use status to update the robot's status below
     };
 
     // Insert telemetry data
@@ -136,7 +136,7 @@ serve(async (req) => {
         location: locationData,
         last_ping: new Date().toISOString()
       })
-      .eq("id", robot.id);
+      .eq("id", robotId);
 
     return new Response(
       JSON.stringify({ success: true, message: "Telemetry data received" }),

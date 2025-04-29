@@ -9,6 +9,7 @@ import { SupabaseRobot } from "@/utils/robotMapper";
 export function useRobots() {
   const [robots, setRobots] = useState<SupabaseRobot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const { toast } = useToast();
   const { session } = useAuth();
 
@@ -25,6 +26,31 @@ export function useRobots() {
         if (error) throw error;
         
         setRobots(data || []);
+        
+        // Fetch API key (common for all robots)
+        const { data: apiKeyData, error: apiKeyError } = await supabase
+          .from('profiles')
+          .select('api_key')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (!apiKeyError && apiKeyData && apiKeyData.api_key) {
+          setApiKey(apiKeyData.api_key);
+        } else {
+          // If no API key exists, generate one
+          const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+          
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ api_key: newApiKey })
+            .eq('id', session.user.id);
+            
+          if (!updateError) {
+            setApiKey(newApiKey);
+          } else {
+            console.error("Error setting API key:", updateError);
+          }
+        }
       } catch (error: any) {
         toast({
           title: "Error fetching robots",
@@ -69,15 +95,11 @@ export function useRobots() {
     try {
       if (!session?.user?.id) throw new Error("User not authenticated");
       
-      // Generate a random API key for the robot
-      const apiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-      
       const { data, error } = await supabase
         .from('robots')
         .insert([
           {
             ...robot,
-            api_key: apiKey,
             user_id: session.user.id
           }
         ])
@@ -120,5 +142,5 @@ export function useRobots() {
     }
   };
 
-  return { robots, loading, addRobot, deleteRobot };
+  return { robots, loading, apiKey, addRobot, deleteRobot };
 }

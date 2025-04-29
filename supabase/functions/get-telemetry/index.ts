@@ -35,6 +35,20 @@ serve(async (req) => {
       );
     }
 
+    // Find the user who owns the API key
+    const { data: profileData, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("id")
+      .eq("api_key", apiKey)
+      .single();
+
+    if (profileError || !profileData) {
+      return new Response(
+        JSON.stringify({ error: "Invalid API key" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
     // Extract the robot ID from the URL path
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
@@ -48,24 +62,17 @@ serve(async (req) => {
       );
     }
 
-    // Verify the robot exists and the API key matches
+    // Verify the robot exists and belongs to the user
     const { data: robot, error: robotError } = await supabaseClient
       .from("robots")
-      .select("id, api_key")
+      .select("id")
       .eq("id", robotId)
+      .eq("user_id", profileData.id)
       .single();
 
     if (robotError || !robot) {
       return new Response(
-        JSON.stringify({ error: "Invalid robot ID" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
-    }
-
-    // Check if API key matches
-    if (robot.api_key !== apiKey) {
-      return new Response(
-        JSON.stringify({ error: "Invalid API key" }),
+        JSON.stringify({ error: "Invalid robot ID or you don't have access to this robot" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
@@ -97,7 +104,7 @@ serve(async (req) => {
           robotId: t.robot_id,
           batteryLevel: t.battery_level,
           temperature: t.temperature,
-          status: t.status || (t.error_codes && t.error_codes.length > 0 ? "ERROR" : "OK"),
+          status: t.error_codes && t.error_codes.length > 0 ? "ERROR" : "OK",
           location: t.location,
           timestamp: t.created_at
         }))

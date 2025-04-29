@@ -10,9 +10,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar";
-import { Battery, MapPin, Bell, ArrowRight } from "lucide-react";
+import { Battery, MapPin, Bell, ArrowRight, Key } from "lucide-react";
+import { ApiKeySettings } from "./ApiKeySettings";
+import { useAuth } from "@/context/AuthContext";
 
 export function AppSidebar() {
+  const { session } = useAuth();
+  
   const mainMenuItems = [
     {
       title: "Dashboard",
@@ -59,6 +63,20 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        
+        {session && (
+          <SidebarGroup className="mt-6">
+            <SidebarGroupLabel className="flex items-center gap-1">
+              <Key className="h-4 w-4" />
+              <span>API Integration</span>
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="p-2">
+                <ApiKeySettings />
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
