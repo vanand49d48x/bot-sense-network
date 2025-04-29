@@ -96,47 +96,53 @@ export function Dashboard() {
           console.log('New telemetry received:', payload);
           const robotId = payload.new.robot_id;
           
-          // Find the robot that needs to be updated
-          const robotToUpdate = localRobots.find(r => r.id === robotId);
-          if (!robotToUpdate) return;
-          
-          // Only patch the specific properties that changed in the telemetry
-          const updatedFields: Partial<Robot> = {
-            lastHeartbeat: new Date().toISOString(),
-            status: 'online', // Set to online since we received telemetry
-          };
-          
-          // Add only the fields that are present in the telemetry payload
-          if (payload.new.battery_level !== null && payload.new.battery_level !== undefined) {
-            updatedFields.batteryLevel = payload.new.battery_level;
-          }
-          
-          if (payload.new.temperature !== null && payload.new.temperature !== undefined) {
-            updatedFields.temperature = payload.new.temperature;
-          }
-          
-          if (payload.new.location) {
-            updatedFields.location = {
-              latitude: payload.new.location.latitude || 0,
-              longitude: payload.new.location.longitude || 0
-            };
-          }
-          
-          // Update the specific robot with only the changed fields
+          // Update the robot immediately with a proper pattern for state updates
           setLocalRobots(prevRobots => {
-            return prevRobots.map(robot => {
+            // First find the robot to update in the current state
+            const robotToUpdate = prevRobots.find(r => r.id === robotId);
+            if (!robotToUpdate) return prevRobots; // No matching robot found
+            
+            // Only patch the specific properties that changed in the telemetry
+            const updatedFields: Partial<Robot> = {
+              lastHeartbeat: new Date().toISOString(),
+              status: 'online', // Set to online since we received telemetry
+            };
+            
+            // Add only the fields that are present in the telemetry payload
+            if (payload.new.battery_level !== null && payload.new.battery_level !== undefined) {
+              updatedFields.batteryLevel = payload.new.battery_level;
+            }
+            
+            if (payload.new.temperature !== null && payload.new.temperature !== undefined) {
+              updatedFields.temperature = payload.new.temperature;
+            }
+            
+            if (payload.new.location) {
+              updatedFields.location = {
+                latitude: payload.new.location.latitude || 0,
+                longitude: payload.new.location.longitude || 0
+              };
+            }
+            
+            // Create the updated robots list
+            const updatedRobots = prevRobots.map(robot => {
               if (robot.id === robotId) {
                 console.log(`Patching robot ${robot.name} with new telemetry data:`, updatedFields);
                 return { ...robot, ...updatedFields };
               }
               return robot;
             });
-          });
-          
-          // Show a toast notification about the new telemetry
-          toast('New telemetry data', {
-            description: `${robotToUpdate.name} has sent new telemetry data`,
-            duration: 2000,
+            
+            // Show toast with the fresh robot name from the updated list
+            const updatedRobot = updatedRobots.find(r => r.id === robotId);
+            if (updatedRobot) {
+              toast('New telemetry data', {
+                description: `${updatedRobot.name} has sent new telemetry data`,
+                duration: 2000,
+              });
+            }
+            
+            return updatedRobots;
           });
         }
       )
