@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Robot } from "@/types/robot";
 import { Progress } from "@/components/ui/progress";
@@ -60,10 +59,8 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
         description: `${robot.name} has been successfully deleted.`
       });
     } catch (error: any) {
-      toast("Error deleting robot", {
+      toast.error("Error deleting robot", {
         description: error.message,
-        // Sonner uses 'error' type instead of 'variant: "destructive"'
-        type: "error",
       });
     } finally {
       setIsDeleting(false);
