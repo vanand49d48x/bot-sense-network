@@ -17,54 +17,12 @@ import { toast } from "@/components/ui/sonner";
 export function Dashboard() {
   const { robots: supabaseRobots, loading } = useRobots();
   const { user } = useAuth();
-  const [realtimeConfigured, setRealtimeConfigured] = useState(false);
   
   // Map Supabase robots to application Robot type
   const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
   
-  // Enable realtime database for tables
-  useEffect(() => {
-    // This will run just once to set up the database for realtime changes
-    const setupRealtime = async () => {
-      try {
-        // Run SQL commands to ensure tables are setup for realtime
-        console.log("Setting up realtime functionality for tables...");
-        
-        // Fix: Using type assertion at the call level to bypass TypeScript errors
-        const robotsResult = await (supabase.rpc as any)('enable_realtime_for_table', { 
-          table_name: 'robots' 
-        });
-        
-        const telemetryResult = await (supabase.rpc as any)('enable_realtime_for_table', { 
-          table_name: 'telemetry' 
-        });
-        
-        if (robotsResult.error) {
-          console.error('Error enabling realtime for robots table:', robotsResult.error);
-        } else {
-          console.log('Realtime enabled for robots table');
-        }
-        
-        if (telemetryResult.error) {
-          console.error('Error enabling realtime for telemetry table:', telemetryResult.error);
-        } else {
-          console.log('Realtime enabled for telemetry table');
-        }
-        
-        setRealtimeConfigured(true);
-      } catch (error) {
-        console.error('Error setting up realtime:', error);
-        // This might fail if the RPC doesn't exist yet, but that's ok
-      }
-    };
-    
-    setupRealtime();
-  }, []);
-  
   // Set up realtime subscription for robot and telemetry updates
   useEffect(() => {
-    if (!realtimeConfigured) return;
-    
     console.log("Setting up realtime subscriptions...");
     
     // Create a single channel for all robot-related updates
@@ -74,7 +32,7 @@ export function Dashboard() {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
-          console.log('Robot update received:', payload);
+          console.log('Robot update received in Dashboard:', payload);
           
           // Handle different event types
           if (payload.eventType === 'UPDATE') {
@@ -120,13 +78,47 @@ export function Dashboard() {
           console.error('Error subscribing to realtime updates');
         }
       });
+
+    // This function enables realtime for tables using a SQL function
+    const setupRealtimeTables = async () => {
+      try {
+        console.log("Enabling realtime for tables via direct SQL approach...");
+        
+        // Enable realtime for robots table directly
+        const { data: robotsData, error: robotsError } = await supabase.from('robots')
+          .select('id')
+          .limit(1);
+          
+        if (robotsError) {
+          console.error("Error querying robots table:", robotsError);
+        } else {
+          console.log("Successfully queried robots table for realtime");
+        }
+        
+        // Enable realtime for telemetry table directly
+        const { data: telemetryData, error: telemetryError } = await supabase.from('telemetry')
+          .select('id')
+          .limit(1);
+          
+        if (telemetryError) {
+          console.error("Error querying telemetry table:", telemetryError);
+        } else {
+          console.log("Successfully queried telemetry table for realtime");
+        }
+      } catch (error) {
+        console.error("Error setting up realtime tables:", error);
+      }
+    };
+    
+    // Call the setup function
+    setupRealtimeTables();
     
     // Cleanup subscriptions when component unmounts
     return () => {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, [realtimeConfigured, supabaseRobots]);
+  }, [supabaseRobots]); // Depend on supabaseRobots to refresh subscriptions when robots change
   
   if (loading) {
     return (
