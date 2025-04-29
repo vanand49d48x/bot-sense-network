@@ -22,17 +22,14 @@ export function Dashboard() {
   // Map Supabase robots to application Robot type
   const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
   
-  // Local state to manage robots for real-time updates with a unique key to force re-render on refresh
+  // Local state to manage robots for real-time updates
   const [localRobots, setLocalRobots] = useState<Robot[]>([]);
-  const [refreshKey, setRefreshKey] = useState(Date.now());
   
   // Initialize local robots when the data from useRobots changes
   useEffect(() => {
     if (robots.length > 0) {
       console.log("Updating local robots state with", robots.length, "robots");
       setLocalRobots(robots);
-      // Update refresh key to force re-render
-      setRefreshKey(Date.now());
     }
   }, [robots]);
   
@@ -67,8 +64,6 @@ export function Dashboard() {
                 return robot;
               });
             });
-            // Update refresh key to force re-render
-            setRefreshKey(Date.now());
           } else if (payload.eventType === 'INSERT') {
             toast('New robot added', {
               description: `${payload.new.name} has been added to your fleet`,
@@ -81,8 +76,6 @@ export function Dashboard() {
               ...prevRobots, 
               mapSupabaseRobotToAppRobot(supabaseRobot)
             ]);
-            // Update refresh key to force re-render
-            setRefreshKey(Date.now());
           } else if (payload.eventType === 'DELETE') {
             toast('Robot removed', {
               description: `A robot has been removed from your fleet`,
@@ -93,8 +86,6 @@ export function Dashboard() {
             setLocalRobots(prevRobots => 
               prevRobots.filter(robot => robot.id !== payload.old.id)
             );
-            // Update refresh key to force re-render
-            setRefreshKey(Date.now());
           }
         }
       )
@@ -150,9 +141,6 @@ export function Dashboard() {
                 duration: 2000,
               });
             }
-
-            // Update refresh key to force re-render
-            setRefreshKey(Date.now());
             
             return updatedRobots;
           });
@@ -227,7 +215,7 @@ export function Dashboard() {
       
       {localRobots.length > 0 ? (
         <>
-          <StatCards robots={localRobots} key={`stats-${refreshKey}`} />
+          <StatCards robots={localRobots} />
           
           <Alert className="my-4">
             <AlertCircle className="h-4 w-4" />
@@ -237,8 +225,8 @@ export function Dashboard() {
             </AlertDescription>
           </Alert>
           
-          <MapView robots={localRobots} key={`map-${refreshKey}`} />
-          <RobotStatusGrid robots={localRobots} key={`grid-${refreshKey}`} />
+          <MapView robots={localRobots} />
+          <RobotStatusGrid robots={localRobots} />
         </>
       ) : (
         <div className="mt-8 text-center p-12 border border-dashed rounded-lg">
