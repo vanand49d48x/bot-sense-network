@@ -13,6 +13,7 @@ export function useRobots() {
   const { toast } = useToast();
   const { session } = useAuth();
 
+  // Fetch robots data and set up real-time subscription
   useEffect(() => {
     if (!session) return;
     
@@ -98,6 +99,7 @@ export function useRobots() {
       });
 
     return () => {
+      console.log("Cleaning up realtime subscription in useRobots hook");
       supabase.removeChannel(robotsChannel);
     };
   }, [session, toast]);
