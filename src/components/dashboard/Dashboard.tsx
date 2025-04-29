@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { SupabaseRobot } from "@/utils/robotMapper";
 
 export function Dashboard() {
   const { robots: supabaseRobots, loading } = useRobots();
@@ -52,12 +53,13 @@ export function Dashboard() {
               duration: 3000,
             });
             
-            // Update the local robots state
+            // Update the local robots state - ensure we have a valid SupabaseRobot
             setLocalRobots(prevRobots => {
               return prevRobots.map(robot => {
                 if (robot.id === payload.new.id) {
-                  // Map the updated robot data to our Robot type
-                  return mapSupabaseRobotToAppRobot(payload.new);
+                  // Cast the payload to SupabaseRobot and use the mapper function
+                  const supabaseRobot = payload.new as SupabaseRobot;
+                  return mapSupabaseRobotToAppRobot(supabaseRobot);
                 }
                 return robot;
               });
@@ -68,10 +70,11 @@ export function Dashboard() {
               duration: 3000,
             });
             
-            // Add the new robot to local state
+            // Add the new robot to local state - ensure we have a valid SupabaseRobot
+            const supabaseRobot = payload.new as SupabaseRobot;
             setLocalRobots(prevRobots => [
               ...prevRobots, 
-              mapSupabaseRobotToAppRobot(payload.new)
+              mapSupabaseRobotToAppRobot(supabaseRobot)
             ]);
           } else if (payload.eventType === 'DELETE') {
             toast('Robot removed', {
