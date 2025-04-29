@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Robot } from "@/hooks/useRobots";
+import { Robot } from "@/types/robot";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -51,7 +51,7 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg font-bold">{robot.name}</CardTitle>
-            <div className="text-sm text-muted-foreground">{robot.type}</div>
+            <div className="text-sm text-muted-foreground">{robot.model}</div>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -70,9 +70,9 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
           <div>
             <div className="flex justify-between text-sm mb-1">
               <span>Battery</span>
-              <span className={getBatteryColor(robot.battery_level)}>{robot.battery_level}%</span>
+              <span className={getBatteryColor(robot.batteryLevel)}>{robot.batteryLevel}%</span>
             </div>
-            <Progress value={robot.battery_level} className="h-1.5" />
+            <Progress value={robot.batteryLevel} className="h-1.5" />
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -82,7 +82,7 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
             </div>
             <div>
               <span className="text-muted-foreground">Last Heartbeat</span>
-              <div>{getLastHeartbeatText(robot.last_ping)}</div>
+              <div>{getLastHeartbeatText(robot.lastHeartbeat)}</div>
             </div>
           </div>
         </div>

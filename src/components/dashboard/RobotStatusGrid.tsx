@@ -1,6 +1,6 @@
 
 import { RobotStatusCard } from "./RobotStatusCard";
-import { Robot } from "@/hooks/useRobots";
+import { Robot } from "@/types/robot";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
                 <TableHead>Battery</TableHead>
                 <TableHead>Temperature</TableHead>
                 <TableHead>Last Ping</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead>Model</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,12 +88,12 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
                   <TableCell>
                     <RobotStatusBadge status={robot.status} />
                   </TableCell>
-                  <TableCell className={getBatteryColor(robot.battery_level)}>
-                    {robot.battery_level}%
+                  <TableCell className={getBatteryColor(robot.batteryLevel)}>
+                    {robot.batteryLevel}%
                   </TableCell>
                   <TableCell>{robot.temperature}°C</TableCell>
-                  <TableCell>{getLastHeartbeatText(robot.last_ping)}</TableCell>
-                  <TableCell>{robot.type}</TableCell>
+                  <TableCell>{getLastHeartbeatText(robot.lastHeartbeat)}</TableCell>
+                  <TableCell>{robot.model}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
