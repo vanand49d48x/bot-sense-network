@@ -6,7 +6,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Robot } from "@/hooks/useRobots";
+import { Robot } from "@/types/robot";
 
 interface StatCardsProps {
   robots: Robot[];

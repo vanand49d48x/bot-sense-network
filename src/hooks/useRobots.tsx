@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
-
-export type Robot = Database['public']['Tables']['robots']['Row'];
+import { SupabaseRobot } from "@/utils/robotMapper";
 
 export function useRobots() {
-  const [robots, setRobots] = useState<Robot[]>([]);
+  const [robots, setRobots] = useState<SupabaseRobot[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { session } = useAuth();
@@ -46,10 +45,10 @@ export function useRobots() {
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setRobots(prev => [...prev, payload.new as Robot]);
+            setRobots(prev => [...prev, payload.new as SupabaseRobot]);
           } else if (payload.eventType === 'UPDATE') {
             setRobots(prev => 
-              prev.map(robot => robot.id === payload.new.id ? payload.new as Robot : robot)
+              prev.map(robot => robot.id === payload.new.id ? payload.new as SupabaseRobot : robot)
             );
           } else if (payload.eventType === 'DELETE') {
             setRobots(prev => 
