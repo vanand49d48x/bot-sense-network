@@ -18,7 +18,7 @@ interface RobotStatusCardProps {
 export function RobotStatusCard({ robot }: RobotStatusCardProps) {
   const { deleteRobot } = useRobots();
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [showApiInfo, setShowApiInfo] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,15 +66,6 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
       });
     } finally {
       setIsDeleting(false);
-    }
-  };
-
-  const copyApiKey = () => {
-    if (robot.apiKey) {
-      navigator.clipboard.writeText(robot.apiKey);
-      toast("API key copied", {
-        description: "The API key has been copied to your clipboard."
-      });
     }
   };
   
@@ -159,13 +150,13 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
               variant="outline" 
               size="sm" 
               className="w-full flex justify-between items-center text-xs" 
-              onClick={() => setShowApiKey(!showApiKey)}
+              onClick={() => setShowApiInfo(!showApiInfo)}
             >
               API Integration
-              {showApiKey ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {showApiInfo ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </Button>
             
-            {showApiKey && (
+            {showApiInfo && (
               <div className="mt-2 space-y-3">
                 <div className="p-3 bg-muted/50 rounded-md">
                   <div className="text-xs text-muted-foreground mb-1">Robot ID</div>
@@ -180,21 +171,8 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
                   </div>
                 </div>
 
-                <div className="p-3 bg-muted/50 rounded-md">
-                  <div className="text-xs text-muted-foreground mb-1">API Key</div>
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
-                      {robot.apiKey || 'No API key available'}
-                    </code>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyApiKey}>
-                      <ClipboardCopy size={14} />
-                      <span className="sr-only">Copy API key</span>
-                    </Button>
-                  </div>
-                </div>
-
                 <div className="text-xs text-muted-foreground mt-2 px-3">
-                  Use the Robot ID and API key to send telemetry data via the API.
+                  Use the Robot ID and your account API key to send telemetry data via the API.
                 </div>
               </div>
             )}

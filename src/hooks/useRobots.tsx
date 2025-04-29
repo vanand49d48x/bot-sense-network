@@ -97,20 +97,16 @@ export function useRobots() {
     };
   }, [session, toast]);
 
-  const addRobot = async (robot: Omit<Database['public']['Tables']['robots']['Insert'], 'user_id' | 'api_key'>) => {
+  const addRobot = async (robot: Omit<Database['public']['Tables']['robots']['Insert'], 'user_id'>) => {
     try {
       if (!session?.user?.id) throw new Error("User not authenticated");
-      
-      // Generate a unique API key for the robot
-      const robotApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
       
       const { data, error } = await supabase
         .from('robots')
         .insert([
           {
             ...robot,
-            user_id: session.user.id,
-            api_key: robotApiKey
+            user_id: session.user.id
           }
         ])
         .select();
