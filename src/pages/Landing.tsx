@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -84,44 +85,78 @@ const Landing = () => {
 
       {/* Features Section - Center justified */}
       <section className="py-16 container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center">🔥 Features</h2>
+        <h2 className="text-3xl md:text-4xl font-bold mb-10 text-center">🔥 Features</h2>
         <div className="grid md:grid-cols-2 gap-16 mt-12 max-w-3xl mx-auto">
-          <div className="flex flex-col items-center text-center">
-            <h3 className="text-2xl font-semibold mb-6">Telemetry Monitoring:</h3>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-3 justify-center">
-                <Battery className="text-primary h-6 w-6" />
+          {/* Left Column */}
+          <div className="bg-card rounded-lg p-6 shadow-sm flex flex-col">
+            <h3 className="text-xl font-semibold mb-6 text-center">Telemetry Monitoring</h3>
+            <ul className="space-y-4 flex-grow">
+              <li className="flex items-center gap-4">
+                <div className="bg-primary/10 p-2 rounded-md">
+                  <Battery className="text-primary h-5 w-5" />
+                </div>
                 <span>Battery %</span>
               </li>
-              <li className="flex items-center gap-3 justify-center">
-                <Activity className="text-primary h-6 w-6" />
+              <li className="flex items-center gap-4">
+                <div className="bg-primary/10 p-2 rounded-md">
+                  <Activity className="text-primary h-5 w-5" />
+                </div>
                 <span>Status</span>
               </li>
-              <li className="flex items-center gap-3 justify-center">
-                <MapPin className="text-primary h-6 w-6" />
+              <li className="flex items-center gap-4">
+                <div className="bg-primary/10 p-2 rounded-md">
+                  <MapPin className="text-primary h-5 w-5" />
+                </div>
                 <span>Location</span>
               </li>
-              <li className="flex items-center gap-3 justify-center">
-                <AlertTriangle className="text-primary h-6 w-6" />
+              <li className="flex items-center gap-4">
+                <div className="bg-primary/10 p-2 rounded-md">
+                  <AlertTriangle className="text-primary h-5 w-5" />
+                </div>
                 <span>Health</span>
               </li>
             </ul>
           </div>
-          <div className="flex flex-col items-center text-center">
-            <h3 className="text-2xl font-semibold mb-6">Custom Alerts:</h3>
-            <p className="text-muted-foreground mb-4">
-              Get email or app alerts for low battery or sensor warnings.
-            </p>
-            
-            <h3 className="text-2xl font-semibold my-6">Fleet Management:</h3>
-            <p className="text-muted-foreground mb-4">
-              Monitor hundreds of robots in one unified dashboard.
-            </p>
-            
-            <h3 className="text-2xl font-semibold my-6">Open APIs:</h3>
-            <p className="text-muted-foreground">
-              Easy integration with any robot type.
-            </p>
+          
+          {/* Right Column */}
+          <div className="bg-card rounded-lg p-6 shadow-sm flex flex-col">
+            <div className="space-y-8 flex-grow">
+              <div>
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <div className="bg-primary/10 p-2 rounded-md">
+                    <Bell className="text-primary h-5 w-5" />
+                  </div>
+                  Custom Alerts
+                </h3>
+                <p className="text-muted-foreground">
+                  Get email or app alerts for low battery or sensor warnings.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <div className="bg-primary/10 p-2 rounded-md">
+                    <Bot className="text-primary h-5 w-5" />
+                  </div>
+                  Fleet Management
+                </h3>
+                <p className="text-muted-foreground">
+                  Monitor hundreds of robots in one unified dashboard.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <div className="bg-primary/10 p-2 rounded-md">
+                    <Rocket className="text-primary h-5 w-5" />
+                  </div>
+                  Open APIs
+                </h3>
+                <p className="text-muted-foreground">
+                  Easy integration with any robot type.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
