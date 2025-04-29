@@ -89,45 +89,55 @@ export function Dashboard() {
           }
         }
       )
-      // Subscribe to telemetry changes
+      // Subscribe to telemetry changes - optimized to patch robot locally
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'telemetry' }, 
         (payload) => {
           console.log('New telemetry received:', payload);
           const robotId = payload.new.robot_id;
           
-          // Update the corresponding robot in our local state with new telemetry data
+          // Find the robot that needs to be updated
+          const robotToUpdate = localRobots.find(r => r.id === robotId);
+          if (!robotToUpdate) return;
+          
+          // Only patch the specific properties that changed in the telemetry
+          const updatedFields: Partial<Robot> = {
+            lastHeartbeat: new Date().toISOString(),
+            status: 'online', // Set to online since we received telemetry
+          };
+          
+          // Add only the fields that are present in the telemetry payload
+          if (payload.new.battery_level !== null && payload.new.battery_level !== undefined) {
+            updatedFields.batteryLevel = payload.new.battery_level;
+          }
+          
+          if (payload.new.temperature !== null && payload.new.temperature !== undefined) {
+            updatedFields.temperature = payload.new.temperature;
+          }
+          
+          if (payload.new.location) {
+            updatedFields.location = {
+              latitude: payload.new.location.latitude || 0,
+              longitude: payload.new.location.longitude || 0
+            };
+          }
+          
+          // Update the specific robot with only the changed fields
           setLocalRobots(prevRobots => {
             return prevRobots.map(robot => {
               if (robot.id === robotId) {
-                // Find the robot that this telemetry belongs to
-                console.log(`Updating robot ${robot.name} with new telemetry`);
-                
-                // Update robot with the telemetry data
-                return {
-                  ...robot,
-                  batteryLevel: payload.new.battery_level ?? robot.batteryLevel,
-                  temperature: payload.new.temperature ?? robot.temperature,
-                  location: payload.new.location ? {
-                    latitude: payload.new.location.latitude || 0,
-                    longitude: payload.new.location.longitude || 0
-                  } : robot.location,
-                  lastHeartbeat: new Date().toISOString(),
-                  status: 'online' // Set to online since we received telemetry
-                };
+                console.log(`Patching robot ${robot.name} with new telemetry data:`, updatedFields);
+                return { ...robot, ...updatedFields };
               }
               return robot;
             });
           });
           
-          // Find the robot name for the toast notification
-          const robot = localRobots.find(r => r.id === robotId);
-          if (robot) {
-            toast('New telemetry data', {
-              description: `${robot.name} has sent new telemetry data`,
-              duration: 2000,
-            });
-          }
+          // Show a toast notification about the new telemetry
+          toast('New telemetry data', {
+            description: `${robotToUpdate.name} has sent new telemetry data`,
+            duration: 2000,
+          });
         }
       )
       .subscribe((status) => {
@@ -178,7 +188,7 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, [localRobots]); // Add localRobots as dependency to ensure we have the latest robot names for toasts
+  }, []); // Remove localRobots from dependency to avoid unnecessary resubscriptions
   
   if (loading) {
     return (
