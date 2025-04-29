@@ -57,8 +57,14 @@ export default function IntegrationGuide() {
             <ul className="space-y-2 list-disc pl-5">
               <li><code className="bg-background px-1.5 py-0.5 rounded">batteryLevel</code>: Battery percentage (0-100)</li>
               <li><code className="bg-background px-1.5 py-0.5 rounded">temperature</code>: Temperature in Celsius</li>
-              <li><code className="bg-background px-1.5 py-0.5 rounded">status</code>: "OK", "WARNING", or "ERROR"</li>
-              <li><code className="bg-background px-1.5 py-0.5 rounded">location</code>: Object with latitude and longitude</li>
+              <li><code className="bg-background px-1.5 py-0.5 rounded">status</code>: "OK", "WARNING", or "ERROR" (updates robot status)</li>
+              <li>
+                <code className="bg-background px-1.5 py-0.5 rounded">location</code>: Object with location coordinates
+                <ul className="ml-6 mt-2 space-y-1">
+                  <li>Preferred format: <code className="bg-background px-1.5 py-0.5 rounded text-xs">{"{ latitude: number, longitude: number }"}</code></li>
+                  <li>Also accepted: <code className="bg-background px-1.5 py-0.5 rounded text-xs">{"{ lat: number, lng: number }"}</code></li>
+                </ul>
+              </li>
               <li><code className="bg-background px-1.5 py-0.5 rounded">timestamp</code>: ISO timestamp (defaults to current time if omitted)</li>
             </ul>
           </div>

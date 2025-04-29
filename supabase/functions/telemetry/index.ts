@@ -94,13 +94,23 @@ serve(async (req) => {
     }
 
     // Process and validate telemetry data
+    // Convert location from client format (lat/lng) to database format (latitude/longitude) if needed
+    let locationData = location;
+    if (location && (location.lat !== undefined || location.lng !== undefined)) {
+      locationData = {
+        latitude: location.lat || 0,
+        longitude: location.lng || 0
+      };
+    }
+
+    // Prepare telemetry object with only the fields that exist in the database
     const telemetry = {
       robot_id: robot.id,
       battery_level: batteryLevel || null,
       temperature: temperature || null,
-      location: location || null,
-      status: status || "OK",
-      timestamp: timestamp || new Date().toISOString()
+      location: locationData || null,
+      // Note: We're not adding 'status' here since it doesn't exist in the telemetry table
+      // Instead, we'll use it to update the robot's status below
     };
 
     // Insert telemetry data
@@ -109,6 +119,7 @@ serve(async (req) => {
       .insert([telemetry]);
 
     if (error) {
+      console.error("Telemetry insert error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to insert telemetry", details: error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -122,7 +133,7 @@ serve(async (req) => {
         status: status === "ERROR" ? "offline" : status === "WARNING" ? "warning" : "online",
         battery_level: batteryLevel,
         temperature: temperature,
-        location: location,
+        location: locationData,
         last_ping: new Date().toISOString()
       })
       .eq("id", robot.id);
