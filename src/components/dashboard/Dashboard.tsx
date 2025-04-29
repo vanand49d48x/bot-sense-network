@@ -10,7 +10,7 @@ import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -20,6 +20,24 @@ export function Dashboard() {
   
   // Map Supabase robots to application Robot type
   const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
+  
+  // Enable realtime database for tables
+  useEffect(() => {
+    // This will run just once to set up the database for realtime changes
+    const setupRealtime = async () => {
+      try {
+        // Run SQL commands to ensure tables are setup for realtime
+        await supabase.rpc('enable_realtime_for_table', { table_name: 'robots' });
+        await supabase.rpc('enable_realtime_for_table', { table_name: 'telemetry' });
+        console.log('Realtime enabled for database tables');
+      } catch (error) {
+        console.error('Error setting up realtime:', error);
+        // This might fail if the RPC doesn't exist yet, but that's ok
+      }
+    };
+    
+    setupRealtime();
+  }, []);
   
   // Set up realtime subscription for robot updates
   useEffect(() => {

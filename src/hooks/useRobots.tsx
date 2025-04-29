@@ -76,7 +76,7 @@ export function useRobots() {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
-          console.log("Robots change detected:", payload.eventType);
+          console.log("Robots change detected:", payload.eventType, payload);
           
           if (payload.eventType === 'INSERT') {
             setRobots(prev => [...prev, payload.new as SupabaseRobot]);
@@ -101,12 +101,14 @@ export function useRobots() {
     try {
       if (!session?.user?.id) throw new Error("User not authenticated");
       
+      // Create a new robot with required api_key
       const { data, error } = await supabase
         .from('robots')
         .insert([
           {
             ...robot,
-            user_id: session.user.id
+            user_id: session.user.id,
+            api_key: crypto.randomUUID().replace(/-/g, '')
           }
         ])
         .select();
