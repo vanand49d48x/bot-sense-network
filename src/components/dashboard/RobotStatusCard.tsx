@@ -56,13 +56,11 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
     try {
       setIsDeleting(true);
       await deleteRobot(robot.id);
-      toast({
-        title: "Robot deleted",
+      toast("Robot deleted", {
         description: `${robot.name} has been successfully deleted.`
       });
     } catch (error: any) {
-      toast({
-        title: "Error deleting robot",
+      toast("Error deleting robot", {
         description: error.message,
         variant: "destructive",
       });
