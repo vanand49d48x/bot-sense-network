@@ -79,6 +79,7 @@ export interface Database {
           battery_level: number
           temperature: number
           location: Json
+          api_key: string  // Add this line for the API key
         }
         Insert: {
           id?: string
@@ -93,6 +94,7 @@ export interface Database {
           battery_level?: number
           temperature?: number
           location?: Json
+          api_key?: string  // Add this line for the API key
         }
         Update: {
           id?: string
@@ -107,6 +109,7 @@ export interface Database {
           battery_level?: number
           temperature?: number
           location?: Json
+          api_key?: string  // Add this line for the API key
         }
       }
       telemetry: {
