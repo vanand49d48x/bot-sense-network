@@ -24,7 +24,8 @@ export function useRobots() {
         
         const { data, error } = await supabase
           .from('robots')
-          .select('*');
+          .select('*')
+          .eq('user_id', session.user.id);
 
         if (error) throw error;
         
@@ -83,9 +84,12 @@ export function useRobots() {
           console.log("Robots change detected in useRobots hook:", payload.eventType, payload);
           
           if (payload.eventType === 'INSERT') {
-            // Add new robot to the state
-            setRobots(prev => [...prev, payload.new as SupabaseRobot]);
-            console.log(`Robot inserted: ${payload.new.name}`);
+            // Only add if the robot belongs to the current user
+            if (payload.new.user_id === session.user.id) {
+              // Add new robot to the state
+              setRobots(prev => [...prev, payload.new as SupabaseRobot]);
+              console.log(`Robot inserted: ${payload.new.name}`);
+            }
           } else if (payload.eventType === 'UPDATE') {
             // Update existing robot in the state
             setRobots(prev => 

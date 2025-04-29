@@ -21,6 +21,17 @@ export function Dashboard() {
   // Map Supabase robots to application Robot type
   const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
   
+  // Local state to manage robots for real-time updates
+  const [localRobots, setLocalRobots] = useState<Robot[]>([]);
+  
+  // Initialize local robots when the data from useRobots changes
+  useEffect(() => {
+    if (robots.length > 0) {
+      console.log("Updating local robots state with", robots.length, "robots");
+      setLocalRobots(robots);
+    }
+  }, [robots]);
+  
   // Set up realtime subscription for robot and telemetry updates
   useEffect(() => {
     console.log("Setting up realtime subscriptions...");
@@ -40,16 +51,38 @@ export function Dashboard() {
               description: `${payload.new.name}'s status has been updated`,
               duration: 3000,
             });
+            
+            // Update the local robots state
+            setLocalRobots(prevRobots => {
+              return prevRobots.map(robot => {
+                if (robot.id === payload.new.id) {
+                  // Map the updated robot data to our Robot type
+                  return mapSupabaseRobotToAppRobot(payload.new);
+                }
+                return robot;
+              });
+            });
           } else if (payload.eventType === 'INSERT') {
             toast('New robot added', {
               description: `${payload.new.name} has been added to your fleet`,
               duration: 3000,
             });
+            
+            // Add the new robot to local state
+            setLocalRobots(prevRobots => [
+              ...prevRobots, 
+              mapSupabaseRobotToAppRobot(payload.new)
+            ]);
           } else if (payload.eventType === 'DELETE') {
             toast('Robot removed', {
               description: `A robot has been removed from your fleet`,
               duration: 3000,
             });
+            
+            // Remove the deleted robot from local state
+            setLocalRobots(prevRobots => 
+              prevRobots.filter(robot => robot.id !== payload.old.id)
+            );
           }
         }
       )
@@ -60,8 +93,32 @@ export function Dashboard() {
           console.log('New telemetry received:', payload);
           const robotId = payload.new.robot_id;
           
-          // Find the robot name
-          const robot = supabaseRobots.find(r => r.id === robotId);
+          // Update the corresponding robot in our local state with new telemetry data
+          setLocalRobots(prevRobots => {
+            return prevRobots.map(robot => {
+              if (robot.id === robotId) {
+                // Find the robot that this telemetry belongs to
+                console.log(`Updating robot ${robot.name} with new telemetry`);
+                
+                // Update robot with the telemetry data
+                return {
+                  ...robot,
+                  batteryLevel: payload.new.battery_level ?? robot.batteryLevel,
+                  temperature: payload.new.temperature ?? robot.temperature,
+                  location: payload.new.location ? {
+                    latitude: payload.new.location.latitude || 0,
+                    longitude: payload.new.location.longitude || 0
+                  } : robot.location,
+                  lastHeartbeat: new Date().toISOString(),
+                  status: 'online' // Set to online since we received telemetry
+                };
+              }
+              return robot;
+            });
+          });
+          
+          // Find the robot name for the toast notification
+          const robot = localRobots.find(r => r.id === robotId);
           if (robot) {
             toast('New telemetry data', {
               description: `${robot.name} has sent new telemetry data`,
@@ -118,7 +175,7 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, [supabaseRobots]); // Depend on supabaseRobots to refresh subscriptions when robots change
+  }, [localRobots]); // Add localRobots as dependency to ensure we have the latest robot names for toasts
   
   if (loading) {
     return (
@@ -137,9 +194,9 @@ export function Dashboard() {
         <AddRobotModal />
       </div>
       
-      {robots.length > 0 ? (
+      {localRobots.length > 0 ? (
         <>
-          <StatCards robots={robots} />
+          <StatCards robots={localRobots} />
           
           <Alert className="my-4">
             <AlertCircle className="h-4 w-4" />
@@ -149,8 +206,8 @@ export function Dashboard() {
             </AlertDescription>
           </Alert>
           
-          <MapView robots={robots} />
-          <RobotStatusGrid robots={robots} />
+          <MapView robots={localRobots} />
+          <RobotStatusGrid robots={localRobots} />
         </>
       ) : (
         <div className="mt-8 text-center p-12 border border-dashed rounded-lg">
