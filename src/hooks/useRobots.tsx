@@ -27,17 +27,23 @@ export function useRobots() {
         
         setRobots(data || []);
         
-        // Fetch API key (common for all robots)
-        const { data: apiKeyData, error: apiKeyError } = await supabase
+        // Fetch API key from profiles
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('api_key')
           .eq('id', session.user.id)
           .single();
           
-        if (!apiKeyError && apiKeyData && apiKeyData.api_key) {
-          setApiKey(apiKeyData.api_key);
+        if (profileError) {
+          console.error("Error fetching API key:", profileError);
+          // If there's an error, we'll try to set it anyway
+          setApiKey(null);
         } else {
-          // If no API key exists, generate one
+          setApiKey(profileData?.api_key || null);
+        }
+        
+        // If no API key exists, generate one
+        if (!profileData?.api_key) {
           const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
           
           const { error: updateError } = await supabase
@@ -95,12 +101,16 @@ export function useRobots() {
     try {
       if (!session?.user?.id) throw new Error("User not authenticated");
       
+      // Generate a unique API key for the robot
+      const robotApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+      
       const { data, error } = await supabase
         .from('robots')
         .insert([
           {
             ...robot,
-            user_id: session.user.id
+            user_id: session.user.id,
+            api_key: robotApiKey
           }
         ])
         .select();
