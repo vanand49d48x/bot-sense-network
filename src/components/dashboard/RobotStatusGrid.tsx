@@ -64,7 +64,10 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
       {viewMode === 'cards' ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {robots.map((robot) => (
-            <RobotStatusCard key={`${robot.id}-${robot.lastHeartbeat}-${robot.status}-${robot.batteryLevel}`} robot={robot} />
+            <RobotStatusCard 
+              key={`${robot.id}-${robot.lastHeartbeat}-${robot.status}-${robot.batteryLevel}-refresh`} 
+              robot={robot} 
+            />
           ))}
         </div>
       ) : (
@@ -82,7 +85,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
             </TableHeader>
             <TableBody>
               {robots.map((robot) => (
-                <TableRow key={`${robot.id}-${robot.lastHeartbeat}-${robot.status}`}>
+                <TableRow key={`${robot.id}-${robot.lastHeartbeat}-${robot.status}-refresh`}>
                   <TableCell className="font-medium">{robot.name}</TableCell>
                   <TableCell>
                     <RobotStatusBadge status={robot.status} />
