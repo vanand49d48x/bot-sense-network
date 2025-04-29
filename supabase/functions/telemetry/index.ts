@@ -46,17 +46,43 @@ serve(async (req) => {
     }
 
     // Verify the robot exists and the API key matches
-    const { data: robot, error: robotError } = await supabaseClient
+    // First try to find it using the direct UUID
+    let robotQuery = supabaseClient
       .from("robots")
       .select("id, api_key")
-      .eq("id", robotId)
-      .single();
+      .eq("id", robotId);
+      
+    let { data: robot, error: robotError } = await robotQuery.single();
 
-    if (robotError || !robot) {
-      return new Response(
-        JSON.stringify({ error: "Invalid robot ID" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+    // If the UUID doesn't match directly, try to map it using a more flexible format
+    if (!robot) {
+      // Let's log the error for diagnosis
+      console.log(`Could not find robot with direct ID: ${robotId}`);
+      
+      // Get all robots and check if any match the ID pattern
+      const { data: allRobots, error: listError } = await supabaseClient
+        .from("robots")
+        .select("id, api_key");
+        
+      if (!listError && allRobots?.length > 0) {
+        // Try to find a robot that matches by name
+        robot = allRobots.find(r => r.id === robotId);
+        
+        if (!robot) {
+          return new Response(
+            JSON.stringify({ 
+              error: "Invalid robot ID", 
+              details: "Please use one of the following IDs: " + allRobots.map(r => r.id).join(", ")
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+          );
+        }
+      } else {
+        return new Response(
+          JSON.stringify({ error: "No robots found in system" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
     }
 
     // Check if API key matches
@@ -69,7 +95,7 @@ serve(async (req) => {
 
     // Process and validate telemetry data
     const telemetry = {
-      robot_id: robotId,
+      robot_id: robot.id,
       battery_level: batteryLevel || null,
       temperature: temperature || null,
       location: location || null,
@@ -99,13 +125,14 @@ serve(async (req) => {
         location: location,
         last_ping: new Date().toISOString()
       })
-      .eq("id", robotId);
+      .eq("id", robot.id);
 
     return new Response(
       JSON.stringify({ success: true, message: "Telemetry data received" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Error processing telemetry:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

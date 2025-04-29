@@ -77,6 +77,13 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
       });
     }
   };
+  
+  const copyRobotId = () => {
+    navigator.clipboard.writeText(robot.id);
+    toast("Robot ID copied", {
+      description: "The Robot ID has been copied to your clipboard."
+    });
+  };
 
   const location = robot.location as { latitude: number, longitude: number } | null;
 
@@ -159,19 +166,35 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
             </Button>
             
             {showApiKey && (
-              <div className="mt-2 p-3 bg-muted/50 rounded-md">
-                <div className="text-xs text-muted-foreground mb-1">API Key</div>
-                <div className="flex items-center gap-2">
-                  <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
-                    {robot.apiKey || 'No API key available'}
-                  </code>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyApiKey}>
-                    <ClipboardCopy size={14} />
-                    <span className="sr-only">Copy API key</span>
-                  </Button>
+              <div className="mt-2 space-y-3">
+                <div className="p-3 bg-muted/50 rounded-md">
+                  <div className="text-xs text-muted-foreground mb-1">Robot ID</div>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
+                      {robot.id}
+                    </code>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyRobotId}>
+                      <ClipboardCopy size={14} />
+                      <span className="sr-only">Copy Robot ID</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-2">
-                  Use this key to send telemetry data via the API.
+
+                <div className="p-3 bg-muted/50 rounded-md">
+                  <div className="text-xs text-muted-foreground mb-1">API Key</div>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
+                      {robot.apiKey || 'No API key available'}
+                    </code>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyApiKey}>
+                      <ClipboardCopy size={14} />
+                      <span className="sr-only">Copy API key</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground mt-2 px-3">
+                  Use the Robot ID and API key to send telemetry data via the API.
                 </div>
               </div>
             )}

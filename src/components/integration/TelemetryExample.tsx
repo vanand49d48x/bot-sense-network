@@ -83,7 +83,7 @@ print(response.text)`;
       <CardHeader>
         <CardTitle>Sending Telemetry Data</CardTitle>
         <CardDescription>
-          Send robot telemetry data using these example code snippets. Replace <code>YOUR_ROBOT_API_KEY</code> and <code>YOUR_ROBOT_ID</code> with your actual robot's API key and ID.
+          Send robot telemetry data using these example code snippets. Replace <code>YOUR_ROBOT_ID</code> with your robot's ID and <code>YOUR_ROBOT_API_KEY</code> with your robot's API key, both found in the "API Integration" section of each robot card.
         </CardDescription>
       </CardHeader>
       <CardContent>
