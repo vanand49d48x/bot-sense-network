@@ -27,9 +27,9 @@ export function Dashboard() {
     const setupRealtime = async () => {
       try {
         // Run SQL commands to ensure tables are setup for realtime
-        // Use explicit type assertion with a type declaration to fix TypeScript error
-        await supabase.rpc('enable_realtime_for_table', { table_name: 'robots' } as any);
-        await supabase.rpc('enable_realtime_for_table', { table_name: 'telemetry' } as any);
+        // Using type assertion with Record<string, any> to fix TypeScript error
+        await supabase.rpc('enable_realtime_for_table', { table_name: 'robots' } as Record<string, any>);
+        await supabase.rpc('enable_realtime_for_table', { table_name: 'telemetry' } as Record<string, any>);
         console.log('Realtime enabled for database tables');
       } catch (error) {
         console.error('Error setting up realtime:', error);
