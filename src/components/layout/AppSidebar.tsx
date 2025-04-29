@@ -17,7 +17,7 @@ export function AppSidebar() {
     {
       title: "Dashboard",
       icon: ArrowRight,
-      url: "/",
+      url: "/dashboard",
     },
     {
       title: "Fleet Status",
