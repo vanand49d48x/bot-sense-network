@@ -62,7 +62,8 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
     } catch (error: any) {
       toast("Error deleting robot", {
         description: error.message,
-        variant: "destructive",
+        // Sonner uses 'error' type instead of 'variant: "destructive"'
+        type: "error",
       });
     } finally {
       setIsDeleting(false);
