@@ -2,12 +2,11 @@
 import { RobotStatusCard } from "./RobotStatusCard";
 import { Robot } from "@/types/robot";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { TableIcon, Grid3X3Icon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 import { RobotStatusBadge } from "./RobotStatusBadge";
 
 interface RobotStatusGridProps {
@@ -16,6 +15,13 @@ interface RobotStatusGridProps {
 
 export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  // For immediate UI updates
+  const [localRobots, setLocalRobots] = useState<Robot[]>([]);
+  
+  // Update local state when robots prop changes
+  useEffect(() => {
+    setLocalRobots(robots);
+  }, [robots]);
 
   const getBatteryColor = (level: number) => {
     if (level > 50) return "text-robot-online";
@@ -64,8 +70,8 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
 
       {viewMode === 'cards' ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {robots.map((robot) => (
-            <RobotStatusCard key={robot.id} robot={robot} />
+          {localRobots.map((robot) => (
+            <RobotStatusCard key={`${robot.id}-${robot.lastHeartbeat}`} robot={robot} />
           ))}
         </div>
       ) : (
@@ -82,8 +88,8 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {robots.map((robot) => (
-                <TableRow key={robot.id}>
+              {localRobots.map((robot) => (
+                <TableRow key={`${robot.id}-${robot.lastHeartbeat}`}>
                   <TableCell className="font-medium">{robot.name}</TableCell>
                   <TableCell>
                     <RobotStatusBadge status={robot.status} />
@@ -101,7 +107,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
         </div>
       )}
       
-      {robots.length === 0 && (
+      {localRobots.length === 0 && (
         <div className="text-center p-12 border border-dashed rounded-lg">
           <h3 className="text-lg font-medium mb-2">No robots connected yet</h3>
           <p className="text-muted-foreground mb-4">

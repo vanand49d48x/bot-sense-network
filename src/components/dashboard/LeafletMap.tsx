@@ -33,6 +33,13 @@ interface LeafletMapProps {
 
 export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false);
+  // Local state to ensure reactivity
+  const [localRobots, setLocalRobots] = useState<Robot[]>([]);
+  
+  // Update local state whenever robots prop changes
+  useEffect(() => {
+    setLocalRobots(robots);
+  }, [robots]);
   
   useEffect(() => {
     setIsClient(true);
@@ -66,7 +73,7 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   const defaultPosition: [number, number] = [37.7749, -122.4194];
 
   // Filter robots that have location data
-  const robotsWithLocation = robots.filter(robot => robot.location !== undefined);
+  const robotsWithLocation = localRobots.filter(robot => robot.location !== undefined);
   
   // Calculate center based on available robots if we have locations
   const center = robotsWithLocation.length > 0 
@@ -83,6 +90,7 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
       center={center} 
       zoom={robotsWithLocation.length > 1 ? 10 : 13} 
       style={{ height, width: "100%" }}
+      key={`map-${robotsWithLocation.length}-${JSON.stringify(center)}`}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -90,7 +98,7 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
       />
       {robotsWithLocation.map(robot => (
         <Marker
-          key={robot.id}
+          key={`${robot.id}-${robot.lastHeartbeat}-${robot.location?.latitude}-${robot.location?.longitude}`}
           position={[
             robot.location!.latitude,
             robot.location!.longitude,
