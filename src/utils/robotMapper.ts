@@ -22,6 +22,7 @@ export function mapSupabaseRobotToAppRobot(robot: SupabaseRobot): Robot {
       longitude: (robot.location as any).longitude || 0
     } : undefined,
     ipAddress: "Unknown", // Default value since Supabase doesn't have this
-    errorCount: 0 // Default value since Supabase doesn't track this
+    errorCount: 0, // Default value since Supabase doesn't track this
+    apiKey: robot.api_key, // Add the API key to the robot object
   };
 }

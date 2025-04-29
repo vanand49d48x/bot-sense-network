@@ -1,10 +1,11 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Robot } from "@/types/robot";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Trash } from "lucide-react";
+import { ChevronDown, ChevronUp, ClipboardCopy, Trash } from "lucide-react";
 import { useRobots } from "@/hooks/useRobots";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -17,6 +18,7 @@ interface RobotStatusCardProps {
 export function RobotStatusCard({ robot }: RobotStatusCardProps) {
   const { deleteRobot } = useRobots();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -64,6 +66,15 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const copyApiKey = () => {
+    if (robot.apiKey) {
+      navigator.clipboard.writeText(robot.apiKey);
+      toast("API key copied", {
+        description: "The API key has been copied to your clipboard."
+      });
     }
   };
 
@@ -134,6 +145,36 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
               <span className="text-muted-foreground">Last Heartbeat</span>
               <div>{getLastHeartbeatText(robot.lastHeartbeat)}</div>
             </div>
+          </div>
+
+          <div className="pt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full flex justify-between items-center text-xs" 
+              onClick={() => setShowApiKey(!showApiKey)}
+            >
+              API Integration
+              {showApiKey ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </Button>
+            
+            {showApiKey && (
+              <div className="mt-2 p-3 bg-muted/50 rounded-md">
+                <div className="text-xs text-muted-foreground mb-1">API Key</div>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
+                    {robot.apiKey || 'No API key available'}
+                  </code>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyApiKey}>
+                    <ClipboardCopy size={14} />
+                    <span className="sr-only">Copy API key</span>
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground mt-2">
+                  Use this key to send telemetry data via the API.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

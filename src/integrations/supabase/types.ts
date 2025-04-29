@@ -76,6 +76,7 @@ export type Database = {
       }
       robots: {
         Row: {
+          api_key: string
           battery_level: number | null
           created_at: string
           description: string | null
@@ -90,6 +91,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          api_key: string
           battery_level?: number | null
           created_at?: string
           description?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          api_key?: string
           battery_level?: number | null
           created_at?: string
           description?: string | null

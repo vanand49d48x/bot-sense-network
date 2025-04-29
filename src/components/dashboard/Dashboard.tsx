@@ -8,6 +8,8 @@ import { useRobots } from "@/hooks/useRobots";
 import { useAuth } from "@/context/AuthContext";
 import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function Dashboard() {
   const { robots: supabaseRobots, loading } = useRobots();
@@ -36,6 +38,15 @@ export function Dashboard() {
       {robots.length > 0 ? (
         <>
           <StatCards robots={robots} />
+          
+          <Alert className="my-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Telemetry Integration</AlertTitle>
+            <AlertDescription>
+              To send telemetry data to your robots, use each robot's API key. View API keys in the robot cards by clicking "API Integration".
+            </AlertDescription>
+          </Alert>
+          
           <MapView robots={robots} />
           <RobotStatusGrid robots={robots} />
         </>

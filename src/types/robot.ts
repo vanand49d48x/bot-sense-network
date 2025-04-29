@@ -13,4 +13,5 @@ export interface Robot {
   };
   ipAddress: string;
   errorCount: number;
+  apiKey?: string;
 }
