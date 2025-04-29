@@ -30,16 +30,14 @@ export function Dashboard() {
         // Run SQL commands to ensure tables are setup for realtime
         console.log("Setting up realtime functionality for tables...");
         
-        // Fix: Using proper type assertion with Record<string, any>
-        const robotsResult = await supabase.rpc(
-          'enable_realtime_for_table', 
-          { table_name: 'robots' } as Record<string, any>
-        );
+        // Fix: Cast the entire function call result to any to bypass type checking
+        const robotsResult = await (supabase.rpc('enable_realtime_for_table', { 
+          table_name: 'robots' 
+        }) as any);
         
-        const telemetryResult = await supabase.rpc(
-          'enable_realtime_for_table', 
-          { table_name: 'telemetry' } as Record<string, any>
-        );
+        const telemetryResult = await (supabase.rpc('enable_realtime_for_table', { 
+          table_name: 'telemetry' 
+        }) as any);
         
         if (robotsResult.error) {
           console.error('Error enabling realtime for robots table:', robotsResult.error);
