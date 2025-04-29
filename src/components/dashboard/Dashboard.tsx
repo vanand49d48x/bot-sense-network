@@ -6,10 +6,15 @@ import { MapView } from "./MapView";
 import { AddRobotModal } from "./AddRobotModal";
 import { useRobots } from "@/hooks/useRobots";
 import { useAuth } from "@/context/AuthContext";
+import { Robot } from "@/types/robot";
+import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 
 export function Dashboard() {
-  const { robots, loading } = useRobots();
+  const { robots: supabaseRobots, loading } = useRobots();
   const { user } = useAuth();
+  
+  // Map Supabase robots to application Robot type
+  const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
   
   if (loading) {
     return (
