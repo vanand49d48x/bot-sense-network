@@ -4,12 +4,21 @@ import { Robot } from "@/types/robot";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash } from "lucide-react";
+import { useRobots } from "@/hooks/useRobots";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { toast } from "@/components/ui/sonner";
 
 interface RobotStatusCardProps {
   robot: Robot;
 }
 
 export function RobotStatusCard({ robot }: RobotStatusCardProps) {
+  const { deleteRobot } = useRobots();
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
@@ -43,6 +52,25 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteRobot(robot.id);
+      toast({
+        title: "Robot deleted",
+        description: `${robot.name} has been successfully deleted.`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting robot",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const location = robot.location as { latitude: number, longitude: number } | null;
 
   return (
@@ -62,6 +90,32 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
                 <span className="ml-2">{robot.status === 'online' ? 'Online' : robot.status === 'warning' ? 'Warning' : 'Offline'}</span>
               </Badge>
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                  <span className="sr-only">Delete robot</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete {robot.name} and all associated data. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDelete} 
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </CardHeader>

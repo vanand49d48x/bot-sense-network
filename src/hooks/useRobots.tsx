@@ -95,5 +95,24 @@ export function useRobots() {
     }
   };
 
-  return { robots, loading, addRobot };
+  const deleteRobot = async (robotId: string) => {
+    try {
+      if (!session?.user?.id) throw new Error("User not authenticated");
+
+      const { error } = await supabase
+        .from('robots')
+        .delete()
+        .eq('id', robotId)
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error deleting robot:", error);
+      throw error;
+    }
+  };
+
+  return { robots, loading, addRobot, deleteRobot };
 }
