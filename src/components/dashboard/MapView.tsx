@@ -1,25 +1,38 @@
 
-import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Robot } from "@/types/robot";
+import L from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Fix Leaflet's missing marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
+});
+
+// Custom marker icons for different robot statuses
+const createStatusIcon = (status: 'online' | 'offline' | 'warning') => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div class="w-4 h-4 rounded-full ${
+      status === 'online' ? 'bg-robot-online' :
+      status === 'warning' ? 'bg-robot-warning' : 'bg-robot-offline'
+    } ${status === 'online' ? 'pulse-animation' : ''}" />`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+};
 
 interface MapViewProps {
   robots: Robot[];
 }
 
-interface Location {
-  latitude: number;
-  longitude: number;
-}
-
 export function MapView({ robots }: MapViewProps) {
-  const [mapLoaded, setMapLoaded] = useState(false);
-
-  useEffect(() => {
-    // In a real app, this would initialize a map library like Leaflet
-    const timer = setTimeout(() => setMapLoaded(true), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Default position (San Francisco)
+  const defaultPosition: [number, number] = [37.7749, -122.4194];
 
   // Filter robots that have location data
   const robotsWithLocation = robots.filter(robot => robot.location !== undefined);
@@ -28,48 +41,51 @@ export function MapView({ robots }: MapViewProps) {
     return null;
   }
 
+  // Calculate center based on available robots if we have locations
+  const center = robotsWithLocation.length > 0 
+    ? getMapCenter(robotsWithLocation)
+    : defaultPosition;
+
   return (
     <Card className="mt-6 animate-fade-in">
       <CardHeader>
         <CardTitle>Robot Locations</CardTitle>
       </CardHeader>
       <CardContent>
-        {!mapLoaded ? (
-          <div className="h-64 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-pulse-slow">Loading map...</div>
-            </div>
-          </div>
-        ) : (
-          <div className="relative h-64 bg-muted/30 rounded-md overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-20 text-7xl font-bold">MAP VIEW</div>
-            {robotsWithLocation.map((robot) => {
-              if (!robot.location) return null;
-              
-              return (
-                <div 
-                  key={robot.id}
-                  className={`absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${
-                    robot.status === 'online' ? 'bg-robot-online' :
-                    robot.status === 'warning' ? 'bg-robot-warning' : 'bg-robot-offline'
-                  }`}
-                  style={{
-                    // This is just a placeholder positioning - in a real app, we'd convert GPS to pixels
-                    left: `${((robot.location.longitude || 0) + 122.42) * 30}%`,
-                    top: `${(37.78 - (robot.location.latitude || 0)) * 30}%`
-                  }}
-                >
-                  {robot.status === 'online' && (
-                    <span className="absolute inset-0 rounded-full bg-robot-online animate-ping-slow opacity-75"></span>
-                  )}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-background px-2 py-1 rounded text-xs whitespace-nowrap">
-                    {robot.name}
+        <div className="h-64 rounded-md overflow-hidden">
+          <MapContainer 
+            center={center} 
+            zoom={robotsWithLocation.length > 1 ? 10 : 13} 
+            style={{ height: "100%", width: "100%" }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {robotsWithLocation.map(robot => (
+              <Marker
+                key={robot.id}
+                position={[
+                  robot.location!.latitude,
+                  robot.location!.longitude,
+                ]}
+                icon={createStatusIcon(robot.status)}
+              >
+                <Popup>
+                  <div className="text-sm">
+                    <strong>{robot.name}</strong><br />
+                    Battery: {robot.batteryLevel}%<br />
+                    Temp: {robot.temperature}°C<br />
+                    Status: <span className={`
+                      ${robot.status === 'online' ? 'text-robot-online' :
+                        robot.status === 'warning' ? 'text-robot-warning' : 'text-robot-offline'}
+                    `}>{robot.status}</span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
         <div className="mt-4 text-xs text-muted-foreground">
           Showing {robotsWithLocation.length} robots with location data
         </div>
@@ -77,3 +93,40 @@ export function MapView({ robots }: MapViewProps) {
     </Card>
   );
 }
+
+// Helper function to calculate the center of the map based on robot positions
+function getMapCenter(robots: Robot[]): [number, number] {
+  if (robots.length === 0) return [37.7749, -122.4194]; // Default to SF
+  
+  let sumLat = 0;
+  let sumLng = 0;
+  
+  robots.forEach(robot => {
+    if (robot.location) {
+      sumLat += robot.location.latitude;
+      sumLng += robot.location.longitude;
+    }
+  });
+  
+  return [sumLat / robots.length, sumLng / robots.length];
+}
+
+// Add the pulse animation
+const style = document.createElement('style');
+style.innerHTML = `
+  .pulse-animation {
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+  }
+`;
+document.head.appendChild(style);
