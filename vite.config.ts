@@ -19,10 +19,19 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react-leaflet', 'leaflet']
   },
   build: {
     commonjsOptions: {
       transformMixedEsModules: true, // Enable this option to handle mixed ES modules
     },
+    rollupOptions: {
+      external: [],
+      output: {
+        manualChunks: {
+          leaflet: ['leaflet', 'react-leaflet'],
+        }
+      }
+    }
   }
 }));
