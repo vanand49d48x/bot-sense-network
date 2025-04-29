@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Robot } from "@/types/robot";
 import L from 'leaflet';
@@ -97,6 +97,11 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
           ]}
           icon={createStatusIcon(robot.status)}
         >
+          <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
+            <div className="text-xs font-medium">
+              {robot.name} ({robot.status})
+            </div>
+          </Tooltip>
           <Popup>
             <div className="text-sm">
               <strong>{robot.name}</strong><br />
