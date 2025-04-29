@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Robot } from "@/types/robot";
 import L from 'leaflet';
@@ -33,13 +33,6 @@ interface LeafletMapProps {
 
 export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false);
-  // Local state to ensure reactivity
-  const [localRobots, setLocalRobots] = useState<Robot[]>([]);
-  
-  // Update local state whenever robots prop changes
-  useEffect(() => {
-    setLocalRobots(robots);
-  }, [robots]);
   
   useEffect(() => {
     setIsClient(true);
@@ -73,7 +66,7 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   const defaultPosition: [number, number] = [37.7749, -122.4194];
 
   // Filter robots that have location data
-  const robotsWithLocation = localRobots.filter(robot => robot.location !== undefined);
+  const robotsWithLocation = robots.filter(robot => robot.location !== undefined);
   
   // Calculate center based on available robots if we have locations
   const center = robotsWithLocation.length > 0 
@@ -90,7 +83,6 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
       center={center} 
       zoom={robotsWithLocation.length > 1 ? 10 : 13} 
       style={{ height, width: "100%" }}
-      key={`map-${robotsWithLocation.length}-${JSON.stringify(center)}`}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -98,26 +90,13 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
       />
       {robotsWithLocation.map(robot => (
         <Marker
-          key={`${robot.id}-${robot.lastHeartbeat}-${robot.location?.latitude}-${robot.location?.longitude}`}
+          key={robot.id}
           position={[
             robot.location!.latitude,
             robot.location!.longitude,
           ]}
           icon={createStatusIcon(robot.status)}
         >
-          <Tooltip direction="top" offset={[0, -20]} opacity={1} permanent={false}>
-            <div className="text-sm p-1">
-              <strong>{robot.name}</strong><br />
-              Model: {robot.model}<br />
-              Battery: {robot.batteryLevel}%<br />
-              Temp: {robot.temperature}°C<br />
-              Status: <span className={`
-                ${robot.status === 'online' ? 'text-green-600 font-medium' :
-                  robot.status === 'warning' ? 'text-yellow-600 font-medium' : 'text-red-600 font-medium'}
-              `}>{robot.status}</span><br />
-              Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
-            </div>
-          </Tooltip>
           <Popup>
             <div className="text-sm">
               <strong>{robot.name}</strong><br />
