@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -210,7 +209,7 @@ if __name__ == '__main__':
                   <li><code className="bg-background px-1.5 py-0.5 rounded">use_mqtt</code> - Enable MQTT (default: false)</li>
                   <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_host</code> - MQTT broker host (default: mqtt.robometrics.xyz)</li>
                   <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_port</code> - MQTT broker port (default: 1883)</li>
-                  <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_topic</code> - Topic to publish to (default: robometrics/telemetry/{robot_id})</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_topic</code> - Topic to publish to (default: robometrics/telemetry/{your-robot-id})</li>
                 </ul>
               </div>
               
