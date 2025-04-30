@@ -5,7 +5,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TableIcon, Grid3X3Icon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import { RobotStatusBadge } from "./RobotStatusBadge";
@@ -65,7 +64,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
       {viewMode === 'cards' ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {robots.map((robot) => (
-            <RobotStatusCard key={robot.id} robot={robot} />
+            <RobotStatusCard key={`${robot.id}-${robot.lastHeartbeat}`} robot={robot} />
           ))}
         </div>
       ) : (
@@ -83,7 +82,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
             </TableHeader>
             <TableBody>
               {robots.map((robot) => (
-                <TableRow key={robot.id}>
+                <TableRow key={`${robot.id}-${robot.lastHeartbeat}-${robot.batteryLevel}`}>
                   <TableCell className="font-medium">{robot.name}</TableCell>
                   <TableCell>
                     <RobotStatusBadge status={robot.status} />

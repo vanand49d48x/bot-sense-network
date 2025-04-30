@@ -33,6 +33,10 @@ interface LeafletMapProps {
 
 export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false);
+  // Create a map key that changes whenever robot positions change
+  const mapKey = JSON.stringify(robots.map(r => 
+    r.location ? `${r.id}-${r.location.latitude}-${r.location.longitude}-${r.status}` : r.id
+  ));
   
   useEffect(() => {
     setIsClient(true);
@@ -80,6 +84,7 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
 
   return (
     <MapContainer 
+      key={mapKey} // This forces the map to re-render when robot data changes
       center={center} 
       zoom={robotsWithLocation.length > 1 ? 10 : 13} 
       style={{ height, width: "100%" }}
@@ -90,7 +95,7 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
       />
       {robotsWithLocation.map(robot => (
         <Marker
-          key={robot.id}
+          key={`${robot.id}-${robot.lastHeartbeat}`}
           position={[
             robot.location!.latitude,
             robot.location!.longitude,

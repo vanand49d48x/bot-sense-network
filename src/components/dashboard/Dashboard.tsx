@@ -10,7 +10,7 @@ import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { SupabaseRobot } from "@/utils/robotMapper";
@@ -25,17 +25,23 @@ export function Dashboard() {
   // Local state to manage robots for real-time updates
   const [localRobots, setLocalRobots] = useState<Robot[]>([]);
   
+  // Track if subscriptions are set up to avoid duplicate subscriptions
+  const subscriptionsSetup = useRef(false);
+  
   // Initialize local robots when the data from useRobots changes
   useEffect(() => {
     if (robots.length > 0) {
-      console.log("Updating local robots state with", robots.length, "robots");
       setLocalRobots(robots);
     }
   }, [robots]);
   
   // Set up realtime subscription for robot and telemetry updates
   useEffect(() => {
+    // Skip if subscriptions are already set up or no user is logged in
+    if (subscriptionsSetup.current || !user) return;
+    
     console.log("Setting up realtime subscriptions...");
+    subscriptionsSetup.current = true;
     
     // Create a single channel for all robot-related updates
     const channel = supabase
@@ -193,8 +199,9 @@ export function Dashboard() {
     return () => {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
+      subscriptionsSetup.current = false;
     };
-  }, []); // Remove localRobots from dependency to avoid unnecessary resubscriptions
+  }, [user]); // Only depend on user to avoid infinite loops
   
   if (loading) {
     return (
