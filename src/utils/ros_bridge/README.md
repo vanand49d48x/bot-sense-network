@@ -18,7 +18,8 @@ The bridge collects data from standard ROS topics and sends it to the RoboMonito
 
 - ROS (Noetic or ROS2)
 - Python 3
-- `requests` library
+- `requests` library (for HTTP)
+- `paho-mqtt` library (for MQTT)
 - A RoboMonitor account with API key
 
 ### Setup Instructions
@@ -44,12 +45,20 @@ catkin_make  # For ROS1
 colcon build  # For ROS2
 ```
 
-#### Alternative Manual Installation:
+#### Using rosdep (Recommended):
 
-1. Create a new package in your ROS workspace
-2. Copy the files from this repository
-3. Install dependencies with `pip install -r requirements.txt`
-4. Build your workspace
+```bash
+# Add the repository to your sources list
+sudo sh -c 'echo "deb http://packages.robometrics.xyz/apt $(lsb_release -sc) main" > /etc/apt/sources.list.d/robometrics.list'
+curl -sL https://packages.robometrics.xyz/key.gpg | sudo apt-key add -
+sudo apt update
+
+# Install the package
+sudo apt install ros-$ROS_DISTRO-robometrics-bridge
+
+# For ROS2, replace $ROS_DISTRO with your ROS2 distribution (e.g. foxy, humble)
+# sudo apt install ros-humble-robometrics-bridge
+```
 
 ## Configuration
 
@@ -60,6 +69,11 @@ Configure the bridge using one of these methods:
 ```bash
 export ROBOMETRICS_ROBOT_ID="your-robot-id" 
 export ROBOMETRICS_API_KEY="your-api-key"
+
+# Optional: Use MQTT instead of HTTP
+export ROBOMETRICS_USE_MQTT="true"
+export ROBOMETRICS_MQTT_HOST="mqtt.robometrics.xyz"
+export ROBOMETRICS_MQTT_PORT="1883"
 ```
 
 ### 2. Launch File Parameters
@@ -70,6 +84,9 @@ roslaunch robometrics_bridge robometrics_bridge.launch robot_id:=your-robot-id a
 
 # ROS2
 ros2 launch robometrics_bridge robometrics_bridge.launch.py robot_id:=your-robot-id api_key:=your-api-key
+
+# With MQTT enabled
+roslaunch robometrics_bridge robometrics_bridge.launch robot_id:=your-robot-id api_key:=your-api-key use_mqtt:=true
 ```
 
 ## Usage
@@ -114,6 +131,56 @@ roslaunch robometrics_bridge robometrics_bridge.launch battery_state:=/my_robot/
 ros2 launch robometrics_bridge robometrics_bridge.launch.py battery_state:=/my_robot/battery temperature:=/my_robot/temp
 ```
 
+## Custom Message Publishing
+
+You can publish your own telemetry data directly using the `RobometricsMessage` format:
+
+```python
+#!/usr/bin/env python3
+import rospy
+from robometrics_bridge.msg import RobometricsMessage
+
+def publish_telemetry():
+    rospy.init_node('telemetry_publisher', anonymous=True)
+    pub = rospy.Publisher('/robometrics/send', RobometricsMessage, queue_size=10)
+    
+    msg = RobometricsMessage()
+    msg.robot_id = "my-robot-id"  # Will override bridge configuration
+    msg.battery_level = 85
+    msg.temperature = 32.5
+    msg.status = "OK"
+    msg.latitude = 37.7749
+    msg.longitude = -122.4194
+    
+    pub.publish(msg)
+    rospy.loginfo("Custom telemetry message published")
+    
+if __name__ == '__main__':
+    try:
+        publish_telemetry()
+    except rospy.ROSInterruptException:
+        pass
+```
+
+When a custom message is received, it is sent immediately to RoboMonitor.
+
+## MQTT Support
+
+The bridge supports MQTT for more reliable communication:
+
+```bash
+# Enable MQTT
+roslaunch robometrics_bridge robometrics_bridge.launch use_mqtt:=true mqtt_host:=mqtt.robometrics.xyz mqtt_port:=1883
+```
+
+MQTT parameters:
+- `use_mqtt` - Enable MQTT (default: false)
+- `mqtt_host` - MQTT broker host (default: mqtt.robometrics.xyz)
+- `mqtt_port` - MQTT broker port (default: 1883)
+- `mqtt_topic` - Topic to publish to (default: robometrics/telemetry/{robot_id})
+
+If MQTT connection fails, the bridge will automatically fall back to HTTP.
+
 ## Troubleshooting
 
 ### No data appearing in RoboMonitor dashboard
@@ -128,6 +195,7 @@ If you see connection errors, check:
 1. Your internet connection
 2. Firewall settings
 3. The API URL configuration
+4. If using MQTT, ensure the broker is accessible
 
 ## License
 

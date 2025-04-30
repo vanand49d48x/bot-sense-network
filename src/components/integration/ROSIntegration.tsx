@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ClipboardCopy, Download } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export function ROSIntegration() {
   const copyToClipboard = (text: string) => {
@@ -49,67 +51,47 @@ echo "Configure your robot ID and API key with:"
 echo "export ROBOMETRICS_ROBOT_ID=your-robot-id"
 echo "export ROBOMETRICS_API_KEY=your-api-key"`;
 
-  const rosNodeCode = `#!/usr/bin/env python3
-import rospy
-import requests
-from sensor_msgs.msg import BatteryState, Temperature, NavSatFix
-from nav_msgs.msg import Odometry
-from std_msgs.msg import String
-
-class RoboMetricsBridge:
-    def __init__(self):
-        # Get parameters
-        self.robot_id = rospy.get_param('~robot_id', 'robot-ros-001')
-        self.api_key = rospy.get_param('~api_key', '')
-        self.api_url = rospy.get_param('~api_url', 'https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry')
-        
-        # Set up telemetry structure
-        self.telemetry = {
-            "robotId": self.robot_id,
-            "batteryLevel": 0,
-            "temperature": 0,
-            "status": "OK",
-            "location": {"latitude": 0, "longitude": 0}
-        }
-        
-        # Set up subscribers
-        rospy.Subscriber('/battery_state', BatteryState, self.battery_callback)
-        rospy.Subscriber('/temperature', Temperature, self.temp_callback)
-        rospy.Subscriber('/robot_status', String, self.status_callback)
-        
-        # Try GPS first, fall back to odometry
-        try:
-            rospy.Subscriber('/gps/fix', NavSatFix, self.gps_callback)
-        except:
-            rospy.Subscriber('/odom', Odometry, self.odom_callback)
-        
-    def send_telemetry(self):
-        # Send data to RoboMonitor platform
-        response = requests.post(
-            self.api_url,
-            headers={"api-key": self.api_key, "Content-Type": "application/json"},
-            json=self.telemetry
-        )
-        rospy.loginfo(f"Sent telemetry: {response.status_code}")
-        
-    def run(self):
-        rate = rospy.Rate(0.1)  # every 10 seconds
-        while not rospy.is_shutdown():
-            self.send_telemetry()
-            rate.sleep()
-
-if __name__ == "__main__":
-    rospy.init_node('robometrics_bridge')
-    bridge = RoboMetricsBridge()
-    bridge.run()`;
-
-  const pythonRequirements = `requests>=2.25.0`;
-
   const launchCommand = `# ROS1
 roslaunch robometrics_bridge robometrics_bridge.launch robot_id:=your-robot-id api_key:=your-api-key
 
 # ROS2
 ros2 launch robometrics_bridge robometrics_bridge.launch.py robot_id:=your-robot-id api_key:=your-api-key`;
+
+  const mqttLaunchCommand = `# ROS1 with MQTT
+roslaunch robometrics_bridge robometrics_bridge.launch robot_id:=your-robot-id api_key:=your-api-key use_mqtt:=true mqtt_host:=mqtt.robometrics.xyz
+
+# ROS2 with MQTT
+ros2 launch robometrics_bridge robometrics_bridge.launch.py robot_id:=your-robot-id api_key:=your-api-key use_mqtt:=true mqtt_host:=mqtt.robometrics.xyz`;
+
+  const customMessageExample = `#!/usr/bin/env python3
+import rospy
+from robometrics_bridge.msg import RobometricsMessage
+
+def publish_telemetry():
+    # Initialize node
+    rospy.init_node('telemetry_publisher', anonymous=True)
+    
+    # Create publisher for RobometricsMessage
+    pub = rospy.Publisher('/robometrics/send', RobometricsMessage, queue_size=10)
+    
+    # Create message
+    msg = RobometricsMessage()
+    msg.robot_id = "my-robot-id"  # Will override the bridge configuration
+    msg.battery_level = 85
+    msg.temperature = 32.5
+    msg.status = "OK"
+    msg.latitude = 37.7749
+    msg.longitude = -122.4194
+    
+    # Publish message (will be sent immediately by the bridge)
+    pub.publish(msg)
+    rospy.loginfo("Custom telemetry message published")
+    
+if __name__ == '__main__':
+    try:
+        publish_telemetry()
+    except rospy.ROSInterruptException:
+        pass`;
 
   return (
     <Card className="mt-6">
@@ -124,7 +106,8 @@ ros2 launch robometrics_bridge robometrics_bridge.launch.py robot_id:=your-robot
           <TabsList className="mb-4">
             <TabsTrigger value="install">Installation</TabsTrigger>
             <TabsTrigger value="usage">Usage</TabsTrigger>
-            <TabsTrigger value="code">Example Code</TabsTrigger>
+            <TabsTrigger value="mqtt">MQTT</TabsTrigger>
+            <TabsTrigger value="custom">Custom Message</TabsTrigger>
           </TabsList>
           
           <TabsContent value="install">
@@ -136,6 +119,8 @@ ros2 launch robometrics_bridge robometrics_bridge.launch.py robot_id:=your-robot
                   <span>Download</span>
                 </Button>
               </div>
+              
+              <Badge variant="outline" className="mb-2">ROS1 & ROS2 Compatible</Badge>
               
               <div className="p-4 bg-muted rounded-md relative">
                 <Button 
@@ -194,41 +179,95 @@ ros2 launch robometrics_bridge robometrics_bridge.launch.py robot_id:=your-robot
             </div>
           </TabsContent>
           
-          <TabsContent value="code">
-            <Tabs defaultValue="node">
-              <TabsList className="mb-4">
-                <TabsTrigger value="node">ROS Node</TabsTrigger>
-                <TabsTrigger value="requirements">Requirements</TabsTrigger>
-              </TabsList>
+          <TabsContent value="mqtt">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold">MQTT Connection</h3>
+                <Badge>Recommended</Badge>
+              </div>
               
-              <TabsContent value="node" className="relative">
+              <p className="text-sm text-muted-foreground">
+                MQTT provides a more efficient and reliable connection for sending telemetry data, especially in environments with unstable internet connections.
+              </p>
+              
+              <div className="p-4 bg-muted rounded-md relative">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(rosNodeCode)}
+                  onClick={() => copyToClipboard(mqttLaunchCommand)}
                 >
                   <ClipboardCopy size={16} />
                 </Button>
-                <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
-                  {rosNodeCode}
+                <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                  {mqttLaunchCommand}
                 </pre>
-              </TabsContent>
+              </div>
               
-              <TabsContent value="requirements" className="relative">
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">MQTT Configuration</h3>
+                <ul className="list-disc pl-5 space-y-2 text-sm">
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">use_mqtt</code> - Enable MQTT (default: false)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_host</code> - MQTT broker host (default: mqtt.robometrics.xyz)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_port</code> - MQTT broker port (default: 1883)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">mqtt_topic</code> - Topic to publish to (default: robometrics/telemetry/{robot_id})</li>
+                </ul>
+              </div>
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                You can also set these parameters using environment variables:
+                <code className="block bg-background p-2 rounded mt-2 text-xs">
+                  export ROBOMETRICS_USE_MQTT=true<br/>
+                  export ROBOMETRICS_MQTT_HOST=mqtt.robometrics.xyz<br/>
+                  export ROBOMETRICS_MQTT_PORT=1883
+                </code>
+              </p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="custom">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold">Custom Message Publishing</h3>
+                <Badge variant="secondary">Advanced</Badge>
+              </div>
+              
+              <p className="text-sm text-muted-foreground">
+                You can publish your own telemetry data directly using the RobometricsMessage format.
+                Just send a message to the <code className="bg-background px-1.5 py-0.5 rounded">/robometrics/send</code> topic.
+              </p>
+              
+              <div className="p-4 bg-muted rounded-md relative">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(pythonRequirements)}
+                  onClick={() => copyToClipboard(customMessageExample)}
                 >
                   <ClipboardCopy size={16} />
                 </Button>
-                <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
-                  {pythonRequirements}
+                <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                  {customMessageExample}
                 </pre>
-              </TabsContent>
-            </Tabs>
+              </div>
+              
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Message Fields</h3>
+                <ul className="list-disc pl-5 space-y-2 text-sm">
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">robot_id</code> - Robot ID (overrides bridge config if provided)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">battery_level</code> - Battery percentage (0-100)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">temperature</code> - Temperature in Celsius</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">status</code> - Status string ("OK", "WARNING", "ERROR")</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">latitude</code> - Latitude coordinate</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">longitude</code> - Longitude coordinate</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">timestamp</code> - Optional timestamp</li>
+                </ul>
+              </div>
+              
+              <p className="text-sm font-medium mt-4">
+                When a custom message is received, it is sent immediately to RoboMonitor, bypassing the regular update interval.
+              </p>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
