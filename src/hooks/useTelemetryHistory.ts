@@ -31,29 +31,33 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
       try {
         setLoading(true);
 
-        // First get the robot's API key
+        // Get the robot's API key
         const { data: robotData, error: robotError } = await supabase
           .from("robots")
           .select("api_key")
           .eq("id", robotId)
           .single();
 
-        if (robotError || !robotData) {
+        if (robotError || !robotData?.api_key) {
           throw new Error(`Failed to fetch robot API key: ${robotError?.message || "Robot not found"}`);
         }
 
+        console.log("Making request to edge function with API key");
+        
         // Make a request to our edge function using the robot's API key
         const response = await fetch(
           `https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/get-telemetry/robots/${robotId}/telemetry?last=${limit}`,
           {
             headers: {
-              "api-key": robotData.api_key,
+              "apikey": robotData.api_key,
             },
           }
         );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch telemetry data: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error("Failed to fetch telemetry data:", response.statusText, errorText);
+          throw new Error(`Failed to fetch telemetry data: ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json();
@@ -68,6 +72,7 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
           
           setTelemetry(formattedTelemetry);
         } else {
+          console.error("Invalid telemetry data format:", data);
           throw new Error("Invalid telemetry data format");
         }
       } catch (error) {

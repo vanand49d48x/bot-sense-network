@@ -26,8 +26,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Check API key in header
-    const apiKey = req.headers.get("api-key");
+    // Extract the API key from header
+    const apiKey = req.headers.get("api-key") || req.headers.get("apikey");
+    
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: "API Key is required" }),
@@ -35,16 +36,17 @@ serve(async (req) => {
       );
     }
 
-    // Find the user who owns the API key
-    const { data: profileData, error: profileError } = await supabaseClient
-      .from("profiles")
-      .select("id")
+    // Find the robot that owns this API key
+    const { data: robotData, error: robotError } = await supabaseClient
+      .from("robots")
+      .select("id, user_id")
       .eq("api_key", apiKey)
       .single();
 
-    if (profileError || !profileData) {
+    if (robotError || !robotData) {
+      console.error("Robot lookup error:", robotError);
       return new Response(
-        JSON.stringify({ error: "Invalid API key" }),
+        JSON.stringify({ error: "Invalid API key", details: robotError }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
@@ -52,27 +54,20 @@ serve(async (req) => {
     // Extract the robot ID from the URL path
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
-    // Expected format: /v1/robots/{robotId}/telemetry
-    const robotId = pathParts.length >= 4 ? pathParts[3] : null;
+    // Expected format: /robots/{robotId}/telemetry
+    const robotIdFromPath = pathParts.length >= 4 ? pathParts[3] : null;
 
-    if (!robotId) {
+    if (!robotIdFromPath) {
       return new Response(
         JSON.stringify({ error: "Robot ID is required in the URL path" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
-    // Verify the robot exists and belongs to the user
-    const { data: robot, error: robotError } = await supabaseClient
-      .from("robots")
-      .select("id")
-      .eq("id", robotId)
-      .eq("user_id", profileData.id)
-      .single();
-
-    if (robotError || !robot) {
+    // Verify the robot ID in the path matches the robot ID from the API key
+    if (robotIdFromPath !== robotData.id) {
       return new Response(
-        JSON.stringify({ error: "Invalid robot ID or you don't have access to this robot" }),
+        JSON.stringify({ error: "API key does not match the robot ID in the path" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
@@ -85,11 +80,12 @@ serve(async (req) => {
     const { data: telemetry, error } = await supabaseClient
       .from("telemetry")
       .select("*")
-      .eq("robot_id", robotId)
+      .eq("robot_id", robotData.id)
       .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) {
+      console.error("Telemetry fetch error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to fetch telemetry data", details: error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -104,7 +100,8 @@ serve(async (req) => {
           robotId: t.robot_id,
           batteryLevel: t.battery_level,
           temperature: t.temperature,
-          status: t.error_codes && t.error_codes.length > 0 ? "ERROR" : "OK",
+          status: t.error_codes && t.error_codes.length > 0 ? "ERROR" : 
+                 t.warning_codes && t.warning_codes.length > 0 ? "WARNING" : "OK",
           location: t.location,
           timestamp: t.created_at
         }))
@@ -112,6 +109,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Function error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
