@@ -6,8 +6,8 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // Configuration
 const API_URL = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry";
-const ROBOT_ID = "YOUR_ROBOT_ID"; // Replace with your actual robot ID
-const API_KEY = "YOUR_ROBOT_API_KEY"; // Replace with your actual robot's API key
+const ROBOT_ID = "YOUR_ROBOT_ID"; // Replace with your robot's UUID
+const API_KEY = "YOUR_API_KEY"; // Replace with your central API key from the dashboard
 const SIMULATION_INTERVAL = 5000; // 5 seconds between data sends
 
 // Function to generate random telemetry data
@@ -91,11 +91,11 @@ console.log(`📍 API URL: ${API_URL}`);
 console.log(`🔑 Using API key: ${API_KEY ? "Set (not shown for security)" : "NOT SET - WILL FAIL"}`);
 
 // Show warning if the robot ID or API key haven't been set
-if (ROBOT_ID === "YOUR_ROBOT_ID" || API_KEY === "YOUR_ROBOT_API_KEY") {
+if (ROBOT_ID === "YOUR_ROBOT_ID" || API_KEY === "YOUR_API_KEY") {
   console.error(`
 ⚠️  WARNING: You need to replace the placeholder values:
-   - Replace YOUR_ROBOT_ID with your actual robot ID 
-   - Replace YOUR_ROBOT_API_KEY with your actual robot's API key
+   - Replace YOUR_ROBOT_ID with your robot's UUID 
+   - Replace YOUR_API_KEY with your central API key
    Both can be found in your RoboMonitor dashboard under "API Integration"
   `);
 }

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/sonner";
+import { useRobots } from "@/hooks/useRobots";
 
 export type TelemetryRecord = {
   id: string;
@@ -20,10 +21,11 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
   const [telemetry, setTelemetry] = useState<TelemetryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { apiKey } = useRobots(); // Use the central API key
 
   useEffect(() => {
     async function fetchTelemetryHistory() {
-      if (!robotId) {
+      if (!robotId || !apiKey) {
         setLoading(false);
         return;
       }
@@ -32,25 +34,14 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
         setLoading(true);
         setError(null); // Reset any previous errors
 
-        // Get the robot's API key
-        const { data: robotData, error: robotError } = await supabase
-          .from("robots")
-          .select("api_key")
-          .eq("id", robotId)
-          .single();
-
-        if (robotError || !robotData?.api_key) {
-          throw new Error(`Failed to fetch robot API key: ${robotError?.message || "Robot not found"}`);
-        }
-
         console.log("Making request to edge function with API key");
         
-        // Make a request to our edge function using the robot's API key
+        // Make a request to our edge function using the central API key
         const response = await fetch(
           `https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/get-telemetry/robots/${robotId}/telemetry?last=${limit}`,
           {
             headers: {
-              "api-key": robotData.api_key,
+              "api-key": apiKey,
               "Content-Type": "application/json"
             },
           }
@@ -87,7 +78,7 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
     }
 
     fetchTelemetryHistory();
-  }, [robotId, limit]);
+  }, [robotId, limit, apiKey]);
 
   return { telemetry, loading, error };
 }

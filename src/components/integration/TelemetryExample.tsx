@@ -11,7 +11,7 @@ export function TelemetryExample() {
 
   const curlExample = `curl -X POST "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry" \\
   -H "Content-Type: application/json" \\
-  -H "api-key: YOUR_ROBOT_API_KEY" \\
+  -H "api-key: YOUR_API_KEY" \\
   -d '{
     "robotId": "YOUR_ROBOT_ID",
     "batteryLevel": 75,
@@ -29,7 +29,7 @@ fetch("https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "api-key": "YOUR_ROBOT_API_KEY"
+    "api-key": "YOUR_API_KEY"
   },
   body: JSON.stringify({
     robotId: "YOUR_ROBOT_ID",
@@ -54,7 +54,7 @@ from datetime import datetime
 url = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
 headers = {
     "Content-Type": "application/json",
-    "api-key": "YOUR_ROBOT_API_KEY"
+    "api-key": "YOUR_API_KEY"
 }
 data = {
     "robotId": "YOUR_ROBOT_ID",
@@ -83,7 +83,7 @@ print(response.text)`;
       <CardHeader>
         <CardTitle>Sending Telemetry Data</CardTitle>
         <CardDescription>
-          Send robot telemetry data using these example code snippets. Replace <code>YOUR_ROBOT_ID</code> with your robot's ID and <code>YOUR_ROBOT_API_KEY</code> with your robot's API key, both found in the "API Integration" section of each robot card.
+          Send robot telemetry data using these example code snippets. Replace <code>YOUR_ROBOT_ID</code> with your robot's UUID and <code>YOUR_API_KEY</code> with your central API key from the API Integration section in the sidebar.
         </CardDescription>
       </CardHeader>
       <CardContent>

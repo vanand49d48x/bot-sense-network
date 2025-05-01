@@ -43,20 +43,25 @@ serve(async (req) => {
       );
     }
 
-    // Find the robot that owns this API key
-    const { data: robotData, error: robotError } = await supabaseClient
-      .from("robots")
-      .select("id, user_id")
+    // Find the user who owns this API key
+    const { data: profileData, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("id")
       .eq("api_key", apiKey)
       .single();
 
-    if (robotError || !robotData) {
-      console.error("Robot lookup error:", robotError);
+    if (profileError || !profileData) {
+      console.error("API key not found:", profileError);
       return new Response(
-        JSON.stringify({ error: "Invalid API key", details: robotError }),
+        JSON.stringify({ 
+          error: "Invalid API key", 
+          message: "API key not found in user profiles"
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
+
+    console.log(`Found user with ID ${profileData.id} for this API key`);
 
     // Extract the robot ID from the URL path
     const url = new URL(req.url);
@@ -71,13 +76,20 @@ serve(async (req) => {
       );
     }
 
-    // Verify the robot ID in the path matches the robot ID from the API key
-    if (robotIdFromPath !== robotData.id) {
+    // Verify the robot exists and belongs to the user
+    const { data: robotData, error: robotError } = await supabaseClient
+      .from("robots")
+      .select("id, user_id")
+      .eq("id", robotIdFromPath)
+      .eq("user_id", profileData.id)
+      .single();
+
+    if (robotError || !robotData) {
       return new Response(
         JSON.stringify({ 
-          error: "API key does not match the robot ID in the path", 
-          providedRobotId: robotIdFromPath,
-          apiKeyRobotId: robotData.id 
+          error: "Invalid robot ID or you don't have access to this robot", 
+          robotIdFromPath,
+          userId: profileData.id
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );

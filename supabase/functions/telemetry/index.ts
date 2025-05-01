@@ -60,7 +60,7 @@ serve(async (req) => {
       );
     }
 
-    // Find the user who owns the API key
+    // Find the user who owns this API key
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id")
@@ -68,52 +68,24 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      // Try looking for a robot with this API key
-      console.log("Looking for robot with API key");
-      const { data: robotData, error: robotError } = await supabaseClient
-        .from("robots")
-        .select("id, user_id")
-        .eq("api_key", apiKey)
-        .single();
-        
-      if (robotError || !robotData) {
-        console.error("API key not found:", robotError);
-        return new Response(
-          JSON.stringify({ 
-            error: "Invalid API key", 
-            message: "API key not found in profiles or robots"
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-        );
-      }
-      
-      console.log(`Found robot with ID ${robotData.id}`);
-      
-      // Robot API key found - verify it matches the robot ID in the request
-      if (robotData.id !== robotId) {
-        return new Response(
-          JSON.stringify({ 
-            error: "API key does not match the robot ID", 
-            message: "The API key you provided belongs to a different robot"
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-        );
-      }
-      
-      console.log(`Robot ID matches the API key`);
-      
-      // Continue with the user ID from the robot
-      var userData = { id: robotData.user_id };
-    } else {
-      var userData = profileData;
+      console.error("API key not found:", profileError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid API key", 
+          message: "API key not found in user profiles"
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
     }
     
+    console.log(`Found user with ID ${profileData.id} for this API key`);
+      
     // Verify the robot exists and belongs to the user
     let { data: robot, error: robotError } = await supabaseClient
       .from("robots")
       .select("id, user_id")
       .eq("id", robotId)
-      .eq("user_id", userData.id)
+      .eq("user_id", profileData.id)
       .single();
 
     if (!robot) {
@@ -126,7 +98,7 @@ serve(async (req) => {
         // Try to find a robot that matches
         robot = allRobots.find(r => r.id === robotId);
         
-        if (!robot || robot.user_id !== userData.id) {
+        if (!robot || robot.user_id !== profileData.id) {
           return new Response(
             JSON.stringify({ 
               error: "Invalid robot ID or you don't have access to this robot", 
