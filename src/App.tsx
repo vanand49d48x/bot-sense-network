@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter as Router,
   Route,
@@ -7,8 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { Landing } from "@/pages/Landing";
-import { Auth } from "@/pages/Auth";
+import Landing from "@/pages/Landing";
+import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import FleetStatus from "@/pages/FleetStatus";
@@ -32,7 +33,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Index />} />
-          <Route path="/robot/:robotId" element={<RobotDetails />} /> {/* New route */}
+          <Route path="/robot/:robotId" element={<RobotDetails />} />
           <Route path="/fleet" element={<FleetStatus />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/map" element={<MapViewPage />} />
