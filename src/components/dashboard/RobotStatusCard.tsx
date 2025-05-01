@@ -19,7 +19,8 @@ interface RobotStatusCardProps {
 }
 
 export function RobotStatusCard({ robot }: RobotStatusCardProps) {
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedApiKey, setCopiedApiKey] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   
   // Format the last heartbeat timestamp as relative time
@@ -30,12 +31,26 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
   // Function to copy robot ID to clipboard
   const copyRobotId = () => {
     navigator.clipboard.writeText(robot.id);
-    setCopied(true);
+    setCopiedId(true);
     toast.success("Robot ID copied to clipboard");
     
     // Reset copied state after 2 seconds
     setTimeout(() => {
-      setCopied(false);
+      setCopiedId(false);
+    }, 2000);
+  };
+
+  // Function to copy API key to clipboard
+  const copyApiKey = () => {
+    if (!robot.apiKey) return;
+    
+    navigator.clipboard.writeText(robot.apiKey);
+    setCopiedApiKey(true);
+    toast.success("API key copied to clipboard");
+    
+    // Reset copied state after 2 seconds
+    setTimeout(() => {
+      setCopiedApiKey(false);
     }, 2000);
   };
 
@@ -84,7 +99,7 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
             className="absolute right-1 top-1" 
             onClick={copyRobotId}
           >
-            {copied ? <CopyCheck size={16} /> : <Copy size={16} />}
+            {copiedId ? <CopyCheck size={16} /> : <Copy size={16} />}
           </Button>
         </div>
         <div className="text-gray-500 text-sm">{robot.model}</div>
@@ -139,7 +154,7 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
                   className="h-6 w-6 p-0"
                   onClick={copyRobotId}
                 >
-                  {copied ? (
+                  {copiedId ? (
                     <CopyCheck className="h-3 w-3 text-green-500" />
                   ) : (
                     <Copy className="h-3 w-3" />
@@ -149,8 +164,22 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
               {robot.apiKey && (
                 <>
                   <div className="text-xs text-muted-foreground mt-2 mb-1">API Key</div>
-                  <div className="text-xs font-mono bg-muted rounded truncate">
-                    •••••••••••••••••••
+                  <div className="flex items-center justify-between">
+                    <code className="text-xs font-mono bg-muted rounded truncate max-w-[80%]">
+                      {robot.apiKey}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={copyApiKey}
+                    >
+                      {copiedApiKey ? (
+                        <CopyCheck className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
                   </div>
                 </>
               )}
