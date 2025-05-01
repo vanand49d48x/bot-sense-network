@@ -30,6 +30,7 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
 
       try {
         setLoading(true);
+        setError(null); // Reset any previous errors
 
         // Get the robot's API key
         const { data: robotData, error: robotError } = await supabase
@@ -50,6 +51,8 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
           {
             headers: {
               "apikey": robotData.api_key,
+              "Authorization": `Bearer ${robotData.api_key}`, // Add Authorization header for edge function
+              "Content-Type": "application/json"
             },
           }
         );

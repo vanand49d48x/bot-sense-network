@@ -26,12 +26,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Extract the API key from header
-    const apiKey = req.headers.get("api-key") || req.headers.get("apikey");
+    // Extract the API key from header - check multiple header names
+    const apiKey = req.headers.get("apikey") || 
+                  req.headers.get("api-key") || 
+                  req.headers.get("Authorization")?.replace("Bearer ", "");
     
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "API Key is required" }),
+        JSON.stringify({ error: "API Key is required", headers: Object.fromEntries(req.headers) }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
@@ -67,7 +69,11 @@ serve(async (req) => {
     // Verify the robot ID in the path matches the robot ID from the API key
     if (robotIdFromPath !== robotData.id) {
       return new Response(
-        JSON.stringify({ error: "API key does not match the robot ID in the path" }),
+        JSON.stringify({ 
+          error: "API key does not match the robot ID in the path", 
+          providedRobotId: robotIdFromPath,
+          apiKeyRobotId: robotData.id 
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
