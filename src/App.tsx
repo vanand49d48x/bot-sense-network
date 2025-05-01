@@ -37,9 +37,9 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/robot/:robotId" element={<RobotDetails />} />
-              <Route path="/fleet" element={<FleetStatus />} />
+              <Route path="/fleet-status" element={<FleetStatus />} />
               <Route path="/alerts" element={<Alerts />} />
-              <Route path="/map" element={<MapViewPage />} />
+              <Route path="/map-view" element={<MapViewPage />} />
               <Route path="/integration-guide" element={<IntegrationGuide />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
