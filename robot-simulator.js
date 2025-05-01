@@ -54,13 +54,16 @@ async function sendTelemetry() {
   console.log(`Generating telemetry: ${JSON.stringify(data, null, 2)}`);
   
   try {
-    // Show all headers being sent for debugging
+    // Define headers - making sure API key is properly formatted
     const headers = {
       "Content-Type": "application/json",
-      "api-key": API_KEY
+      "api-key": API_KEY  // Using api-key format as expected by the edge function
     };
     
-    console.log("Sending headers:", headers);
+    console.log("Sending with headers:", {
+      "Content-Type": headers["Content-Type"],
+      "api-key": headers["api-key"] ? "PRESENT (hidden for security)" : "MISSING"
+    });
     
     const response = await fetch(API_URL, {
       method: "POST",
@@ -68,16 +71,23 @@ async function sendTelemetry() {
       body: JSON.stringify(data)
     });
     
-    // Log the raw response
+    // Log raw response status and headers
     console.log(`Response status: ${response.status} ${response.statusText}`);
+    console.log("Response headers:", Object.fromEntries([...response.headers.entries()]));
     
-    const result = await response.json();
-    
-    if (response.ok) {
-      console.log(`✅ Telemetry sent successfully: ${JSON.stringify(result)}`);
-    } else {
-      console.error(`❌ Failed to send telemetry: ${response.status} ${response.statusText}`);
-      console.error(result);
+    try {
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log(`✅ Telemetry sent successfully: ${JSON.stringify(result)}`);
+      } else {
+        console.error(`❌ Failed to send telemetry: ${response.status} ${response.statusText}`);
+        console.error(result);
+      }
+    } catch (parseError) {
+      console.error("Failed to parse response as JSON:", parseError);
+      const text = await response.text();
+      console.error("Raw response body:", text);
     }
   } catch (error) {
     console.error(`❌ Error sending telemetry: ${error.message}`);
@@ -88,7 +98,7 @@ async function sendTelemetry() {
 console.log(`🤖 Robot Simulator starting for robot ${ROBOT_ID}`);
 console.log(`📡 Sending telemetry every ${SIMULATION_INTERVAL/1000} seconds...`);
 console.log(`📍 API URL: ${API_URL}`);
-console.log(`🔑 Using API key: ${API_KEY ? "Set (not shown for security)" : "NOT SET - WILL FAIL"}`);
+console.log(`🔑 Using API key: ${API_KEY ? "Set (first 4 chars: " + API_KEY.substring(0, 4) + "...)" : "NOT SET - WILL FAIL"}`);
 
 // Show warning if the robot ID or API key haven't been set
 if (ROBOT_ID === "YOUR_ROBOT_ID" || API_KEY === "YOUR_API_KEY") {
