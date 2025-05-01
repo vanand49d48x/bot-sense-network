@@ -26,17 +26,17 @@ export function AppSidebar() {
     {
       title: "Fleet Status",
       icon: Battery,
-      url: "#",
+      url: "/fleet-status",
     },
     {
       title: "Map View",
       icon: MapPin,
-      url: "#",
+      url: "/map-view",
     },
     {
       title: "Alerts",
       icon: Bell,
-      url: "#",
+      url: "/alerts",
     }
   ];
 
