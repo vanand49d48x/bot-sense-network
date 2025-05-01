@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRobots } from "@/hooks/useRobots";
@@ -30,9 +30,9 @@ export default function Alerts() {
   // Map Supabase robots to application Robot type
   const robots = supabaseRobots.map(mapSupabaseRobotToAppRobot);
 
-  // Generate alerts based on robot data
-  useEffect(() => {
-    if (robots.length === 0) return;
+  // Generate alerts based on robot data - now using useCallback to prevent recreation on every render
+  const generateAlerts = useCallback(() => {
+    if (robots.length === 0) return [];
     
     const newAlerts: RobotAlert[] = [];
     
@@ -94,8 +94,13 @@ export default function Alerts() {
       }
     });
     
-    setAlerts(newAlerts);
-  }, [robots]); // Only depend on robots, not on alerts
+    return newAlerts;
+  }, [robots]);
+
+  // Set alerts only when robots change
+  useEffect(() => {
+    setAlerts(generateAlerts());
+  }, [generateAlerts]);
 
   // Format the timestamp for display
   const formatTimestamp = (timestamp: string) => {
@@ -132,20 +137,27 @@ export default function Alerts() {
     });
   };
   
+  // Fixed toggleNotification function
   const toggleNotification = (alertId: string) => {
-    // First update the alert state
+    console.log("Toggle notification called for alert:", alertId);
+    
     setAlerts(prevAlerts => {
-      // Create a new array with the updated alert
-      const newAlerts = prevAlerts.map(alert => 
-        alert.id === alertId 
-          ? { ...alert, notificationSent: !alert.notificationSent } 
-          : alert
-      );
+      const updatedAlerts = prevAlerts.map(alert => {
+        if (alert.id !== alertId) return alert;
+        
+        // Toggle the status for the matching alert
+        const newStatus = !alert.notificationSent;
+        console.log(`Changing notification status from ${alert.notificationSent} to ${newStatus}`);
+        
+        return { ...alert, notificationSent: newStatus };
+      });
       
-      // Find the updated alert
-      const updatedAlert = newAlerts.find(a => a.id === alertId);
-      
-      // Show a toast notification based on the updated state
+      return updatedAlerts;
+    });
+    
+    // Need to get the alert info from the current state after the update
+    setTimeout(() => {
+      const updatedAlert = alerts.find(a => a.id === alertId);
       if (updatedAlert) {
         toast({
           title: updatedAlert.notificationSent ? "Notification sent" : "Notification cancelled",
@@ -154,9 +166,7 @@ export default function Alerts() {
             : `Cancelled notification for ${updatedAlert.robotName}`
         });
       }
-      
-      return newAlerts;
-    });
+    }, 0);
   };
 
   if (loading) {
@@ -213,6 +223,7 @@ export default function Alerts() {
                             size="sm" 
                             onClick={() => toggleNotification(alert.id)}
                             title={alert.notificationSent ? "Cancel notification" : "Send notification"}
+                            className="transition-all duration-200"
                           >
                             {alert.notificationSent ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                           </Button>
