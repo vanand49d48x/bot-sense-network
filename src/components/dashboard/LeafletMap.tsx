@@ -1,10 +1,9 @@
 
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { useEffect, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Robot } from "@/types/robot";
 import L from 'leaflet';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 // Fix Leaflet's missing marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -14,19 +13,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
 });
 
-// Custom marker icons for different robot statuses
-const createStatusIcon = (status: 'online' | 'offline' | 'warning') => {
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `<div class="w-4 h-4 rounded-full ${
-      status === 'online' ? 'bg-green-500' :
-      status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-    } ${status === 'online' ? 'pulse-animation' : ''}" />`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-  });
-};
-
 interface LeafletMapProps {
   robots: Robot[];
   height?: string;
@@ -34,7 +20,6 @@ interface LeafletMapProps {
 
 export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false);
-  const [hoveredRobotId, setHoveredRobotId] = useState<string | null>(null);
   
   // Create a map key that changes whenever robot positions change
   const mapKey = JSON.stringify(robots.map(r => 
@@ -62,22 +47,46 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
         }
       }
       
-      /* Custom styles for the robot hover tooltips */
+      /* Custom robot marker styles */
       .robot-marker {
-        position: relative;
-        z-index: 1;
-      }
-      
-      .robot-marker:hover {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px !important;
+        height: 16px !important;
+        border-radius: 50%;
         z-index: 1000;
       }
       
-      /* Override Leaflet's default tooltip styles */
-      .leaflet-tooltip {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
+      .robot-marker.online {
+        background-color: rgb(34, 197, 94);
+      }
+      
+      .robot-marker.warning {
+        background-color: rgb(234, 179, 8);
+      }
+      
+      .robot-marker.offline {
+        background-color: rgb(239, 68, 68);
+      }
+      
+      .robot-marker.online {
+        animation: pulse 1.5s infinite;
+      }
+      
+      /* Custom tooltip styles */
+      .leaflet-tooltip.robot-tooltip {
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 8px;
+        font-size: 12px;
+        min-width: 150px;
+      }
+      
+      .leaflet-tooltip-top.robot-tooltip:before {
+        border-top-color: rgba(255, 255, 255, 0.95);
       }
     `;
     document.head.appendChild(style);
@@ -98,20 +107,10 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
     ? getMapCenter(robotsWithLocation)
     : defaultPosition;
 
-  // Create custom marker elements with hover functionality
-  const createCustomMarker = (robot: Robot) => {
-    // Create a div icon with hover capabilities
+  // Create custom marker icons based on robot status
+  const createCustomMarkerIcon = (status: 'online' | 'offline' | 'warning') => {
     return L.divIcon({
-      className: 'robot-marker',
-      html: `
-        <div 
-          class="w-4 h-4 rounded-full ${
-            robot.status === 'online' ? 'bg-green-500' :
-            robot.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-          } ${robot.status === 'online' ? 'pulse-animation' : ''}"
-          data-robot-id="${robot.id}"
-        />
-      `,
+      className: `robot-marker ${status}`,
       iconSize: [16, 16],
       iconAnchor: [8, 8],
     });
@@ -123,41 +122,36 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
   }
 
   return (
-    <>
-      <MapContainer 
-        key={mapKey} // This forces the map to re-render when robot data changes
-        center={center} 
-        zoom={robotsWithLocation.length > 1 ? 10 : 13} 
-        style={{ height, width: "100%" }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {robotsWithLocation.map(robot => (
-          <Marker
-            key={`${robot.id}-${robot.lastHeartbeat}`}
-            position={[
-              robot.location!.latitude,
-              robot.location!.longitude,
-            ]}
-            icon={createCustomMarker(robot)}
-            eventHandlers={{
-              mouseover: () => setHoveredRobotId(robot.id),
-              mouseout: () => setHoveredRobotId(null),
-            }}
-          />
-        ))}
-      </MapContainer>
-      
-      {/* Floating tooltip that follows cursor */}
+    <MapContainer 
+      key={mapKey}
+      center={center} 
+      zoom={robotsWithLocation.length > 1 ? 10 : 13} 
+      style={{ height, width: "100%" }}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
       {robotsWithLocation.map(robot => (
-        <div key={robot.id} className="relative">
-          <div style={{ display: hoveredRobotId === robot.id ? 'block' : 'none' }} 
-               className="absolute z-50 pointer-events-none">
-            <div className="bg-background/90 backdrop-blur-sm border rounded-md shadow-md p-3 max-w-xs">
+        <Marker
+          key={`${robot.id}-${robot.lastHeartbeat}`}
+          position={[
+            robot.location!.latitude,
+            robot.location!.longitude,
+          ]}
+          icon={createCustomMarkerIcon(robot.status)}
+        >
+          <Tooltip 
+            direction="top" 
+            offset={[0, -8]} 
+            opacity={1.0} 
+            permanent={false} 
+            interactive={true}
+            className="robot-tooltip"
+          >
+            <div>
               <h4 className="font-semibold">{robot.name}</h4>
-              <div className="grid grid-cols-2 gap-x-2 text-sm mt-1">
+              <div className="grid grid-cols-2 gap-x-2 text-xs mt-1">
                 <div className="text-muted-foreground">Battery:</div>
                 <div>{robot.batteryLevel}%</div>
                 
@@ -173,10 +167,10 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </Tooltip>
+        </Marker>
       ))}
-    </>
+    </MapContainer>
   );
 }
 
