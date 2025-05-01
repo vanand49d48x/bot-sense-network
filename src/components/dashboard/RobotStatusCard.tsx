@@ -33,6 +33,21 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
     }, 2000);
   };
 
+  // Get battery color based on level
+  const getBatteryColor = (level: number) => {
+    if (level > 50) return "text-green-600";
+    if (level > 20) return "text-amber-500";
+    return "text-red-600";
+  };
+
+  // Get temperature color based on value
+  const getTemperatureColor = (temp: number) => {
+    if (temp < 30) return "text-blue-500";
+    if (temp < 60) return "text-green-600";
+    if (temp < 80) return "text-amber-500";
+    return "text-red-600";
+  };
+
   return (
     <Card className="transition-all hover:shadow-md">
       <CardHeader className="pb-2">
@@ -50,14 +65,18 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
             <Battery className="mr-1 h-4 w-4 text-muted-foreground" />
             <span>Battery</span>
           </div>
-          <div className="text-sm font-medium">{robot.batteryLevel}%</div>
+          <div className={`text-sm font-medium ${getBatteryColor(robot.batteryLevel)}`}>
+            {robot.batteryLevel}%
+          </div>
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center text-sm">
             <Thermometer className="mr-1 h-4 w-4 text-muted-foreground" />
             <span>Temperature</span>
           </div>
-          <div className="text-sm font-medium">{robot.temperature}°C</div>
+          <div className={`text-sm font-medium ${getTemperatureColor(robot.temperature)}`}>
+            {robot.temperature}°C
+          </div>
         </div>
         <div className="flex items-center justify-between border-t border-dashed pt-2 mt-2">
           <div className="text-xs text-muted-foreground truncate max-w-[70%]" title={robot.id}>
