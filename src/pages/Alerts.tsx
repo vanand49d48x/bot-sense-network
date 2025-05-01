@@ -122,7 +122,7 @@ export default function Alerts() {
   };
   
   const resolveAlert = (alertId: string) => {
-    setAlerts(alerts.map(alert => 
+    setAlerts(prevAlerts => prevAlerts.map(alert => 
       alert.id === alertId ? { ...alert, resolved: true } : alert
     ));
     
@@ -133,26 +133,30 @@ export default function Alerts() {
   };
   
   const toggleNotification = (alertId: string) => {
-    setAlerts(prevAlerts => 
-      prevAlerts.map(alert => 
+    // First update the alert state
+    setAlerts(prevAlerts => {
+      // Create a new array with the updated alert
+      const newAlerts = prevAlerts.map(alert => 
         alert.id === alertId 
           ? { ...alert, notificationSent: !alert.notificationSent } 
           : alert
-      )
-    );
-    
-    // Find the alert that was toggled
-    const alert = alerts.find(a => a.id === alertId);
-    
-    // Show a toast notification based on the new state
-    if (alert) {
-      toast({
-        title: alert.notificationSent ? "Notification cancelled" : "Notification sent",
-        description: alert.notificationSent 
-          ? `Cancelled notification for ${alert.robotName}` 
-          : `Sent notification for ${alert.robotName}`
-      });
-    }
+      );
+      
+      // Find the updated alert
+      const updatedAlert = newAlerts.find(a => a.id === alertId);
+      
+      // Show a toast notification based on the updated state
+      if (updatedAlert) {
+        toast({
+          title: updatedAlert.notificationSent ? "Notification sent" : "Notification cancelled",
+          description: updatedAlert.notificationSent 
+            ? `Sent notification for ${updatedAlert.robotName}` 
+            : `Cancelled notification for ${updatedAlert.robotName}`
+        });
+      }
+      
+      return newAlerts;
+    });
   };
 
   if (loading) {
