@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 
 // Configuration - Update these values with your own
 const ROBOT_ID = '00f48d5f-d82f-471b-afc8-05faaa1075ab'; // Replace with your robot ID
-const API_KEY = ''; // Replace with your API key from ApiKeySettings in the dashboard
+const API_KEY = ''; // Replace with your API key from the API Key panel in the sidebar
 const SUPABASE_URL = 'https://uwmbdporlrduzthgdmcg.supabase.co';
 
 // Send telemetry data every 10 seconds by default
@@ -53,9 +53,17 @@ async function sendTelemetry() {
     timestamp: new Date().toISOString()
   };
 
-  console.log('Generating telemetry:', JSON.stringify(telemetry, null, 2));
+  console.log('========================================');
+  console.log(`Generating telemetry for robot: ${ROBOT_ID}`);
+  console.log('Data:', JSON.stringify(telemetry, null, 2));
 
   try {
+    if (!API_KEY) {
+      console.error('❌ API_KEY is not set! Please update the API_KEY value in this script.');
+      console.error('   You can find your API key in the API Key panel in the sidebar.');
+      return;
+    }
+
     // Send to telemetry endpoint
     const headers = {
       'Content-Type': 'application/json',
@@ -64,11 +72,12 @@ async function sendTelemetry() {
     
     console.log('Sending with headers:', {
       'Content-Type': 'application/json',
-      'api-key': API_KEY ? 'PRESENT (hidden for security)' : 'MISSING!'
+      'api-key': API_KEY ? `${API_KEY.substring(0, 5)}...${API_KEY.substring(API_KEY.length - 5)}` : 'MISSING!'
     });
     
     const endpoint = `${SUPABASE_URL}/functions/v1/telemetry`;
     console.log('Sending to:', endpoint);
+    console.log('----------------------------------------');
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -76,27 +85,35 @@ async function sendTelemetry() {
       body: JSON.stringify(telemetry)
     });
 
-    console.log('Response status:', response.status, response.statusText);
-    console.log('Response headers:', response.headers.raw());
-    
     const responseData = await response.json();
+    
+    console.log('Response status:', response.status, response.statusText);
     
     if (!response.ok) {
       console.log('❌ Failed to send telemetry:', response.status, response.statusText);
       console.log('Error details:', responseData);
+      console.log('\nTroubleshooting tips:');
+      console.log('1. Check that your API_KEY is correctly set in this file');
+      console.log('2. Verify the robot ID belongs to your account');
+      console.log('3. Check the telemetry function logs in Supabase');
     } else {
       console.log('✅ Telemetry sent successfully!');
       console.log('Response:', responseData);
     }
   } catch (error) {
     console.error('❌ Error sending telemetry:', error);
+    console.log('\nTroubleshooting tips:');
+    console.log('1. Check your internet connection');
+    console.log('2. Verify the SUPABASE_URL is correct');
+    console.log('3. Make sure you have the right permissions');
   }
+  console.log('========================================\n');
 }
 
 console.log('🤖 Robot Telemetry Simulator');
 console.log('============================');
 console.log(`Robot ID: ${ROBOT_ID}`);
-console.log(`API Key: ${API_KEY ? '********' + API_KEY.substring(API_KEY.length - 4) : 'NOT SET! Update the API_KEY value in this script'}`);
+console.log(`API Key: ${API_KEY ? '********' + API_KEY.substring(API_KEY.length - 4) : 'NOT SET! Please update the API_KEY value in this script'}`);
 console.log(`Endpoint: ${SUPABASE_URL}/functions/v1/telemetry`);
 console.log(`Interval: ${INTERVAL_MS / 1000} seconds`);
 console.log('============================\n');

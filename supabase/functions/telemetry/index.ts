@@ -26,20 +26,33 @@ serve(async (req) => {
       );
     }
 
-    // Check API key in header - support both "api-key" and "apikey" formats
-    const apiKey = req.headers.get("api-key") || req.headers.get("apikey");
+    console.log("Headers received:", JSON.stringify([...req.headers.entries()]));
+    
+    // Check API key in header - support multiple header formats
+    const apiKey = req.headers.get("api-key") || 
+                  req.headers.get("apikey") || 
+                  req.headers.get("API-KEY") || 
+                  req.headers.get("APIKEY") ||
+                  req.headers.get("Authorization")?.replace("Bearer ", "");
+    
+    console.log("API Key detected:", apiKey ? `${apiKey.substring(0, 5)}...` : "None");
+    
     if (!apiKey) {
       return new Response(
         JSON.stringify({ 
           error: "API Key is required", 
-          details: "Please provide your API key in the 'api-key' header"
+          details: "Please provide your API key in the 'api-key' header",
+          receivedHeaders: Object.fromEntries([...req.headers.entries()].map(([k]) => [k, '(hidden)']))
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
+    console.log("Parsing request body...");
     const telemetryData = await req.json();
     const { robotId, batteryLevel, temperature, status, location, timestamp } = telemetryData;
+    
+    console.log("Received telemetry for robotId:", robotId);
 
     if (!robotId) {
       return new Response(

@@ -32,9 +32,16 @@ The client will:
 
 ## Troubleshooting
 
-If you see a 401 Unauthorized error, check:
-1. That you've entered the correct API key from your profile
+### API Key Guidelines
+- The API Key must be provided in the `api-key` header
+- The API Key must match the one shown in your API Key Settings panel in the sidebar
+- This is a user-level API key, not a robot-specific key
+
+### If you see a 401 Unauthorized error, check:
+1. That you've entered the correct API key from the API Key panel in the sidebar
 2. That the robot ID you're using belongs to your account
+3. That the headers are properly formatted in the request
+4. Check the Supabase logs for the telemetry function for more information
 
 ## How to get your API key
 
