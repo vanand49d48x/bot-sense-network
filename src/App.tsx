@@ -17,32 +17,35 @@ import Alerts from "@/pages/Alerts";
 import MapViewPage from "@/pages/MapViewPage";
 import IntegrationGuide from "@/pages/IntegrationGuide";
 import RobotDetails from "./pages/RobotDetails";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   const { toast } = useToast()
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <Router>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Index />} />
-          <Route path="/robot/:robotId" element={<RobotDetails />} />
-          <Route path="/fleet" element={<FleetStatus />} />
-          <Route path="/alerts" element={<Alerts />} />
-          <Route path="/map" element={<MapViewPage />} />
-          <Route path="/integration-guide" element={<IntegrationGuide />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-      <Toaster />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <Router>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Index />} />
+            <Route path="/robot/:robotId" element={<RobotDetails />} />
+            <Route path="/fleet" element={<FleetStatus />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/map" element={<MapViewPage />} />
+            <Route path="/integration-guide" element={<IntegrationGuide />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+        <Toaster />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
