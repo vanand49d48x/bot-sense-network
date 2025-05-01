@@ -6,7 +6,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // Configuration
 const API_URL = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry";
-const ROBOT_ID = "YOUR_ROBOT_ID"; // Replace with your robot's UUID
+const ROBOT_ID = "00f48d5f-d82f-471b-afc8-05faaa1075ab"; // Your robot UUID
 const API_KEY = "YOUR_API_KEY"; // Replace with your central API key from the dashboard
 const SIMULATION_INTERVAL = 5000; // 5 seconds between data sends
 
@@ -54,20 +54,18 @@ async function sendTelemetry() {
   console.log(`Generating telemetry: ${JSON.stringify(data, null, 2)}`);
   
   try {
-    // Define headers - now trying multiple formats for the API key
+    // Simplify headers - focus on the formats actually supported by Edge Function
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${API_KEY}`,  // Try standard Authorization bearer format
-      "apikey": API_KEY,                    // Try 'apikey' format
-      "api-key": API_KEY                    // Keep 'api-key' format too
+      "Authorization": `Bearer ${API_KEY}`
     };
     
     console.log("Sending with headers:", {
       "Content-Type": headers["Content-Type"],
-      "Authorization": headers["Authorization"] ? "PRESENT (hidden for security)" : "MISSING",
-      "apikey": headers["apikey"] ? "PRESENT (hidden for security)" : "MISSING",
-      "api-key": headers["api-key"] ? "PRESENT (hidden for security)" : "MISSING"
+      "Authorization": "PRESENT (hidden for security)"
     });
+    
+    console.log(`Sending to: ${API_URL}`);
     
     const response = await fetch(API_URL, {
       method: "POST",
@@ -110,7 +108,7 @@ if (ROBOT_ID === "YOUR_ROBOT_ID" || API_KEY === "YOUR_API_KEY") {
 ⚠️  WARNING: You need to replace the placeholder values:
    - Replace YOUR_ROBOT_ID with your robot's UUID 
    - Replace YOUR_API_KEY with your central API key
-   Both can be found in your RoboMonitor dashboard under "API Integration"
+   - Both can be found in your RoboMonitor dashboard under "API Integration"
   `);
 }
 

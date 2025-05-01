@@ -29,18 +29,16 @@ serve(async (req) => {
     // Log all headers for debugging
     console.log("Headers received:", Object.fromEntries(req.headers.entries()));
     
-    // Check API key in header - support multiple header names for compatibility
-    const apiKey = req.headers.get("apikey") || 
-                  req.headers.get("api-key") || 
-                  req.headers.get("Authorization")?.replace("Bearer ", "") ||
-                  req.headers.get("authorization")?.replace("Bearer ", "");
+    // Check API key in Authorization header as primary method
+    const authHeader = req.headers.get("Authorization");
+    const apiKey = authHeader ? authHeader.replace("Bearer ", "") : null;
                   
     if (!apiKey) {
       return new Response(
         JSON.stringify({ 
           error: "API Key is required",
-          message: "Please include your API key in the 'api-key', 'apikey', or 'Authorization: Bearer' header",
-          headers: Object.fromEntries(req.headers.entries())
+          message: "Please include your API key in the 'Authorization: Bearer YOUR_API_KEY' header",
+          receivedHeaders: Object.fromEntries(req.headers.entries())
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
