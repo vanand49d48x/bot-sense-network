@@ -3,19 +3,35 @@ import { Robot } from "@/types/robot";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RobotStatusBadge } from "./RobotStatusBadge";
-import { Battery, Thermometer, Eye } from "lucide-react";
+import { Battery, Thermometer, Eye, Copy, CopyCheck } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { toast } from "@/components/ui/sonner";
 
 interface RobotStatusCardProps {
   robot: Robot;
 }
 
 export function RobotStatusCard({ robot }: RobotStatusCardProps) {
+  const [copied, setCopied] = useState(false);
+  
   // Format the last heartbeat timestamp
   const formattedLastHeartbeat = robot.lastHeartbeat
     ? format(new Date(robot.lastHeartbeat), "MMM d, h:mm a")
     : "Never";
+
+  // Function to copy robot ID to clipboard
+  const copyRobotId = () => {
+    navigator.clipboard.writeText(robot.id);
+    setCopied(true);
+    toast.success("Robot ID copied to clipboard");
+    
+    // Reset copied state after 2 seconds
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
 
   return (
     <Card className="transition-all hover:shadow-md">
@@ -42,6 +58,24 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
             <span>Temperature</span>
           </div>
           <div className="text-sm font-medium">{robot.temperature}°C</div>
+        </div>
+        <div className="flex items-center justify-between border-t border-dashed pt-2 mt-2">
+          <div className="text-xs text-muted-foreground truncate max-w-[70%]" title={robot.id}>
+            ID: {robot.id}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={copyRobotId}
+            title="Copy robot ID"
+          >
+            {copied ? (
+              <CopyCheck className="h-4 w-4 text-green-500" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </CardContent>
       <CardFooter className="pt-0">
