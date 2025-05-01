@@ -6,8 +6,9 @@ import { useRobots } from "@/hooks/useRobots";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { formatDistanceToNow, format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, BellOff } from "lucide-react";
+import { AlertTriangle, BellOff, Bell } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 interface RobotAlert {
   id: string;
@@ -17,6 +18,7 @@ interface RobotAlert {
   message: string;
   timestamp: string;
   resolved: boolean;
+  notificationSent: boolean;
 }
 
 export default function Alerts() {
@@ -42,7 +44,8 @@ export default function Alerts() {
           type: 'offline',
           message: `Robot is offline`,
           timestamp: robot.lastHeartbeat,
-          resolved: false
+          resolved: false,
+          notificationSent: false
         });
       }
       
@@ -55,7 +58,8 @@ export default function Alerts() {
           type: 'warning',
           message: `Robot is in warning state`,
           timestamp: robot.lastHeartbeat,
-          resolved: false
+          resolved: false,
+          notificationSent: false
         });
       }
       
@@ -68,7 +72,8 @@ export default function Alerts() {
           type: 'battery',
           message: `Low battery (${robot.batteryLevel}%)`,
           timestamp: robot.lastHeartbeat,
-          resolved: false
+          resolved: false,
+          notificationSent: false
         });
       }
       
@@ -81,7 +86,8 @@ export default function Alerts() {
           type: 'error',
           message: `High temperature (${robot.temperature}°C)`,
           timestamp: robot.lastHeartbeat,
-          resolved: false
+          resolved: false,
+          notificationSent: false
         });
       }
     });
@@ -118,6 +124,12 @@ export default function Alerts() {
       alert.id === alertId ? { ...alert, resolved: true } : alert
     ));
   };
+  
+  const toggleNotification = (alertId: string) => {
+    setAlerts(alerts.map(alert => 
+      alert.id === alertId ? { ...alert, notificationSent: !alert.notificationSent } : alert
+    ));
+  };
 
   if (loading) {
     return (
@@ -148,6 +160,7 @@ export default function Alerts() {
                   <TableHead>Type</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead>Time</TableHead>
+                  <TableHead>Notification</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -161,13 +174,27 @@ export default function Alerts() {
                       <TableCell>{alert.message}</TableCell>
                       <TableCell title={time.absolute}>{time.relative}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => resolveAlert(alert.id)}
-                        >
-                          Resolve
-                        </Button>
+                        <Badge variant={alert.notificationSent ? "default" : "outline"}>
+                          {alert.notificationSent ? "Sent" : "Not Sent"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => toggleNotification(alert.id)}
+                          >
+                            {alert.notificationSent ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => resolveAlert(alert.id)}
+                          >
+                            Resolve
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -191,6 +218,7 @@ export default function Alerts() {
           <AlertDescription>
             Alerts are generated automatically based on robot status, battery levels, and temperature readings.
             The system checks for offline robots, warning states, low battery (&lt;20%), and high temperatures (&gt;40°C).
+            Notification status can be toggled for each alert.
           </AlertDescription>
         </Alert>
       </div>
