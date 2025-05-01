@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { toast } from "@/components/ui/sonner";
 
 export type TelemetryRecord = {
   id: string;
@@ -30,12 +31,23 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
       try {
         setLoading(true);
 
-        // Make a request to our edge function that gets telemetry data
+        // First get the robot's API key
+        const { data: robotData, error: robotError } = await supabase
+          .from("robots")
+          .select("api_key")
+          .eq("id", robotId)
+          .single();
+
+        if (robotError || !robotData) {
+          throw new Error(`Failed to fetch robot API key: ${robotError?.message || "Robot not found"}`);
+        }
+
+        // Make a request to our edge function using the robot's API key
         const response = await fetch(
           `https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/get-telemetry/robots/${robotId}/telemetry?last=${limit}`,
           {
             headers: {
-              "api-key": (await supabase.auth.getSession()).data.session?.access_token || "",
+              "api-key": robotData.api_key,
             },
           }
         );
@@ -61,6 +73,7 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
       } catch (error) {
         console.error("Error fetching telemetry history:", error);
         setError(error instanceof Error ? error : new Error("Failed to fetch telemetry history"));
+        toast.error("Failed to load telemetry data");
       } finally {
         setLoading(false);
       }
