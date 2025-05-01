@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, BellOff, Bell } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 interface RobotAlert {
   id: string;
@@ -24,6 +25,7 @@ interface RobotAlert {
 export default function Alerts() {
   const { robots: supabaseRobots, loading } = useRobots();
   const [alerts, setAlerts] = useState<RobotAlert[]>([]);
+  const { toast } = useToast();
   
   // Map Supabase robots to application Robot type
   const robots = supabaseRobots.map(mapSupabaseRobotToAppRobot);
@@ -93,7 +95,7 @@ export default function Alerts() {
     });
     
     setAlerts(newAlerts);
-  }, [robots]);
+  }, [robots]); // Only depend on robots, not on alerts
 
   // Format the timestamp for display
   const formatTimestamp = (timestamp: string) => {
@@ -123,12 +125,34 @@ export default function Alerts() {
     setAlerts(alerts.map(alert => 
       alert.id === alertId ? { ...alert, resolved: true } : alert
     ));
+    
+    toast({
+      title: "Alert resolved",
+      description: "The alert has been marked as resolved."
+    });
   };
   
   const toggleNotification = (alertId: string) => {
-    setAlerts(alerts.map(alert => 
-      alert.id === alertId ? { ...alert, notificationSent: !alert.notificationSent } : alert
-    ));
+    setAlerts(prevAlerts => 
+      prevAlerts.map(alert => 
+        alert.id === alertId 
+          ? { ...alert, notificationSent: !alert.notificationSent } 
+          : alert
+      )
+    );
+    
+    // Find the alert that was toggled
+    const alert = alerts.find(a => a.id === alertId);
+    
+    // Show a toast notification based on the new state
+    if (alert) {
+      toast({
+        title: alert.notificationSent ? "Notification cancelled" : "Notification sent",
+        description: alert.notificationSent 
+          ? `Cancelled notification for ${alert.robotName}` 
+          : `Sent notification for ${alert.robotName}`
+      });
+    }
   };
 
   if (loading) {
@@ -184,6 +208,7 @@ export default function Alerts() {
                             variant="outline" 
                             size="sm" 
                             onClick={() => toggleNotification(alert.id)}
+                            title={alert.notificationSent ? "Cancel notification" : "Send notification"}
                           >
                             {alert.notificationSent ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                           </Button>
