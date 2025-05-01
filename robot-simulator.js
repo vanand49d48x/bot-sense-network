@@ -54,14 +54,18 @@ async function sendTelemetry() {
   console.log(`Generating telemetry: ${JSON.stringify(data, null, 2)}`);
   
   try {
-    // Define headers - making sure API key is properly formatted
+    // Define headers - now trying multiple formats for the API key
     const headers = {
       "Content-Type": "application/json",
-      "api-key": API_KEY  // Using api-key format as expected by the edge function
+      "Authorization": `Bearer ${API_KEY}`,  // Try standard Authorization bearer format
+      "apikey": API_KEY,                    // Try 'apikey' format
+      "api-key": API_KEY                    // Keep 'api-key' format too
     };
     
     console.log("Sending with headers:", {
       "Content-Type": headers["Content-Type"],
+      "Authorization": headers["Authorization"] ? "PRESENT (hidden for security)" : "MISSING",
+      "apikey": headers["apikey"] ? "PRESENT (hidden for security)" : "MISSING",
       "api-key": headers["api-key"] ? "PRESENT (hidden for security)" : "MISSING"
     });
     

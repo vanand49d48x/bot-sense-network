@@ -39,7 +39,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: "API Key is required",
-          message: "Please include your API key in the 'api-key' header",
+          message: "Please include your API key in the 'api-key', 'apikey', or 'Authorization: Bearer' header",
           headers: Object.fromEntries(req.headers.entries())
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
