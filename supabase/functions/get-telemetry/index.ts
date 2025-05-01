@@ -26,24 +26,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Extract the API key from header - check multiple header names
-    const apiKey = req.headers.get("apikey") || 
-                  req.headers.get("api-key") || 
-                  req.headers.get("Authorization")?.replace("Bearer ", "") ||
-                  req.headers.get("authorization")?.replace("Bearer ", "");
-    
+    // Check API key in header
+    const apiKey = req.headers.get("api-key");
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ 
-          error: "API Key is required", 
-          headers: Object.fromEntries(req.headers),
-          message: "Please include your API key in the 'api-key' header"
-        }),
+        JSON.stringify({ error: "API Key is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    // Find the user who owns this API key
+    // Find the user who owns the API key
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id")
@@ -51,25 +43,19 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      console.error("API key not found:", profileError);
       return new Response(
-        JSON.stringify({ 
-          error: "Invalid API key", 
-          message: "API key not found in user profiles"
-        }),
+        JSON.stringify({ error: "Invalid API key" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    console.log(`Found user with ID ${profileData.id} for this API key`);
-
     // Extract the robot ID from the URL path
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
-    // Expected format: /robots/{robotId}/telemetry
-    const robotIdFromPath = pathParts.length >= 4 ? pathParts[3] : null;
+    // Expected format: /v1/robots/{robotId}/telemetry
+    const robotId = pathParts.length >= 4 ? pathParts[3] : null;
 
-    if (!robotIdFromPath) {
+    if (!robotId) {
       return new Response(
         JSON.stringify({ error: "Robot ID is required in the URL path" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -77,20 +63,16 @@ serve(async (req) => {
     }
 
     // Verify the robot exists and belongs to the user
-    const { data: robotData, error: robotError } = await supabaseClient
+    const { data: robot, error: robotError } = await supabaseClient
       .from("robots")
-      .select("id, user_id")
-      .eq("id", robotIdFromPath)
+      .select("id")
+      .eq("id", robotId)
       .eq("user_id", profileData.id)
       .single();
 
-    if (robotError || !robotData) {
+    if (robotError || !robot) {
       return new Response(
-        JSON.stringify({ 
-          error: "Invalid robot ID or you don't have access to this robot", 
-          robotIdFromPath,
-          userId: profileData.id
-        }),
+        JSON.stringify({ error: "Invalid robot ID or you don't have access to this robot" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
@@ -103,12 +85,11 @@ serve(async (req) => {
     const { data: telemetry, error } = await supabaseClient
       .from("telemetry")
       .select("*")
-      .eq("robot_id", robotData.id)
+      .eq("robot_id", robotId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) {
-      console.error("Telemetry fetch error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to fetch telemetry data", details: error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -123,8 +104,7 @@ serve(async (req) => {
           robotId: t.robot_id,
           batteryLevel: t.battery_level,
           temperature: t.temperature,
-          status: t.error_codes && t.error_codes.length > 0 ? "ERROR" : 
-                 t.warning_codes && t.warning_codes.length > 0 ? "WARNING" : "OK",
+          status: t.error_codes && t.error_codes.length > 0 ? "ERROR" : "OK",
           location: t.location,
           timestamp: t.created_at
         }))
@@ -132,7 +112,6 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Function error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

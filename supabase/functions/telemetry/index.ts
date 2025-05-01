@@ -26,32 +26,17 @@ serve(async (req) => {
       );
     }
 
-    // Log all headers for debugging
-    console.log("Headers received:", Object.fromEntries(req.headers.entries()));
-    
-    // Check for API key in multiple possible header formats
-    const apiKey = req.headers.get("apikey") || 
-                  req.headers.get("api-key") || 
-                  req.headers.get("Authorization")?.replace("Bearer ", "") ||
-                  req.headers.get("authorization")?.replace("Bearer ", "");
-                   
+    // Check API key in header
+    const apiKey = req.headers.get("api-key");
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ 
-          error: "API Key is required",
-          message: "Please include your API key in the 'apikey' header or 'Authorization: Bearer YOUR_API_KEY' header",
-          receivedHeaders: Object.fromEntries(req.headers.entries())
-        }),
+        JSON.stringify({ error: "API Key is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    console.log("API Key found:", apiKey ? "Yes (redacted)" : "No");
-
     const telemetryData = await req.json();
-    console.log("Received telemetry data:", JSON.stringify(telemetryData));
-    
-    const { robotId, batteryLevel, temperature, status, location, timestamp, errorCodes, warningCodes } = telemetryData;
+    const { robotId, batteryLevel, temperature, status, location, timestamp } = telemetryData;
 
     if (!robotId) {
       return new Response(
@@ -60,7 +45,7 @@ serve(async (req) => {
       );
     }
 
-    // Find the user who owns this API key
+    // Find the user who owns the API key
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id")
@@ -68,18 +53,12 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      console.error("API key not found:", profileError);
       return new Response(
-        JSON.stringify({ 
-          error: "Invalid API key", 
-          message: "API key not found in user profiles"
-        }),
+        JSON.stringify({ error: "Invalid API key" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
-    
-    console.log(`Found user with ID ${profileData.id} for this API key`);
-      
+
     // Verify the robot exists and belongs to the user
     let { data: robot, error: robotError } = await supabaseClient
       .from("robots")
@@ -115,8 +94,6 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Robot validation successful`);
-
     // Process and validate telemetry data
     // Convert location from client format (lat/lng) to database format (latitude/longitude) if needed
     let locationData = location;
@@ -133,8 +110,7 @@ serve(async (req) => {
       battery_level: batteryLevel || null,
       temperature: temperature || null,
       location: locationData || null,
-      error_codes: errorCodes || [],
-      warning_codes: warningCodes || []
+      // We'll use status to update the robot's status below
     };
 
     // Insert telemetry data
@@ -150,8 +126,6 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Telemetry data inserted successfully`);
-
     // Update robot status (last_ping, battery_level, etc.)
     await supabaseClient
       .from("robots")
@@ -163,8 +137,6 @@ serve(async (req) => {
         last_ping: new Date().toISOString()
       })
       .eq("id", robotId);
-
-    console.log(`Robot status updated`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Telemetry data received" }),
