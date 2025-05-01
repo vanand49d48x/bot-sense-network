@@ -26,6 +26,9 @@ serve(async (req) => {
       );
     }
 
+    // Log all headers for debugging
+    console.log("Headers received:", Object.fromEntries(req.headers.entries()));
+    
     // Check API key in header - support multiple header names for compatibility
     const apiKey = req.headers.get("apikey") || 
                   req.headers.get("api-key") || 
@@ -36,14 +39,19 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: "API Key is required",
-          message: "Please include your API key in the 'api-key' header"
+          message: "Please include your API key in the 'api-key' header",
+          headers: Object.fromEntries(req.headers.entries())
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
+    console.log("API Key found:", apiKey ? "Yes (redacted)" : "No");
+
     const telemetryData = await req.json();
-    const { robotId, batteryLevel, temperature, status, location, timestamp } = telemetryData;
+    console.log("Received telemetry data:", JSON.stringify(telemetryData));
+    
+    const { robotId, batteryLevel, temperature, status, location, timestamp, errorCodes, warningCodes } = telemetryData;
 
     if (!robotId) {
       return new Response(
@@ -61,6 +69,7 @@ serve(async (req) => {
 
     if (profileError || !profileData) {
       // Try looking for a robot with this API key
+      console.log("Looking for robot with API key");
       const { data: robotData, error: robotError } = await supabaseClient
         .from("robots")
         .select("id, user_id")
@@ -68,6 +77,7 @@ serve(async (req) => {
         .single();
         
       if (robotError || !robotData) {
+        console.error("API key not found:", robotError);
         return new Response(
           JSON.stringify({ 
             error: "Invalid API key", 
@@ -76,6 +86,8 @@ serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
         );
       }
+      
+      console.log(`Found robot with ID ${robotData.id}`);
       
       // Robot API key found - verify it matches the robot ID in the request
       if (robotData.id !== robotId) {
@@ -88,8 +100,12 @@ serve(async (req) => {
         );
       }
       
+      console.log(`Robot ID matches the API key`);
+      
       // Continue with the user ID from the robot
-      profileData = { id: robotData.user_id };
+      var userData = { id: robotData.user_id };
+    } else {
+      var userData = profileData;
     }
     
     // Verify the robot exists and belongs to the user
@@ -97,7 +113,7 @@ serve(async (req) => {
       .from("robots")
       .select("id, user_id")
       .eq("id", robotId)
-      .eq("user_id", profileData.id)
+      .eq("user_id", userData.id)
       .single();
 
     if (!robot) {
@@ -110,7 +126,7 @@ serve(async (req) => {
         // Try to find a robot that matches
         robot = allRobots.find(r => r.id === robotId);
         
-        if (!robot || robot.user_id !== profileData.id) {
+        if (!robot || robot.user_id !== userData.id) {
           return new Response(
             JSON.stringify({ 
               error: "Invalid robot ID or you don't have access to this robot", 
@@ -126,6 +142,8 @@ serve(async (req) => {
         );
       }
     }
+
+    console.log(`Robot validation successful`);
 
     // Process and validate telemetry data
     // Convert location from client format (lat/lng) to database format (latitude/longitude) if needed
@@ -143,7 +161,8 @@ serve(async (req) => {
       battery_level: batteryLevel || null,
       temperature: temperature || null,
       location: locationData || null,
-      // We'll use status to update the robot's status below
+      error_codes: errorCodes || [],
+      warning_codes: warningCodes || []
     };
 
     // Insert telemetry data
@@ -159,6 +178,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Telemetry data inserted successfully`);
+
     // Update robot status (last_ping, battery_level, etc.)
     await supabaseClient
       .from("robots")
@@ -170,6 +191,8 @@ serve(async (req) => {
         last_ping: new Date().toISOString()
       })
       .eq("id", robotId);
+
+    console.log(`Robot status updated`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Telemetry data received" }),
