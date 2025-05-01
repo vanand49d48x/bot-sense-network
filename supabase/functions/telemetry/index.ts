@@ -26,11 +26,18 @@ serve(async (req) => {
       );
     }
 
-    // Check API key in header
-    const apiKey = req.headers.get("api-key");
+    // Check API key in header - support multiple header names for compatibility
+    const apiKey = req.headers.get("apikey") || 
+                  req.headers.get("api-key") || 
+                  req.headers.get("Authorization")?.replace("Bearer ", "") ||
+                  req.headers.get("authorization")?.replace("Bearer ", "");
+                  
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "API Key is required" }),
+        JSON.stringify({ 
+          error: "API Key is required",
+          message: "Please include your API key in the 'api-key' header"
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
@@ -53,12 +60,38 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      return new Response(
-        JSON.stringify({ error: "Invalid API key" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+      // Try looking for a robot with this API key
+      const { data: robotData, error: robotError } = await supabaseClient
+        .from("robots")
+        .select("id, user_id")
+        .eq("api_key", apiKey)
+        .single();
+        
+      if (robotError || !robotData) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid API key", 
+            message: "API key not found in profiles or robots"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+      
+      // Robot API key found - verify it matches the robot ID in the request
+      if (robotData.id !== robotId) {
+        return new Response(
+          JSON.stringify({ 
+            error: "API key does not match the robot ID", 
+            message: "The API key you provided belongs to a different robot"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+      
+      // Continue with the user ID from the robot
+      profileData = { id: robotData.user_id };
     }
-
+    
     // Verify the robot exists and belongs to the user
     let { data: robot, error: robotError } = await supabaseClient
       .from("robots")

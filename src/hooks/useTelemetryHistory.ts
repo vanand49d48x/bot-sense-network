@@ -50,8 +50,7 @@ export function useTelemetryHistory(robotId: string, limit: number = 1000) {
           `https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/get-telemetry/robots/${robotId}/telemetry?last=${limit}`,
           {
             headers: {
-              "apikey": robotData.api_key,
-              "Authorization": `Bearer ${robotData.api_key}`, // Add Authorization header for edge function
+              "api-key": robotData.api_key,
               "Content-Type": "application/json"
             },
           }

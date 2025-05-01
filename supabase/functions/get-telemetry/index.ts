@@ -29,11 +29,16 @@ serve(async (req) => {
     // Extract the API key from header - check multiple header names
     const apiKey = req.headers.get("apikey") || 
                   req.headers.get("api-key") || 
-                  req.headers.get("Authorization")?.replace("Bearer ", "");
+                  req.headers.get("Authorization")?.replace("Bearer ", "") ||
+                  req.headers.get("authorization")?.replace("Bearer ", "");
     
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "API Key is required", headers: Object.fromEntries(req.headers) }),
+        JSON.stringify({ 
+          error: "API Key is required", 
+          headers: Object.fromEntries(req.headers),
+          message: "Please include your API key in the 'api-key' header"
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
