@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -19,9 +20,6 @@ import Alerts from "@/pages/Alerts";
 const queryClient = new QueryClient();
 
 function App() {
-  const auth = AuthProvider();
-  const { session } = auth;
-
   return (
     <ThemeProvider defaultTheme="system" storageKey="theme">
       <QueryClientProvider client={queryClient}>
