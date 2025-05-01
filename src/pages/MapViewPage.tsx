@@ -42,7 +42,7 @@ export default function MapViewPage() {
             <CardTitle>Robot Locations</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[70vh] rounded-md overflow-hidden">
+            <div className="h-[70vh] rounded-md overflow-hidden relative">
               <LeafletMap 
                 robots={robots} 
                 height="100%" 
