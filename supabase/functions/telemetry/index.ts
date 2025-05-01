@@ -26,8 +26,8 @@ serve(async (req) => {
       );
     }
 
-    // Check API key in header - accept both formats
-    const apiKey = req.headers.get("api-key") || req.headers.get("apikey");
+    // Check API key in header
+    const apiKey = req.headers.get("api-key");
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: "API Key is required" }),
