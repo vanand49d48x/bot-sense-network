@@ -15,24 +15,14 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-
-type Telemetry = {
-  id: string;
-  timestamp: string;
-  battery_level: number;
-  temperature: number;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-};
+import { TelemetryRecord } from "@/hooks/useTelemetryHistory";
 
 interface TelemetryTableProps {
-  telemetry: Telemetry[];
-  loading: boolean;
+  telemetry: TelemetryRecord[];
+  loading?: boolean;
 }
 
-export function TelemetryTable({ telemetry, loading }: TelemetryTableProps) {
+export function TelemetryTable({ telemetry, loading = false }: TelemetryTableProps) {
   const [recordsPerPage, setRecordsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -101,6 +91,7 @@ export function TelemetryTable({ telemetry, loading }: TelemetryTableProps) {
                 <th className="text-left p-2 font-medium">Battery</th>
                 <th className="text-left p-2 font-medium">Temp</th>
                 <th className="text-left p-2 font-medium">Location</th>
+                <th className="text-left p-2 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +99,7 @@ export function TelemetryTable({ telemetry, loading }: TelemetryTableProps) {
                 <tr key={record.id} className="border-t">
                   <td className="p-2">
                     <div>
-                      {new Date(record.timestamp).toLocaleString()}
+                      {record.formattedDate} {record.formattedTime}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {formatDistance(new Date(record.timestamp), new Date(), {
@@ -116,14 +107,21 @@ export function TelemetryTable({ telemetry, loading }: TelemetryTableProps) {
                       })}
                     </div>
                   </td>
-                  <td className="p-2">{record.battery_level}%</td>
-                  <td className="p-2">{record.temperature}°C</td>
+                  <td className="p-2">{record.batteryLevel !== null ? `${record.batteryLevel}%` : 'N/A'}</td>
+                  <td className="p-2">{record.temperature !== null ? `${record.temperature}°C` : 'N/A'}</td>
                   <td className="p-2">
                     {record.location
-                      ? `${record.location.latitude.toFixed(
-                          4
-                        )}, ${record.location.longitude.toFixed(4)}`
+                      ? `${record.location.latitude.toFixed(4)}, ${record.location.longitude.toFixed(4)}`
                       : "N/A"}
+                  </td>
+                  <td className="p-2">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      record.status === 'ERROR' ? 'bg-red-100 text-red-800' : 
+                      record.status === 'WARNING' ? 'bg-yellow-100 text-yellow-800' : 
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {record.status}
+                    </span>
                   </td>
                 </tr>
               ))}

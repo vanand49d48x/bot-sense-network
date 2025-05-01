@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useTelemetryHistory, TelemetryRecord } from "@/hooks/useTelemetryHistory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
