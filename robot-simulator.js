@@ -7,7 +7,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 // Configuration
 const API_URL = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry";
 const ROBOT_ID = "00f48d5f-d82f-471b-afc8-05faaa1075ab"; // Your robot UUID
-const API_KEY = "YOUR_API_KEY"; // Replace with your central API key from the dashboard
+const API_KEY = "ca5c45b3fd7144ce87f93a7ba3469735a54006da6e4d24ca5b14e1e"; // Replace if this is not your API key
 const SIMULATION_INTERVAL = 5000; // 5 seconds between data sends
 
 // Function to generate random telemetry data
@@ -54,15 +54,15 @@ async function sendTelemetry() {
   console.log(`Generating telemetry: ${JSON.stringify(data, null, 2)}`);
   
   try {
-    // Simplify headers - focus on the formats actually supported by Edge Function
+    // Using apikey header which is the standard for Supabase functions
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${API_KEY}`
+      "apikey": API_KEY
     };
     
     console.log("Sending with headers:", {
       "Content-Type": headers["Content-Type"],
-      "Authorization": "PRESENT (hidden for security)"
+      "apikey": "PRESENT (hidden for security)"
     });
     
     console.log(`Sending to: ${API_URL}`);
