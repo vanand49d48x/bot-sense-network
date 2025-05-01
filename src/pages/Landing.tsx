@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Battery, AlertTriangle, MapPin, Shield, Activity, 
          Bot, Rocket, Clock, Mail, Map, Bell } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const Landing = () => {
   return (
@@ -15,7 +15,8 @@ const Landing = () => {
             <Bot className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">RoboMetrics</span>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            <ThemeToggle />
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
             </Link>
