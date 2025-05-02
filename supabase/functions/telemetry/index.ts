@@ -8,16 +8,31 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("Telemetry function called");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Log the environment variables (excluding sensitive info)
+    console.log("SUPABASE_URL available:", !!Deno.env.get("SUPABASE_URL"));
+    console.log("SUPABASE_SERVICE_ROLE_KEY available:", !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
+    
+    // Create Supabase client with service role
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error("Missing required environment variables:", {
+        hasUrl: !!supabaseUrl,
+        hasServiceKey: !!supabaseServiceRoleKey
+      });
+      throw new Error("Server configuration error: Missing environment variables");
+    }
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     if (req.method !== "POST") {
       return new Response(
@@ -26,23 +41,28 @@ serve(async (req) => {
       );
     }
 
-    console.log("Headers received:", JSON.stringify([...req.headers.entries()]));
+    // Log all headers for debugging (excluding actual key values)
+    const headersLog = {};
+    req.headers.forEach((value, key) => {
+      headersLog[key] = key.toLowerCase().includes("key") || key.toLowerCase().includes("auth") ? 
+        "VALUE_HIDDEN_FOR_SECURITY" : value;
+    });
+    console.log("Headers received:", JSON.stringify(headersLog));
     
-    // Check API key in header - support multiple header formats
+    // Check for API key in various header formats
     const apiKey = req.headers.get("api-key") || 
                   req.headers.get("apikey") || 
                   req.headers.get("API-KEY") || 
-                  req.headers.get("APIKEY") ||
-                  req.headers.get("Authorization")?.replace("Bearer ", "");
+                  req.headers.get("APIKEY");
     
-    console.log("API Key detected:", apiKey ? `${apiKey.substring(0, 5)}...` : "None");
+    console.log("API Key format detected:", apiKey ? "Present" : "Missing");
     
     if (!apiKey) {
       return new Response(
         JSON.stringify({ 
           error: "API Key is required", 
           details: "Please provide your API key in the 'api-key' header",
-          receivedHeaders: Object.fromEntries([...req.headers.entries()].map(([k]) => [k, '(hidden)']))
+          receivedHeaders: Object.keys(headersLog)
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
@@ -62,7 +82,7 @@ serve(async (req) => {
     }
 
     console.log(`Processing telemetry for robot ${robotId}`);
-    console.log(`API key provided: ${apiKey.substring(0, 5)}...`);
+    console.log(`API key provided: ${apiKey ? "Present (hidden)" : "Missing"}`);
 
     // Find the user who owns the API key
     const { data: profileData, error: profileError } = await supabaseClient
@@ -92,7 +112,7 @@ serve(async (req) => {
       .eq("user_id", profileData.id)
       .single();
 
-    if (!robot) {
+    if (!robot || robotError) {
       // Try to find any robot with this ID
       const { data: allRobots, error: listError } = await supabaseClient
         .from("robots")

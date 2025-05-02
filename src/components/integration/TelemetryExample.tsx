@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ClipboardCopy } from "lucide-react";
+import { ClipboardCopy, AlertTriangle } from "lucide-react";
 
 export function TelemetryExample() {
   const [activeTab, setActiveTab] = useState("curl");
@@ -87,6 +87,19 @@ print(response.text)`;
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-6 p-4 border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30 rounded-md">
+          <div className="flex gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-red-800 dark:text-red-300 mb-2">IMPORTANT: API Key Format</h4>
+              <p className="text-sm text-red-700 dark:text-red-400">
+                The API key <strong>must</strong> be sent in the <code className="bg-red-100 dark:bg-red-900 px-1.5 py-0.5 rounded text-xs">api-key</code> header (case sensitive). 
+                Using other formats like <code>Authorization</code> will not work.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <Tabs defaultValue="curl" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="curl">cURL</TabsTrigger>
@@ -143,7 +156,8 @@ print(response.text)`;
             <li>Make sure to replace <code>YOUR_API_KEY</code> with the API key from the API Key panel in the sidebar</li>
             <li>The API key must be sent in the <code>api-key</code> header (case sensitive)</li>
             <li>Your robot must exist in your account and the Robot ID must be correct</li>
-            <li>For more debugging info, check the Supabase logs for the telemetry function</li>
+            <li>For debugging, add more verbose logging to your requests and check response status codes</li>
+            <li>If you're still having issues, try downloading and running the robot-client.js simulator</li>
           </ul>
         </div>
       </CardContent>
