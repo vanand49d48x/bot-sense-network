@@ -58,7 +58,28 @@ export function TelemetryHistory({ robotId, retentionDays }: TelemetryHistoryPro
         .range((page - 1) * limit, page * limit - 1);
 
       if (error) throw new Error(error.message);
-      return data as TelemetryRecord[];
+      
+      // Transform data to ensure location has the correct type
+      return (data || []).map(item => {
+        // Convert location from Json to the expected shape
+        let locationData = null;
+        if (item.location) {
+          // Handle both object and string format
+          const loc = typeof item.location === 'string' 
+            ? JSON.parse(item.location) 
+            : item.location;
+            
+          locationData = {
+            latitude: loc.latitude || (loc.lat || 0),
+            longitude: loc.longitude || (loc.lng || 0)
+          };
+        }
+        
+        return {
+          ...item,
+          location: locationData
+        };
+      }) as TelemetryRecord[];
     },
     enabled: !!robotId && !!user,
   });
