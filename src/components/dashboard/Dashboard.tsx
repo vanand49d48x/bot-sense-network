@@ -26,13 +26,15 @@ export function Dashboard() {
   const [localRobots, setLocalRobots] = useState<Robot[]>([]);
   
   // Initialize local robots when the data from useRobots changes
+  // Using a string key for the dependency array to prevent infinite loops
   useEffect(() => {
-    if (robots.length > 0) {
-      console.log("Updating local robots state with", robots.length, "robots");
+    if (supabaseRobots.length > 0) {
+      console.log("Updating local robots state with", supabaseRobots.length, "robots");
+      // Use a callback to avoid dependency on localRobots
       setLocalRobots(robots);
     }
-  }, [robots]);
-
+  }, [supabaseRobots]); // Only depend on supabaseRobots, not on the derived robots value
+  
   // Handle refresh button click
   const handleRefresh = () => {
     toast('Refreshing robot data...', {
@@ -169,7 +171,7 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, []); // Remove dependency array to prevent resubscription loops
+  }, []); // Keep empty dependency array
   
   if (loading) {
     return (
@@ -181,6 +183,9 @@ export function Dashboard() {
     );
   }
 
+  // Important: render using localRobots which contains the real-time updates
+  const displayRobots = localRobots.length > 0 ? localRobots : robots;
+
   return (
     <div>
       <div className="flex justify-between items-center">
@@ -188,9 +193,9 @@ export function Dashboard() {
         <AddRobotModal />
       </div>
       
-      {localRobots.length > 0 ? (
+      {displayRobots.length > 0 ? (
         <>
-          <StatCards robots={localRobots} />
+          <StatCards robots={displayRobots} />
           
           <Alert className="my-4">
             <AlertCircle className="h-4 w-4" />
@@ -200,8 +205,8 @@ export function Dashboard() {
             </AlertDescription>
           </Alert>
           
-          <MapView robots={localRobots} />
-          <RobotStatusGrid robots={localRobots} />
+          <MapView robots={displayRobots} />
+          <RobotStatusGrid robots={displayRobots} />
         </>
       ) : (
         <div className="mt-8 text-center p-12 border border-dashed rounded-lg">
