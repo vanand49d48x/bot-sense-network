@@ -4,10 +4,11 @@ import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusBadge } from "./RobotStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Battery, Thermometer, MapPin, Clock, Info, Code } from "lucide-react";
+import { Battery, Thermometer, MapPin, Clock, Info, Code, History } from "lucide-react";
 import { CustomTelemetryDisplay } from "./CustomTelemetryDisplay";
 import { CustomTelemetryGuide } from "../integration/CustomTelemetryGuide";
 import { format } from "date-fns";
+import { TelemetryHistory } from "./TelemetryHistory";
 
 interface RobotDetailViewProps {
   robot: Robot;
@@ -35,9 +36,10 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="telemetry">Custom Telemetry</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="integration">API Integration</TabsTrigger>
           </TabsList>
           
@@ -95,6 +97,13 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
           
           <TabsContent value="telemetry">
             <CustomTelemetryDisplay robot={robot} />
+          </TabsContent>
+          
+          <TabsContent value="history">
+            <TelemetryHistory 
+              robotId={robot.id} 
+              retentionDays={userProfile?.telemetryRetentionDays || 7} 
+            />
           </TabsContent>
           
           <TabsContent value="integration">

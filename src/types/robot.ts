@@ -1,4 +1,3 @@
-
 export interface Robot {
   id: string;
   name: string;
@@ -21,10 +20,12 @@ export interface Robot {
 
 export interface UserProfile {
   id: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  api_key: string | null;
-  custom_robot_types: string[] | null;
-  custom_telemetry_types: string[] | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  api_key?: string | null;
+  custom_robot_types?: string[] | null;
+  custom_telemetry_types?: string[] | null;
+  custom_alerts?: any[] | null;
+  telemetryRetentionDays?: number;
 }

@@ -38,7 +38,7 @@ serve(async (req) => {
     // Find the user who owns the API key
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("id")
+      .select("id, telemetry_retention_days")
       .eq("api_key", apiKey)
       .single();
 
@@ -77,17 +77,27 @@ serve(async (req) => {
       );
     }
 
-    // Get the 'last' query parameter, default to 100 if not provided
-    const last = parseInt(url.searchParams.get("last") || "100");
-    const limit = isNaN(last) || last <= 0 ? 100 : (last > 1000 ? 1000 : last);
+    // Get query parameters
+    const limit = parseInt(url.searchParams.get("limit") || "100");
+    const page = parseInt(url.searchParams.get("page") || "1");
+    const retentionDays = profileData.telemetry_retention_days || 7;
+    
+    // Calculate pagination ranges
+    const from = (page - 1) * limit;
+    const to = page * limit - 1;
+    
+    // Calculate the date cutoff based on retention days
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-    // Get telemetry data
-    const { data: telemetry, error } = await supabaseClient
+    // Get telemetry data with pagination and retention period
+    const { data: telemetry, error, count } = await supabaseClient
       .from("telemetry")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("robot_id", robotId)
+      .gte("created_at", cutoffDate.toISOString())
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(from, to);
 
     if (error) {
       return new Response(
@@ -106,8 +116,20 @@ serve(async (req) => {
           temperature: t.temperature,
           status: t.error_codes && t.error_codes.length > 0 ? "ERROR" : "OK",
           location: t.location,
+          customTelemetry: t.motor_status,
+          errorCodes: t.error_codes,
           timestamp: t.created_at
-        }))
+        })),
+        pagination: {
+          page,
+          limit,
+          total: count,
+          pages: Math.ceil((count || 0) / limit)
+        },
+        retention: {
+          days: retentionDays,
+          cutoff: cutoffDate.toISOString()
+        }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -14,3 +14,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Enable realtime for the robots table to get telemetry updates
 SELECT enable_realtime_for_table('robots');
+
+-- Add telemetry retention days to profiles table
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS telemetry_retention_days INTEGER DEFAULT 7;
+
+-- Update existing profiles to have the default retention period
+UPDATE profiles SET telemetry_retention_days = 7 WHERE telemetry_retention_days IS NULL;
+
+-- Create index on telemetry table to improve query performance for history lookups
+CREATE INDEX IF NOT EXISTS idx_telemetry_robot_created_at ON telemetry(robot_id, created_at);
