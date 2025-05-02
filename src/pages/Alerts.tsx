@@ -5,10 +5,20 @@ import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Bell, BellRing, Battery, Thermometer } from "lucide-react";
+import { AlertTriangle, Bell, BellRing, Battery, Thermometer, Check, Mail, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RobotStatusBadge } from "@/components/dashboard/RobotStatusBadge";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Alerts = () => {
   const { robots: supabaseRobots, loading } = useRobots();
@@ -65,6 +75,26 @@ const Alerts = () => {
   // Handle card click
   const handleCardClick = (filter: string) => {
     setSelectedFilter(selectedFilter === filter ? null : filter);
+  };
+
+  // Handle notification actions
+  const handleEmailNotification = (robotId: string, robotName: string) => {
+    toast.success(`Email notification sent for ${robotName}`);
+  };
+
+  const handleSmsNotification = (robotId: string, robotName: string) => {
+    toast.success(`SMS notification sent for ${robotName}`);
+  };
+
+  // Handle resolving an alert
+  const handleResolveAlert = async (robotId: string, robotName: string) => {
+    try {
+      // This would normally update the alert status in the database
+      toast.success(`Alert for ${robotName} marked as resolved`);
+    } catch (error) {
+      toast.error("Failed to resolve alert");
+      console.error("Error resolving alert:", error);
+    }
   };
 
   if (loading) {
@@ -187,45 +217,79 @@ const Alerts = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {getFilteredRobots().map(robot => (
-                  <Card key={robot.id} className="bg-muted/40">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <RobotStatusBadge status={robot.status} />
-                          <span className="font-medium">{robot.name}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Robot</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Issues</TableHead>
+                    <TableHead>Last Ping</TableHead>
+                    <TableHead>Actions</TableHead>
+                    <TableHead>Resolve</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {getFilteredRobots().map(robot => (
+                    <TableRow key={robot.id}>
+                      <TableCell className="font-medium">{robot.name}</TableCell>
+                      <TableCell><RobotStatusBadge status={robot.status} /></TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
                           {robot.status === 'offline' && (
-                            <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
+                            <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
                               <BellRing className="h-3 w-3" /> Offline
                             </span>
                           )}
                           {robot.batteryLevel < 20 && (
-                            <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
-                              <Battery className="h-3 w-3" /> Low Battery ({robot.batteryLevel}%)
+                            <span className="px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
+                              <Battery className="h-3 w-3" /> {robot.batteryLevel}%
                             </span>
                           )}
                           {robot.errorCount > 0 && (
-                            <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
-                              <AlertTriangle className="h-3 w-3" /> Errors ({robot.errorCount})
+                            <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" /> {robot.errorCount}
                             </span>
                           )}
                           {robot.temperature > 35 && (
-                            <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
-                              <Thermometer className="h-3 w-3" /> High Temp ({robot.temperature}°C)
+                            <span className="px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
+                              <Thermometer className="h-3 w-3" /> {robot.temperature}°C
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
+                      </TableCell>
+                      <TableCell>{new Date(robot.lastHeartbeat).toLocaleTimeString()}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEmailNotification(robot.id, robot.name)}
+                          >
+                            <Mail className="h-3 w-3 mr-1" /> Email
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleSmsNotification(robot.id, robot.name)}
+                          >
+                            <Phone className="h-3 w-3 mr-1" /> Text
+                          </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                          onClick={() => handleResolveAlert(robot.id, robot.name)}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         ) : (
@@ -241,45 +305,79 @@ const Alerts = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {robotsWithAlerts.map(robot => (
-                    <Card key={robot.id} className="bg-muted/40">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <RobotStatusBadge status={robot.status} />
-                            <span className="font-medium">{robot.name}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-sm">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Robot</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Issues</TableHead>
+                      <TableHead>Last Ping</TableHead>
+                      <TableHead>Actions</TableHead>
+                      <TableHead>Resolve</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {robotsWithAlerts.map(robot => (
+                      <TableRow key={robot.id}>
+                        <TableCell className="font-medium">{robot.name}</TableCell>
+                        <TableCell><RobotStatusBadge status={robot.status} /></TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
                             {robot.status === 'offline' && (
-                              <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
+                              <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
                                 <BellRing className="h-3 w-3" /> Offline
                               </span>
                             )}
                             {robot.batteryLevel < 20 && (
-                              <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
-                                <Battery className="h-3 w-3" /> Low Battery ({robot.batteryLevel}%)
+                              <span className="px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
+                                <Battery className="h-3 w-3" /> {robot.batteryLevel}%
                               </span>
                             )}
                             {robot.errorCount > 0 && (
-                              <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3" /> Errors ({robot.errorCount})
+                              <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" /> {robot.errorCount}
                               </span>
                             )}
                             {robot.temperature > 35 && (
-                              <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
-                                <Thermometer className="h-3 w-3" /> High Temp ({robot.temperature}°C)
+                              <span className="px-2 py-0.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-md flex items-center gap-1">
+                                <Thermometer className="h-3 w-3" /> {robot.temperature}°C
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
+                        </TableCell>
+                        <TableCell>{new Date(robot.lastHeartbeat).toLocaleTimeString()}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEmailNotification(robot.id, robot.name)}
+                            >
+                              <Mail className="h-3 w-3 mr-1" /> Email
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleSmsNotification(robot.id, robot.name)}
+                            >
+                              <Phone className="h-3 w-3 mr-1" /> Text
+                            </Button>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                            onClick={() => handleResolveAlert(robot.id, robot.name)}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           ) : (
