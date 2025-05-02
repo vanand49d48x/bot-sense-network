@@ -55,6 +55,7 @@ export type Database = {
           api_key: string | null
           avatar_url: string | null
           created_at: string
+          custom_robot_types: string[] | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -64,6 +65,7 @@ export type Database = {
           api_key?: string | null
           avatar_url?: string | null
           created_at?: string
+          custom_robot_types?: string[] | null
           first_name?: string | null
           id: string
           last_name?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           api_key?: string | null
           avatar_url?: string | null
           created_at?: string
+          custom_robot_types?: string[] | null
           first_name?: string | null
           id?: string
           last_name?: string | null
