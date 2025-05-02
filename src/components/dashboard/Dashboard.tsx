@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react";
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
@@ -6,14 +7,18 @@ import { MapView } from "./MapView";
 import { AddRobotModal } from "./AddRobotModal";
 import { useRobots } from "@/hooks/useRobots";
 import { useAuth } from "@/context/AuthContext";
-import { Robot } from "@/types/robot";
+import { Robot, UserProfile } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { SupabaseRobot } from "@/utils/robotMapper";
+import { RobotFilter } from "./RobotFilter";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export function Dashboard() {
   const { robots: supabaseRobots, loading, fetchRobots } = useRobots();
@@ -24,14 +29,39 @@ export function Dashboard() {
   
   // Local state to manage robots for real-time updates
   const [localRobots, setLocalRobots] = useState<Robot[]>([]);
+  const [filteredRobots, setFilteredRobots] = useState<Robot[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  
+  // Load user profile data
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('api_key, custom_robot_types, custom_telemetry_types')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id,
+  });
   
   // Initialize local robots when the data from useRobots changes
-  // Using a string key for the dependency array to prevent infinite loops
   useEffect(() => {
     if (supabaseRobots.length > 0) {
       console.log("Updating local robots state with", supabaseRobots.length, "robots");
       // Use a callback to avoid dependency on localRobots
-      setLocalRobots(robots);
+      const mapped = robots;
+      setLocalRobots(mapped);
+      setFilteredRobots(mapped);
     }
   }, [supabaseRobots]); // Only depend on supabaseRobots, not on the derived robots value
   
@@ -42,6 +72,11 @@ export function Dashboard() {
       duration: 2000,
     });
     fetchRobots();
+  };
+  
+  // Handle filter changes
+  const handleFilteredRobotsChange = (filtered: Robot[]) => {
+    setFilteredRobots(filtered);
   };
   
   // Set up realtime subscription for robot and telemetry updates
@@ -121,6 +156,22 @@ export function Dashboard() {
               };
             }
             
+            // Handle custom telemetry data
+            if (robotToUpdate.telemetryData && payload.new.motor_status) {
+              try {
+                const customData = typeof payload.new.motor_status === 'string' 
+                  ? JSON.parse(payload.new.motor_status)
+                  : payload.new.motor_status;
+                
+                updatedFields.telemetryData = {
+                  ...robotToUpdate.telemetryData,
+                  ...customData
+                };
+              } catch (e) {
+                console.error("Error parsing custom telemetry:", e);
+              }
+            }
+            
             // Create the updated robots list
             const updatedRobots = prevRobots.map(robot => {
               if (robot.id === robotId) {
@@ -160,7 +211,7 @@ export function Dashboard() {
   }
 
   // Important: render using localRobots which contains the real-time updates
-  const displayRobots = localRobots.length > 0 ? localRobots : robots;
+  const displayRobots = filteredRobots.length > 0 ? filteredRobots : localRobots;
 
   return (
     <div>
@@ -169,7 +220,7 @@ export function Dashboard() {
         <AddRobotModal />
       </div>
       
-      {displayRobots.length > 0 ? (
+      {localRobots.length > 0 ? (
         <>
           <StatCards robots={displayRobots} />
           
@@ -180,6 +231,42 @@ export function Dashboard() {
               To send telemetry data to your robots, use each robot's API key. View API keys in the robot cards by clicking "API Integration".
             </AlertDescription>
           </Alert>
+          
+          {/* Filter section */}
+          <Collapsible
+            open={isFilterOpen}
+            onOpenChange={setIsFilterOpen}
+            className="mt-4 mb-6 border rounded-lg p-4"
+          >
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="flex justify-between w-full">
+                <span className="font-medium">Filter Robots</span>
+                {isFilterOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4">
+              <RobotFilter 
+                robots={localRobots}
+                userProfile={userProfile as UserProfile}
+                onFilteredRobotsChange={handleFilteredRobotsChange} 
+              />
+            </CollapsibleContent>
+          </Collapsible>
+          
+          {displayRobots.length !== localRobots.length && (
+            <div className="bg-muted p-2 rounded text-sm mb-4">
+              Showing {displayRobots.length} of {localRobots.length} robots
+              {displayRobots.length === 0 && (
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-sm ml-2"
+                  onClick={() => setFilteredRobots(localRobots)}
+                >
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          )}
           
           <MapView robots={displayRobots} />
           <RobotStatusGrid robots={displayRobots} />
