@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Json } from "@/types/supabase";
 
 type AlertType = "battery" | "temperature" | "offline" | "error";
 type AlertThreshold = {
@@ -80,8 +80,22 @@ export default function ProfilePage() {
         
       if (error) throw error;
       
-      if (profileData?.custom_alerts) {
-        setCustomAlerts(profileData.custom_alerts);
+      if (profileData?.custom_alerts && Array.isArray(profileData.custom_alerts)) {
+        // Type assertion to properly convert from Json[] to AlertThreshold[]
+        const typedAlerts: AlertThreshold[] = profileData.custom_alerts.map((alert: Json) => {
+          // Ensure the alert has the right shape before casting
+          if (typeof alert === 'object' && alert !== null &&
+              'type' in alert && 'threshold' in alert && 'enabled' in alert) {
+            return {
+              type: alert.type as AlertType,
+              threshold: Number(alert.threshold),
+              enabled: Boolean(alert.enabled)
+            };
+          }
+          return null;
+        }).filter((alert): alert is AlertThreshold => alert !== null);
+        
+        setCustomAlerts(typedAlerts);
       } else {
         // Set default alerts if none exist
         setCustomAlerts([
