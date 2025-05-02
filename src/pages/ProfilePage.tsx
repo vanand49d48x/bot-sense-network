@@ -935,9 +935,10 @@ export default function ProfilePage() {
                                         <SelectItem value="error">Errors</SelectItem>
                                         {customTelemetryTypes.length > 0 && (
                                           <>
-                                            <SelectItem value="separator" disabled>
-                                              <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
-                                            </SelectItem>
+                                            {/* Fixed: Using a normal div instead of a SelectItem with empty/separator value */}
+                                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                              Custom Telemetry Types
+                                            </div>
                                             {customTelemetryTypes.map((type, index) => (
                                               <SelectItem key={index} value={type}>{type}</SelectItem>
                                             ))}

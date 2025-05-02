@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Robot, UserProfile } from "@/types/robot";
 import { Input } from "@/components/ui/input";
@@ -168,7 +167,8 @@ export function RobotFilter({ robots, userProfile, onFilteredRobotsChange }: Rob
               <SelectValue placeholder="All models" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All models</SelectItem>
+              {/* Fixed: Using a non-empty string for the "all models" option */}
+              <SelectItem value="_all">All models</SelectItem>
               {availableModels.map((model) => (
                 <SelectItem key={model} value={model}>{model}</SelectItem>
               ))}
@@ -187,7 +187,8 @@ export function RobotFilter({ robots, userProfile, onFilteredRobotsChange }: Rob
               <SelectValue placeholder="Any status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any status</SelectItem>
+              {/* Fixed: Using a non-empty string for the "any status" option */}
+              <SelectItem value="_all">Any status</SelectItem>
               <SelectItem value="online">Online</SelectItem>
               <SelectItem value="offline">Offline</SelectItem>
               <SelectItem value="warning">Warning</SelectItem>
