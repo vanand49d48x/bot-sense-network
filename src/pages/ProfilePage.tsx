@@ -17,12 +17,14 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Json } from "@/types/supabase";
+import { Switch } from "@/components/ui/switch";
 
 type AlertType = "battery" | "temperature" | "offline" | "error";
 type AlertThreshold = {
   type: AlertType;
   threshold: number;
   enabled: boolean;
+  andCondition?: boolean; // New AND condition attribute
 };
 
 export default function ProfilePage() {
@@ -32,6 +34,7 @@ export default function ProfilePage() {
   const [newType, setNewType] = useState("");
   const [alertType, setAlertType] = useState<AlertType>("battery");
   const [alertThreshold, setAlertThreshold] = useState<number>(20);
+  const [useAndCondition, setUseAndCondition] = useState<boolean>(false); // New state for AND condition
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
@@ -89,7 +92,8 @@ export default function ProfilePage() {
             return {
               type: alert.type as AlertType,
               threshold: Number(alert.threshold),
-              enabled: Boolean(alert.enabled)
+              enabled: Boolean(alert.enabled),
+              andCondition: 'andCondition' in alert ? Boolean(alert.andCondition) : false
             };
           }
           return null;
@@ -99,10 +103,10 @@ export default function ProfilePage() {
       } else {
         // Set default alerts if none exist
         setCustomAlerts([
-          { type: "battery", threshold: 20, enabled: true },
-          { type: "temperature", threshold: 35, enabled: true },
-          { type: "offline", threshold: 0, enabled: true },
-          { type: "error", threshold: 0, enabled: true }
+          { type: "battery", threshold: 20, enabled: true, andCondition: false },
+          { type: "temperature", threshold: 35, enabled: true, andCondition: false },
+          { type: "offline", threshold: 0, enabled: true, andCondition: false },
+          { type: "error", threshold: 0, enabled: true, andCondition: false }
         ]);
       }
     } catch (error: any) {
@@ -111,10 +115,10 @@ export default function ProfilePage() {
       
       // Set default alerts on error
       setCustomAlerts([
-        { type: "battery", threshold: 20, enabled: true },
-        { type: "temperature", threshold: 35, enabled: true },
-        { type: "offline", threshold: 0, enabled: true },
-        { type: "error", threshold: 0, enabled: true }
+        { type: "battery", threshold: 20, enabled: true, andCondition: false },
+        { type: "temperature", threshold: 35, enabled: true, andCondition: false },
+        { type: "offline", threshold: 0, enabled: true, andCondition: false },
+        { type: "error", threshold: 0, enabled: true, andCondition: false }
       ]);
     } finally {
       setIsLoading(false);
@@ -194,7 +198,8 @@ export default function ProfilePage() {
         updatedAlerts[existingAlertIndex] = {
           ...updatedAlerts[existingAlertIndex],
           threshold: alertThreshold,
-          enabled: true
+          enabled: true,
+          andCondition: useAndCondition
         };
       } else {
         // Add new alert
@@ -203,7 +208,8 @@ export default function ProfilePage() {
           {
             type: alertType,
             threshold: alertThreshold,
-            enabled: true
+            enabled: true,
+            andCondition: useAndCondition
           }
         ];
       }
@@ -250,6 +256,31 @@ export default function ProfilePage() {
     }
   };
 
+  const toggleAlertAndCondition = async (type: AlertType) => {
+    try {
+      const updatedAlerts = customAlerts.map(alert => {
+        if (alert.type === type) {
+          return { ...alert, andCondition: !alert.andCondition };
+        }
+        return alert;
+      });
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_alerts: updatedAlerts })
+        .eq('id', user?.id);
+        
+      if (error) throw error;
+      
+      setCustomAlerts(updatedAlerts);
+      const alert = updatedAlerts.find(a => a.type === type);
+      toast.success(`AND condition ${alert?.andCondition ? 'enabled' : 'disabled'}`);
+    } catch (error: any) {
+      console.error('Error toggling AND condition:', error.message);
+      toast.error('Failed to update alert settings');
+    }
+  };
+
   const getAlertIcon = (type: AlertType) => {
     switch (type) {
       case "battery":
@@ -277,15 +308,16 @@ export default function ProfilePage() {
   };
 
   const getAlertDescription = (alert: AlertThreshold) => {
+    const andText = alert.andCondition ? " AND other conditions" : "";
     switch (alert.type) {
       case "battery":
-        return `Alert when battery is below ${alert.threshold}%`;
+        return `Alert when battery is below ${alert.threshold}%${andText}`;
       case "temperature":
-        return `Alert when temperature exceeds ${alert.threshold}°C`;
+        return `Alert when temperature exceeds ${alert.threshold}°C${andText}`;
       case "offline":
-        return "Alert when robot goes offline";
+        return `Alert when robot goes offline${andText}`;
       case "error":
-        return "Alert when robot reports errors";
+        return `Alert when robot reports errors${andText}`;
     }
   };
 
@@ -407,6 +439,18 @@ export default function ProfilePage() {
                       />
                     </div>
                   </div>
+                  
+                  {/* New AND condition checkbox */}
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="and-condition" 
+                      checked={useAndCondition}
+                      onCheckedChange={setUseAndCondition}
+                    />
+                    <Label htmlFor="and-condition">
+                      Combine with other conditions (AND)
+                    </Label>
+                  </div>
 
                   <Button 
                     onClick={addCustomAlert}
@@ -430,21 +474,34 @@ export default function ProfilePage() {
                 ) : (
                   <div className="space-y-3">
                     {customAlerts.map((alert, index) => (
-                      <div key={index} className="flex items-center justify-between bg-muted p-3 rounded-md">
-                        <div className="flex items-center">
-                          {getAlertIcon(alert.type)}
-                          <div>
-                            <p className="font-medium">{getAlertLabel(alert.type)}</p>
-                            <p className="text-sm text-muted-foreground">{getAlertDescription(alert)}</p>
+                      <div key={index} className="bg-muted p-3 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            {getAlertIcon(alert.type)}
+                            <div>
+                              <p className="font-medium">{getAlertLabel(alert.type)}</p>
+                              <p className="text-sm text-muted-foreground">{getAlertDescription(alert)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => toggleAlertAndCondition(alert.type)}
+                              className={alert.enabled ? "" : "opacity-50"}
+                              disabled={!alert.enabled}
+                            >
+                              {alert.andCondition ? "AND" : "OR"}
+                            </Button>
+                            <Button 
+                              variant={alert.enabled ? "default" : "outline"} 
+                              size="sm"
+                              onClick={() => toggleAlertEnabled(alert.type)}
+                            >
+                              {alert.enabled ? "Enabled" : "Disabled"}
+                            </Button>
                           </div>
                         </div>
-                        <Button 
-                          variant={alert.enabled ? "default" : "outline"} 
-                          size="sm"
-                          onClick={() => toggleAlertEnabled(alert.type)}
-                        >
-                          {alert.enabled ? "Enabled" : "Disabled"}
-                        </Button>
                       </div>
                     ))}
                   </div>
