@@ -5,10 +5,11 @@ import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Bell, BellRing, Battery, Thermometer } from "lucide-react";
+import { AlertTriangle, Bell, BellRing, Battery, Thermometer, Send, Mail, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RobotStatusBadge } from "@/components/dashboard/RobotStatusBadge";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 
 const Alerts = () => {
   const { robots: supabaseRobots, loading } = useRobots();
@@ -65,6 +66,13 @@ const Alerts = () => {
   // Handle card click
   const handleCardClick = (filter: string) => {
     setSelectedFilter(selectedFilter === filter ? null : filter);
+  };
+  
+  // Handle notification actions
+  const handleNotification = (robot: Robot, type: 'email' | 'text') => {
+    toast(`${type === 'email' ? 'Email' : 'Text'} notification for ${robot.name}`, {
+      description: `Placeholder: ${type === 'email' ? 'Email' : 'Text'} alert has been triggered for ${robot.name}`,
+    });
   };
 
   if (loading) {
@@ -218,8 +226,30 @@ const Alerts = () => {
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm text-muted-foreground mr-4">
+                            Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleNotification(robot, 'email')}
+                              className="flex items-center gap-1"
+                            >
+                              <Mail className="h-4 w-4" />
+                              <span className="hidden sm:inline">Email</span>
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleNotification(robot, 'text')}
+                              className="flex items-center gap-1"
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span className="hidden sm:inline">Text</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -272,8 +302,30 @@ const Alerts = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm text-muted-foreground mr-4">
+                              Last ping: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleNotification(robot, 'email')}
+                                className="flex items-center gap-1"
+                              >
+                                <Mail className="h-4 w-4" />
+                                <span className="hidden sm:inline">Email</span>
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleNotification(robot, 'text')}
+                                className="flex items-center gap-1"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                                <span className="hidden sm:inline">Text</span>
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
