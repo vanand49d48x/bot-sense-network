@@ -19,6 +19,7 @@ import { AlertCircle, Battery, Thermometer, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TelemetryHistoryProps {
   robotId: string;
@@ -211,74 +212,76 @@ export function TelemetryHistory({ robotId, retentionDays }: TelemetryHistoryPro
       </div>
 
       <Card>
-        <CardContent className="p-0 overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Battery</TableHead>
-                <TableHead>Temp</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Custom Telemetry</TableHead>
-                <TableHead>Errors</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTelemetry.length > 0 ? (
-                filteredTelemetry.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-mono text-xs">
-                      {formatDateTime(record.created_at)}
-                    </TableCell>
-                    <TableCell>
-                      {record.battery_level !== null ? (
-                        <span className="flex items-center gap-1">
-                          <Battery size={14} className={record.battery_level < 20 ? 'text-red-500' : 'text-green-500'} />
-                          {record.battery_level}%
-                        </span>
-                      ) : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {record.temperature !== null ? (
-                        <span className="flex items-center gap-1">
-                          <Thermometer size={14} className={record.temperature > 35 ? 'text-red-500' : 'text-green-500'} />
-                          {record.temperature}°C
-                        </span>
-                      ) : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {record.location ? (
-                        <span className="flex items-center gap-1">
-                          <MapPin size={14} className="text-blue-500" />
-                          {record.location.latitude.toFixed(3)}, {record.location.longitude.toFixed(3)}
-                        </span>
-                      ) : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <pre className="text-xs bg-muted p-1 rounded max-w-[200px] overflow-auto">
-                        {JSON.stringify(getCustomFields(record), null, 1)}
-                      </pre>
-                    </TableCell>
-                    <TableCell>
-                      {record.error_codes && record.error_codes.length > 0 ? (
-                        <span className="px-2 py-1 rounded bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 text-xs">
-                          {record.error_codes.join(", ")}
-                        </span>
-                      ) : (
-                        <span className="text-green-600 dark:text-green-400">None</span>
-                      )}
+        <CardContent className="p-0">
+          <ScrollArea className="h-[400px] w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Battery</TableHead>
+                  <TableHead>Temp</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Custom Telemetry</TableHead>
+                  <TableHead>Errors</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTelemetry.length > 0 ? (
+                  filteredTelemetry.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-mono text-xs">
+                        {formatDateTime(record.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        {record.battery_level !== null ? (
+                          <span className="flex items-center gap-1">
+                            <Battery size={14} className={record.battery_level < 20 ? 'text-red-500' : 'text-green-500'} />
+                            {record.battery_level}%
+                          </span>
+                        ) : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {record.temperature !== null ? (
+                          <span className="flex items-center gap-1">
+                            <Thermometer size={14} className={record.temperature > 35 ? 'text-red-500' : 'text-green-500'} />
+                            {record.temperature}°C
+                          </span>
+                        ) : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {record.location ? (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={14} className="text-blue-500" />
+                            {record.location.latitude.toFixed(3)}, {record.location.longitude.toFixed(3)}
+                          </span>
+                        ) : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <pre className="text-xs bg-muted p-1 rounded max-w-[200px] overflow-auto">
+                          {JSON.stringify(getCustomFields(record), null, 1)}
+                        </pre>
+                      </TableCell>
+                      <TableCell>
+                        {record.error_codes && record.error_codes.length > 0 ? (
+                          <span className="px-2 py-1 rounded bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 text-xs">
+                            {record.error_codes.join(", ")}
+                          </span>
+                        ) : (
+                          <span className="text-green-600 dark:text-green-400">None</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No telemetry data available for the selected time period
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No telemetry data available for the selected time period
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
 

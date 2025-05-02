@@ -29,4 +29,5 @@ export interface UserProfile {
   custom_telemetry_types?: string[] | null;
   custom_alerts?: any[] | null;
   telemetryRetentionDays?: number;
+  telemetry_retention_days?: number; // Adding snake_case variant for database compatibility
 }
