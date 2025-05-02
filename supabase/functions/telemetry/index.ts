@@ -36,7 +36,7 @@ serve(async (req) => {
     }
 
     const telemetryData = await req.json();
-    const { robotId, batteryLevel, temperature, status, location, timestamp } = telemetryData;
+    const { robotId, batteryLevel, temperature, status, location, timestamp, customTelemetry } = telemetryData;
 
     if (!robotId) {
       return new Response(
@@ -48,7 +48,7 @@ serve(async (req) => {
     // Find the user who owns the API key
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("id")
+      .select("id, custom_telemetry_types")
       .eq("api_key", apiKey)
       .single();
 
@@ -110,8 +110,46 @@ serve(async (req) => {
       battery_level: batteryLevel || null,
       temperature: temperature || null,
       location: locationData || null,
+      // Store custom telemetry data if provided
+      motor_status: customTelemetry ? JSON.stringify(customTelemetry) : null,
       // We'll use status to update the robot's status below
     };
+
+    // Check for custom telemetry types and validate against user's allowed types
+    if (customTelemetry && typeof customTelemetry === 'object') {
+      const userCustomTypes = profileData.custom_telemetry_types || [];
+      const incomingTypes = Object.keys(customTelemetry);
+      
+      // Log the custom telemetry data for debugging
+      console.log("Received custom telemetry:", JSON.stringify(customTelemetry));
+      console.log("User custom telemetry types:", JSON.stringify(userCustomTypes));
+      
+      // Create alerts for any custom telemetry that exceeds thresholds
+      // We'll need to fetch the custom alerts from the user's profile
+      const { data: alertsData } = await supabaseClient
+        .from("profiles")
+        .select("custom_alerts")
+        .eq("id", profileData.id)
+        .single();
+        
+      if (alertsData?.custom_alerts && Array.isArray(alertsData.custom_alerts)) {
+        for (const alert of alertsData.custom_alerts) {
+          if (alert.enabled && alert.customTelemetry && incomingTypes.includes(alert.type)) {
+            const telemetryValue = customTelemetry[alert.type];
+            
+            // If this is a numeric value and exceeds threshold, create an alert
+            if (typeof telemetryValue === 'number' && telemetryValue >= alert.threshold) {
+              await supabaseClient.from("alerts").insert({
+                robot_id: robotId,
+                type: alert.type,
+                message: `${alert.type} value of ${telemetryValue} exceeds threshold of ${alert.threshold}`,
+                resolved: false
+              });
+            }
+          }
+        }
+      }
+    }
 
     // Insert telemetry data
     const { data, error } = await supabaseClient
@@ -127,15 +165,22 @@ serve(async (req) => {
     }
 
     // Update robot status (last_ping, battery_level, etc.)
+    const robotUpdate = {
+      status: status === "ERROR" ? "offline" : status === "WARNING" ? "warning" : "online",
+      battery_level: batteryLevel,
+      temperature: temperature,
+      location: locationData,
+      last_ping: new Date().toISOString()
+    };
+    
+    // If custom telemetry data exists, add it as a JSON column
+    if (customTelemetry && typeof customTelemetry === 'object') {
+      robotUpdate.telemetry_data = customTelemetry;
+    }
+    
     await supabaseClient
       .from("robots")
-      .update({
-        status: status === "ERROR" ? "offline" : status === "WARNING" ? "warning" : "online",
-        battery_level: batteryLevel,
-        temperature: temperature,
-        location: locationData,
-        last_ping: new Date().toISOString()
-      })
+      .update(robotUpdate)
       .eq("id", robotId);
 
     return new Response(

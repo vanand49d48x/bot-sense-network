@@ -21,8 +21,30 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { 
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu";
 
-type AlertType = "battery" | "temperature" | "offline" | "error";
+type AlertType = "battery" | "temperature" | "offline" | "error" | string;
+
+// Define metadata for alert types to better handle thresholds and UI
+interface AlertTypeMetadata {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  hasThreshold: boolean;
+  defaultThreshold: number;
+  thresholdLabel?: string;
+  thresholdUnit?: string;
+  thresholdMin?: number;
+  thresholdMax?: number;
+}
 
 // Condition object that defines a single alert condition
 type AlertCondition = {
@@ -37,13 +59,16 @@ type AlertThreshold = {
   enabled: boolean;          // Is this alert enabled
   andCondition: boolean;     // Use AND or OR logic for additional conditions
   additionalConditions?: AlertCondition[]; // Additional conditions to check
+  customTelemetry?: boolean; // Flag for custom telemetry data
 };
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [customRobotTypes, setCustomRobotTypes] = useState<string[]>([]);
   const [customAlerts, setCustomAlerts] = useState<AlertThreshold[]>([]);
+  const [customTelemetryTypes, setCustomTelemetryTypes] = useState<string[]>([]);
   const [newType, setNewType] = useState("");
+  const [newTelemetryType, setNewTelemetryType] = useState("");
   const [alertType, setAlertType] = useState<AlertType>("battery");
   const [alertThreshold, setAlertThreshold] = useState<number>(20);
   const [useAndCondition, setUseAndCondition] = useState<boolean>(false);
@@ -54,12 +79,60 @@ export default function ProfilePage() {
   const [additionalThreshold, setAdditionalThreshold] = useState<number>(35);
   const [isOpenConditions, setIsOpenConditions] = useState<{[key: string]: boolean}>({});
   
+  // Define standard alert types metadata
+  const alertTypeMetadata: Record<string, AlertTypeMetadata> = {
+    "battery": {
+      label: "Low Battery",
+      description: "Alert when battery level drops below threshold",
+      icon: <Battery className="h-4 w-4 mr-2" />,
+      hasThreshold: true,
+      defaultThreshold: 20,
+      thresholdLabel: "Battery Level",
+      thresholdUnit: "%",
+      thresholdMin: 1,
+      thresholdMax: 100
+    },
+    "temperature": {
+      label: "High Temperature",
+      description: "Alert when temperature exceeds threshold",
+      icon: <Thermometer className="h-4 w-4 mr-2" />,
+      hasThreshold: true,
+      defaultThreshold: 35,
+      thresholdLabel: "Temperature",
+      thresholdUnit: "°C",
+      thresholdMin: 0,
+      thresholdMax: 100
+    },
+    "offline": {
+      label: "Offline Status",
+      description: "Alert when robot goes offline",
+      icon: <BellRing className="h-4 w-4 mr-2" />,
+      hasThreshold: false,
+      defaultThreshold: 0
+    },
+    "error": {
+      label: "Error",
+      description: "Alert when robot reports errors",
+      icon: <AlertTriangle className="h-4 w-4 mr-2" />,
+      hasThreshold: false,
+      defaultThreshold: 0
+    }
+  };
+  
   useEffect(() => {
     if (user) {
       fetchCustomRobotTypes();
       fetchCustomAlerts();
+      fetchCustomTelemetryTypes();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Update threshold when alert type changes based on metadata
+    if (alertType in alertTypeMetadata) {
+      setAlertThreshold(alertTypeMetadata[alertType].defaultThreshold);
+    }
+  }, [alertType]);
   
   const fetchCustomRobotTypes = async () => {
     try {
@@ -82,6 +155,32 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error('Error fetching custom robot types:', error.message);
       toast.error('Failed to load custom robot types');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCustomTelemetryTypes = async () => {
+    try {
+      if (!user) return;
+      
+      setIsLoading(true);
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('custom_telemetry_types')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (profileData?.custom_telemetry_types && Array.isArray(profileData.custom_telemetry_types)) {
+        setCustomTelemetryTypes(profileData.custom_telemetry_types);
+      } else {
+        setCustomTelemetryTypes([]);
+      }
+    } catch (error: any) {
+      console.error('Error fetching custom telemetry types:', error.message);
+      toast.error('Failed to load custom telemetry types');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +215,8 @@ export default function ProfilePage() {
                     type: cond.type as AlertType,
                     threshold: Number(cond.threshold)
                   }))
-                : []
+                : [],
+              customTelemetry: 'customTelemetry' in alert ? Boolean(alert.customTelemetry) : false
             };
           }
           // Return a default alert for any invalid data
@@ -125,7 +225,8 @@ export default function ProfilePage() {
             threshold: 20,
             enabled: false,
             andCondition: false,
-            additionalConditions: []
+            additionalConditions: [],
+            customTelemetry: false
           };
         });
         
@@ -214,6 +315,65 @@ export default function ProfilePage() {
     }
   };
 
+  const addCustomTelemetryType = async () => {
+    if (!newTelemetryType.trim()) {
+      toast.error('Please enter a valid telemetry type');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Check if type already exists
+      if (customTelemetryTypes.includes(newTelemetryType)) {
+        toast.error('This telemetry type already exists');
+        return;
+      }
+      
+      const updatedTypes = [...customTelemetryTypes, newTelemetryType.trim()];
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_telemetry_types: updatedTypes })
+        .eq('id', user?.id);
+        
+      if (error) throw error;
+      
+      setCustomTelemetryTypes(updatedTypes);
+      setNewTelemetryType("");
+      
+      toast.success('Custom telemetry type added successfully');
+    } catch (error: any) {
+      console.error('Error adding telemetry type:', error.message);
+      toast.error('Failed to add telemetry type');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const deleteCustomTelemetryType = async (typeToDelete: string) => {
+    try {
+      setIsLoading(true);
+      
+      const updatedTypes = customTelemetryTypes.filter(type => type !== typeToDelete);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_telemetry_types: updatedTypes })
+        .eq('id', user?.id);
+        
+      if (error) throw error;
+      
+      setCustomTelemetryTypes(updatedTypes);
+      toast.success('Telemetry type removed');
+    } catch (error: any) {
+      console.error('Error removing telemetry type:', error.message);
+      toast.error('Failed to remove telemetry type');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const addCustomAlert = async () => {
     try {
       setIsLoading(true);
@@ -221,6 +381,9 @@ export default function ProfilePage() {
       // Check if alert already exists
       const existingAlertIndex = customAlerts.findIndex(alert => alert.type === alertType);
       let updatedAlerts: AlertThreshold[];
+      
+      // Determine if this is a custom telemetry alert
+      const isCustomTelemetry = !Object.keys(alertTypeMetadata).includes(alertType) && customTelemetryTypes.includes(alertType);
       
       if (existingAlertIndex >= 0) {
         // Update existing alert
@@ -230,7 +393,8 @@ export default function ProfilePage() {
           threshold: alertThreshold,
           enabled: true,
           andCondition: useAndCondition,
-          additionalConditions: updatedAlerts[existingAlertIndex].additionalConditions || []
+          additionalConditions: updatedAlerts[existingAlertIndex].additionalConditions || [],
+          customTelemetry: isCustomTelemetry
         };
       } else {
         // Add new alert
@@ -241,7 +405,8 @@ export default function ProfilePage() {
             threshold: alertThreshold,
             enabled: true,
             andCondition: useAndCondition,
-            additionalConditions: []
+            additionalConditions: [],
+            customTelemetry: isCustomTelemetry
           }
         ];
       }
@@ -394,61 +559,61 @@ export default function ProfilePage() {
     }));
   };
 
-  const getAlertIcon = (type: AlertType) => {
-    switch (type) {
-      case "battery":
-        return <Battery className="h-4 w-4 mr-2" />;
-      case "temperature":
-        return <Thermometer className="h-4 w-4 mr-2" />;
-      case "offline":
-        return <BellRing className="h-4 w-4 mr-2" />;
-      case "error":
-        return <AlertTriangle className="h-4 w-4 mr-2" />;
+  // Helper function to get alert metadata with fallback for custom types
+  const getAlertMetadata = (type: AlertType): AlertTypeMetadata => {
+    if (type in alertTypeMetadata) {
+      return alertTypeMetadata[type];
     }
+    
+    // Return default metadata for custom telemetry types
+    return {
+      label: type,
+      description: `Alert on ${type} value`,
+      icon: <AlertTriangle className="h-4 w-4 mr-2" />,
+      hasThreshold: true,
+      defaultThreshold: 50,
+      thresholdLabel: "Value",
+      thresholdMin: 0,
+      thresholdMax: 999
+    };
+  };
+
+  const getAlertIcon = (type: AlertType) => {
+    return getAlertMetadata(type).icon;
   };
 
   const getAlertLabel = (type: AlertType) => {
-    switch (type) {
-      case "battery":
-        return "Low Battery";
-      case "temperature":
-        return "High Temperature";
-      case "offline":
-        return "Offline";
-      case "error":
-        return "Error";
-    }
+    return getAlertMetadata(type).label;
   };
 
   const getAlertDescription = (alert: AlertThreshold) => {
+    const metadata = getAlertMetadata(alert.type);
     const condCount = alert.additionalConditions?.length || 0;
     const condText = condCount > 0 
       ? `with ${condCount} additional condition${condCount > 1 ? 's' : ''} (${alert.andCondition ? 'AND' : 'OR'})` 
       : "";
     
-    switch (alert.type) {
-      case "battery":
-        return `Alert when battery is below ${alert.threshold}% ${condText}`;
-      case "temperature":
-        return `Alert when temperature exceeds ${alert.threshold}°C ${condText}`;
-      case "offline":
-        return `Alert when robot goes offline ${condText}`;
-      case "error":
-        return `Alert when robot reports errors ${condText}`;
+    if (metadata.hasThreshold) {
+      return `Alert when ${alert.type} ${metadata.description.includes("below") ? "is below" : "exceeds"} ${alert.threshold}${metadata.thresholdUnit || ''} ${condText}`;
+    } else {
+      return `${metadata.description} ${condText}`;
     }
   };
 
   const getConditionDescription = (condition: AlertCondition) => {
-    switch (condition.type) {
-      case "battery":
-        return `Battery below ${condition.threshold}%`;
-      case "temperature":
-        return `Temperature exceeds ${condition.threshold}°C`;
-      case "offline":
-        return `Robot is offline`;
-      case "error":
-        return `Robot has errors`;
+    const metadata = getAlertMetadata(condition.type);
+    
+    if (metadata.hasThreshold) {
+      return `${metadata.label} ${metadata.description.includes("below") ? "below" : "exceeds"} ${condition.threshold}${metadata.thresholdUnit || ''}`;
+    } else {
+      return metadata.description;
     }
+  };
+
+  // Combine standard and custom telemetry types for alert type selection
+  const getAllAlertTypes = () => {
+    const standardTypes = Object.keys(alertTypeMetadata);
+    return [...standardTypes, ...customTelemetryTypes];
   };
 
   return (
@@ -523,7 +688,74 @@ export default function ProfilePage() {
             </CardFooter>
           </Card>
 
+          {/* New Card for Custom Telemetry Types */}
           <Card>
+            <CardHeader>
+              <CardTitle>Custom Telemetry Types</CardTitle>
+              <CardDescription>
+                Define custom telemetry data types for your robots
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Label htmlFor="new-telemetry-type">Add New Telemetry Type</Label>
+                    <Input 
+                      id="new-telemetry-type"
+                      placeholder="Enter telemetry type name" 
+                      value={newTelemetryType}
+                      onChange={(e) => setNewTelemetryType(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <Button 
+                    onClick={addCustomTelemetryType}
+                    disabled={isLoading || !newTelemetryType.trim()}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                    )}
+                    Add
+                  </Button>
+                </div>
+                
+                {isLoading && <div className="text-center py-4">Loading...</div>}
+                
+                {!isLoading && customTelemetryTypes.length === 0 && (
+                  <div className="text-center text-muted-foreground py-4">
+                    No custom telemetry types added yet
+                  </div>
+                )}
+                
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {customTelemetryTypes.map((type, index) => (
+                    <div 
+                      key={index} 
+                      className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full flex items-center gap-1"
+                    >
+                      <span>{type}</span>
+                      <button 
+                        onClick={() => deleteCustomTelemetryType(type)}
+                        className="hover:text-destructive transition-colors"
+                        disabled={isLoading}
+                        aria-label={`Delete ${type} telemetry type`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="text-sm text-muted-foreground">
+              Custom telemetry types can be used for creating alerts and monitoring robot data
+            </CardFooter>
+          </Card>
+
+          <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>Custom Alert Settings</CardTitle>
               <CardDescription>
@@ -537,7 +769,7 @@ export default function ProfilePage() {
                     <div>
                       <Label htmlFor="alert-type">Alert Type</Label>
                       <Select 
-                        defaultValue={alertType} 
+                        value={alertType} 
                         onValueChange={(value) => setAlertType(value as AlertType)}
                       >
                         <SelectTrigger id="alert-type">
@@ -548,24 +780,37 @@ export default function ProfilePage() {
                           <SelectItem value="temperature">High Temperature</SelectItem>
                           <SelectItem value="offline">Offline Status</SelectItem>
                           <SelectItem value="error">Errors</SelectItem>
+                          {customTelemetryTypes.length > 0 && (
+                            <>
+                              <SelectItem disabled>
+                                <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
+                              </SelectItem>
+                              {customTelemetryTypes.map((type, index) => (
+                                <SelectItem key={index} value={type}>{type}</SelectItem>
+                              ))}
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div>
                       <Label htmlFor="alert-threshold">
-                        {alertType === "battery" ? "Battery % Threshold" : 
-                         alertType === "temperature" ? "Temperature °C Threshold" : 
-                         "Threshold"}
+                        {(() => {
+                          const metadata = getAlertMetadata(alertType);
+                          return metadata.hasThreshold 
+                            ? `${metadata.thresholdLabel || 'Threshold'}${metadata.thresholdUnit ? ' (' + metadata.thresholdUnit + ')' : ''}` 
+                            : 'Threshold';
+                        })()}
                       </Label>
                       <Input 
                         id="alert-threshold"
                         type="number" 
                         value={alertThreshold}
                         onChange={(e) => setAlertThreshold(Number(e.target.value))}
-                        disabled={alertType === "offline" || alertType === "error"}
-                        min={alertType === "battery" ? 1 : 0}
-                        max={alertType === "battery" ? 100 : 100}
+                        disabled={!getAlertMetadata(alertType).hasThreshold}
+                        min={getAlertMetadata(alertType).thresholdMin || 0}
+                        max={getAlertMetadata(alertType).thresholdMax || 100}
                       />
                     </div>
                   </div>
@@ -603,13 +848,18 @@ export default function ProfilePage() {
                 ) : (
                   <div className="space-y-3">
                     {customAlerts.map((alert, index) => (
-                      <div key={index} className="bg-muted p-3 rounded-md">
+                      <div key={index} className={`bg-muted p-3 rounded-md ${alert.customTelemetry ? 'border-l-4 border-purple-500' : ''}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             {getAlertIcon(alert.type)}
                             <div>
                               <p className="font-medium">{getAlertLabel(alert.type)}</p>
                               <p className="text-sm text-muted-foreground">{getAlertDescription(alert)}</p>
+                              {alert.customTelemetry && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 mt-1">
+                                  Custom Telemetry
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -683,6 +933,16 @@ export default function ProfilePage() {
                                         <SelectItem value="temperature">High Temperature</SelectItem>
                                         <SelectItem value="offline">Offline Status</SelectItem>
                                         <SelectItem value="error">Errors</SelectItem>
+                                        {customTelemetryTypes.length > 0 && (
+                                          <>
+                                            <SelectItem disabled>
+                                              <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
+                                            </SelectItem>
+                                            {customTelemetryTypes.map((type, index) => (
+                                              <SelectItem key={index} value={type}>{type}</SelectItem>
+                                            ))}
+                                          </>
+                                        )}
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -693,7 +953,7 @@ export default function ProfilePage() {
                                       type="number" 
                                       value={additionalThreshold}
                                       onChange={(e) => setAdditionalThreshold(Number(e.target.value))}
-                                      disabled={additionalConditionType === "offline" || additionalConditionType === "error"}
+                                      disabled={!getAlertMetadata(additionalConditionType).hasThreshold}
                                     />
                                   </div>
                                 </div>

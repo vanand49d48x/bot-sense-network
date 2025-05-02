@@ -14,6 +14,9 @@ export interface Robot {
   ipAddress: string;
   errorCount: number;
   apiKey?: string;
+  telemetryData?: {
+    [key: string]: number | string | boolean;
+  };
 }
 
 export interface UserProfile {
@@ -23,4 +26,5 @@ export interface UserProfile {
   avatar_url: string | null;
   api_key: string | null;
   custom_robot_types: string[] | null;
+  custom_telemetry_types?: string[] | null;
 }
