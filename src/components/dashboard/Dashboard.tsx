@@ -59,11 +59,6 @@ export function Dashboard() {
           
           // Handle different event types
           if (payload.eventType === 'UPDATE') {
-            toast('Robot status updated', {
-              description: `${payload.new.name}'s status has been updated`,
-              duration: 3000,
-            });
-            
             // Update the local robots state - ensure we have a valid SupabaseRobot
             setLocalRobots(prevRobots => {
               return prevRobots.map(robot => {
@@ -77,11 +72,6 @@ export function Dashboard() {
               });
             });
           } else if (payload.eventType === 'INSERT') {
-            toast('New robot added', {
-              description: `${payload.new.name} has been added to your fleet`,
-              duration: 3000,
-            });
-            
             // Add the new robot to local state - ensure we have a valid SupabaseRobot
             const supabaseRobot = payload.new as SupabaseRobot;
             setLocalRobots(prevRobots => [
@@ -89,11 +79,6 @@ export function Dashboard() {
               mapSupabaseRobotToAppRobot(supabaseRobot)
             ]);
           } else if (payload.eventType === 'DELETE') {
-            toast('Robot removed', {
-              description: `A robot has been removed from your fleet`,
-              duration: 3000,
-            });
-            
             // Remove the deleted robot from local state
             setLocalRobots(prevRobots => 
               prevRobots.filter(robot => robot.id !== payload.old.id)
@@ -144,15 +129,6 @@ export function Dashboard() {
               }
               return robot;
             });
-            
-            // Show toast with the fresh robot name from the updated list
-            const updatedRobot = updatedRobots.find(r => r.id === robotId);
-            if (updatedRobot) {
-              toast('New telemetry data', {
-                description: `${updatedRobot.name} has sent new telemetry data`,
-                duration: 2000,
-              });
-            }
             
             return updatedRobots;
           });
