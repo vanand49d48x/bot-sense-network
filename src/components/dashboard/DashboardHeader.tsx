@@ -1,7 +1,12 @@
 
 import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onRefresh: () => void;
+}
+
+export function DashboardHeader({ onRefresh }: DashboardHeaderProps) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <div>
@@ -11,8 +16,10 @@ export function DashboardHeader() {
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="outline">Refresh</Button>
-        <Button>+ Add Robot</Button>
+        <Button variant="outline" onClick={onRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
     </div>
   );

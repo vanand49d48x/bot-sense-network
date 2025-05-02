@@ -1,4 +1,3 @@
-
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
@@ -16,7 +15,7 @@ import { toast } from "@/components/ui/sonner";
 import { SupabaseRobot } from "@/utils/robotMapper";
 
 export function Dashboard() {
-  const { robots: supabaseRobots, loading } = useRobots();
+  const { robots: supabaseRobots, loading, fetchRobots } = useRobots();
   const { user } = useAuth();
   
   // Map Supabase robots to application Robot type
@@ -32,6 +31,15 @@ export function Dashboard() {
       setLocalRobots(robots);
     }
   }, [robots]);
+
+  // Handle refresh button click
+  const handleRefresh = () => {
+    toast('Refreshing robot data...', {
+      description: 'Fetching the latest robot status and telemetry',
+      duration: 2000,
+    });
+    fetchRobots();
+  };
   
   // Set up realtime subscription for robot and telemetry updates
   useEffect(() => {
@@ -209,7 +217,7 @@ export function Dashboard() {
   return (
     <div>
       <div className="flex justify-between items-center">
-        <DashboardHeader />
+        <DashboardHeader onRefresh={handleRefresh} />
         <AddRobotModal />
       </div>
       
