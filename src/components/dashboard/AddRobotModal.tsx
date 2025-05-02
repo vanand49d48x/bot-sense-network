@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRobots } from "@/hooks/useRobots";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 export function AddRobotModal() {
   const [open, setOpen] = useState(false);
@@ -30,8 +32,48 @@ export function AddRobotModal() {
   const [type, setType] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customRobotTypes, setCustomRobotTypes] = useState<string[]>([]);
   const { addRobot } = useRobots();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Default robot types
+  const defaultRobotTypes = [
+    "delivery",
+    "warehouse",
+    "cleaning",
+    "security",
+    "assembly"
+  ];
+
+  // Fetch custom robot types when modal opens
+  useEffect(() => {
+    if (open && user) {
+      fetchCustomRobotTypes();
+    }
+  }, [open, user]);
+
+  // Fetch user's custom robot types
+  const fetchCustomRobotTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('custom_robot_types')
+        .eq('id', user?.id)
+        .single();
+        
+      if (error) {
+        console.error("Error fetching custom robot types:", error);
+        return;
+      }
+      
+      if (data?.custom_robot_types) {
+        setCustomRobotTypes(data.custom_robot_types);
+      }
+    } catch (error) {
+      console.error("Error in fetchCustomRobotTypes:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,11 +160,28 @@ export function AddRobotModal() {
                     <SelectValue placeholder="Select robot type" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="" disabled>Select robot type</SelectItem>
+                    
+                    {/* Default robot types */}
                     <SelectItem value="delivery">Delivery Bot</SelectItem>
                     <SelectItem value="warehouse">Warehouse Bot</SelectItem>
                     <SelectItem value="cleaning">Cleaning Bot</SelectItem>
                     <SelectItem value="security">Security Bot</SelectItem>
                     <SelectItem value="assembly">Assembly Bot</SelectItem>
+                    
+                    {/* Custom robot types */}
+                    {customRobotTypes.length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          Custom Types
+                        </div>
+                        {customRobotTypes.map((customType) => (
+                          <SelectItem key={customType} value={customType}>
+                            {customType}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

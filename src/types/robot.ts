@@ -15,3 +15,12 @@ export interface Robot {
   errorCount: number;
   apiKey?: string;
 }
+
+export interface UserProfile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  api_key: string | null;
+  custom_robot_types: string[] | null;
+}

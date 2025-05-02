@@ -14,6 +14,7 @@ import Landing from "./pages/Landing";
 import MapViewPage from "./pages/MapViewPage";
 import Alerts from "./pages/Alerts";
 import FleetStatusPage from "./pages/FleetStatusPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Alerts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />
