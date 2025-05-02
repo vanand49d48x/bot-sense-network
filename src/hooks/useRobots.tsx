@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,66 +12,69 @@ export function useRobots() {
   const { toast } = useToast();
   const { session } = useAuth();
 
+  // Define fetchRobots here so it can be exported and used in Dashboard.tsx
+  const fetchRobots = async () => {
+    if (!session) return;
+    
+    try {
+      setLoading(true);
+      console.log("Fetching robots data...");
+      
+      const { data, error } = await supabase
+        .from('robots')
+        .select('*')
+        .eq('user_id', session.user.id);
+
+      if (error) throw error;
+      
+      console.log("Robots data fetched:", data?.length || 0, "robots");
+      setRobots(data || []);
+      
+      // Fetch API key from profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('api_key')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (profileError) {
+        console.error("Error fetching API key:", profileError);
+        // If there's an error, we'll try to set it anyway
+        setApiKey(null);
+      } else {
+        setApiKey(profileData?.api_key || null);
+      }
+      
+      // If no API key exists, generate one
+      if (!profileData?.api_key) {
+        const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+        
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ api_key: newApiKey })
+          .eq('id', session.user.id);
+          
+        if (!updateError) {
+          setApiKey(newApiKey);
+        } else {
+          console.error("Error setting API key:", updateError);
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error fetching robots",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch robots data and set up real-time subscription
   useEffect(() => {
     if (!session) return;
     
-    const fetchRobots = async () => {
-      try {
-        setLoading(true);
-        console.log("Fetching robots data...");
-        
-        const { data, error } = await supabase
-          .from('robots')
-          .select('*')
-          .eq('user_id', session.user.id);
-
-        if (error) throw error;
-        
-        console.log("Robots data fetched:", data?.length || 0, "robots");
-        setRobots(data || []);
-        
-        // Fetch API key from profiles
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('api_key')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profileError) {
-          console.error("Error fetching API key:", profileError);
-          // If there's an error, we'll try to set it anyway
-          setApiKey(null);
-        } else {
-          setApiKey(profileData?.api_key || null);
-        }
-        
-        // If no API key exists, generate one
-        if (!profileData?.api_key) {
-          const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-          
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ api_key: newApiKey })
-            .eq('id', session.user.id);
-            
-          if (!updateError) {
-            setApiKey(newApiKey);
-          } else {
-            console.error("Error setting API key:", updateError);
-          }
-        }
-      } catch (error: any) {
-        toast({
-          title: "Error fetching robots",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRobots();
     
     // Set up realtime subscription for robot updates
@@ -177,5 +179,6 @@ export function useRobots() {
     }
   };
 
-  return { robots, loading, apiKey, addRobot, deleteRobot };
+  // Export the fetchRobots function along with other values
+  return { robots, loading, apiKey, addRobot, deleteRobot, fetchRobots };
 }
