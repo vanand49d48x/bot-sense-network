@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +25,7 @@ type AlertThreshold = {
   type: AlertType;
   threshold: number;
   enabled: boolean;
-  andCondition?: boolean; // New AND condition attribute
+  andCondition: boolean; // Changed from optional to required property
 };
 
 export default function ProfilePage() {
@@ -34,7 +35,7 @@ export default function ProfilePage() {
   const [newType, setNewType] = useState("");
   const [alertType, setAlertType] = useState<AlertType>("battery");
   const [alertThreshold, setAlertThreshold] = useState<number>(20);
-  const [useAndCondition, setUseAndCondition] = useState<boolean>(false); // New state for AND condition
+  const [useAndCondition, setUseAndCondition] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
@@ -96,8 +97,14 @@ export default function ProfilePage() {
               andCondition: 'andCondition' in alert ? Boolean(alert.andCondition) : false
             };
           }
-          return null;
-        }).filter((alert): alert is AlertThreshold => alert !== null);
+          // Return a default alert for any invalid data
+          return {
+            type: 'battery' as AlertType,
+            threshold: 20,
+            enabled: false,
+            andCondition: false
+          };
+        });
         
         setCustomAlerts(typedAlerts);
       } else {
