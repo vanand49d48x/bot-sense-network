@@ -13,6 +13,7 @@ import IntegrationGuide from "./pages/IntegrationGuide";
 import Landing from "./pages/Landing";
 import MapViewPage from "./pages/MapViewPage";
 import Alerts from "./pages/Alerts";
+import FleetStatusPage from "./pages/FleetStatusPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,14 @@ const App = () => (
                     <Index />
                   </ProtectedRoute>
                 } 
+              />
+              <Route 
+                path="/fleet-status" 
+                element={
+                  <ProtectedRoute>
+                    <FleetStatusPage />
+                  </ProtectedRoute>
+                }
               />
               <Route 
                 path="/map" 

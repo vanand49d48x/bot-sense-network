@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar";
-import { Battery, MapPin, Bell, ArrowRight, Key } from "lucide-react";
+import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3 } from "lucide-react";
 import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
 
@@ -23,6 +23,11 @@ export function AppSidebar() {
       title: "Dashboard",
       icon: ArrowRight,
       url: "/dashboard",
+    },
+    {
+      title: "Fleet Status",
+      icon: BarChart3,
+      url: "/fleet-status",
     },
     {
       title: "Map View",
