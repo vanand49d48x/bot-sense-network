@@ -28,5 +28,5 @@ export interface UserProfile {
   custom_robot_types?: string[] | null;
   custom_telemetry_types?: string[] | null;
   custom_alerts?: any[] | null;
-  telemetry_retention_days?: number; // Using snake_case to match the database column
+  telemetry_retention_days?: number;
 }

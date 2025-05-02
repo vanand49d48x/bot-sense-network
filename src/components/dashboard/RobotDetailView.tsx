@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { TelemetryHistory } from "./TelemetryHistory";
 import { TelemetryChart } from "./TelemetryChart";
 import { RobotPathHistory } from "./RobotPathHistory";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RobotDetailViewProps {
   robot: Robot;
@@ -101,10 +102,12 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
           </TabsContent>
           
           <TabsContent value="charts">
-            <div className="space-y-6">
-              <TelemetryChart robotId={robot.id} retentionDays={retentionDays} />
-              <RobotPathHistory robot={robot} retentionDays={retentionDays} />
-            </div>
+            <ScrollArea className="h-[650px] pr-4">
+              <div className="space-y-6">
+                <TelemetryChart robotId={robot.id} retentionDays={retentionDays} />
+                <RobotPathHistory robot={robot} retentionDays={retentionDays} />
+              </div>
+            </ScrollArea>
           </TabsContent>
           
           <TabsContent value="telemetry">
