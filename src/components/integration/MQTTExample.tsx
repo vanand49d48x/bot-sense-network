@@ -7,384 +7,502 @@ import { toast } from "@/components/ui/sonner";
 import { ClipboardCopy, Download } from "lucide-react";
 
 export function MQTTExample() {
-  const [activeTab, setActiveTab] = useState("nodejs");
+  const [activeTab, setActiveTab] = useState("python");
 
-  const nodejsExample = `
-const mqtt = require('mqtt');
-const axios = require('axios');
-
-// MQTT Configuration
-const MQTT_BROKER = 'mqtt://broker.hivemq.com'; // Public broker for example, use your own in production
-const TOPICS = {
-  BATTERY: 'robometrics/YOUR_ROBOT_ID/battery',
-  TEMPERATURE: 'robometrics/YOUR_ROBOT_ID/temperature',
-  STATUS: 'robometrics/YOUR_ROBOT_ID/status',
-  LOCATION: 'robometrics/YOUR_ROBOT_ID/location',
-  ALL: 'robometrics/YOUR_ROBOT_ID/all' // Combined topic for all data
-};
-
-// RoboMetrics configuration
-const ROBOMETRICS_ENDPOINT = 'https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry';
-const ROBOT_ID = 'YOUR_ROBOT_ID';
-const API_KEY = 'YOUR_API_KEY';
-
-// State to hold latest robot telemetry
-const robotState = {
-  batteryLevel: 100,
-  temperature: 25.0,
-  status: 'OK',
-  location: {
-    latitude: 0,
-    longitude: 0
-  },
-  hasLocationData: false
-};
-
-// Connect to MQTT broker
-console.log(\`Connecting to MQTT broker: \${MQTT_BROKER}\`);
-const client = mqtt.connect(MQTT_BROKER);
-
-client.on('connect', () => {
-  console.log('Connected to MQTT broker');
-  
-  // Subscribe to all relevant topics
-  Object.values(TOPICS).forEach(topic => {
-    client.subscribe(topic, (err) => {
-      if (err) {
-        console.error(\`Error subscribing to \${topic}:\`, err);
-      } else {
-        console.log(\`Subscribed to \${topic}\`);
-      }
-    });
-  });
-  
-  // Setup periodic telemetry sending
-  setInterval(sendTelemetry, 60000); // Send every 60 seconds
-});
-
-client.on('message', (topic, message) => {
-  const payload = message.toString();
-  console.log(\`Received message on \${topic}: \${payload}\`);
-  
-  try {
-    // Process message based on topic
-    if (topic === TOPICS.BATTERY) {
-      robotState.batteryLevel = parseFloat(payload);
-      console.log(\`Updated battery level: \${robotState.batteryLevel}%\`);
-    }
-    else if (topic === TOPICS.TEMPERATURE) {
-      robotState.temperature = parseFloat(payload);
-      console.log(\`Updated temperature: \${robotState.temperature}°C\`);
-    }
-    else if (topic === TOPICS.STATUS) {
-      robotState.status = payload;
-      console.log(\`Updated status: \${robotState.status}\`);
-    }
-    else if (topic === TOPICS.LOCATION) {
-      try {
-        const locationData = JSON.parse(payload);
-        if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
-          robotState.location = {
-            latitude: locationData.latitude,
-            longitude: locationData.longitude
-          };
-          robotState.hasLocationData = true;
-          console.log(\`Updated location: \${robotState.location.latitude}, \${robotState.location.longitude}\`);
-        }
-      } catch (e) {
-        console.error('Failed to parse location data:', e);
-      }
-    }
-    else if (topic === TOPICS.ALL) {
-      try {
-        const allData = JSON.parse(payload);
-        if (allData.batteryLevel !== undefined) {
-          robotState.batteryLevel = allData.batteryLevel;
-        }
-        if (allData.temperature !== undefined) {
-          robotState.temperature = allData.temperature;
-        }
-        if (allData.status !== undefined) {
-          robotState.status = allData.status;
-        }
-        if (allData.location !== undefined) {
-          robotState.location = allData.location;
-          robotState.hasLocationData = true;
-        }
-        console.log('Updated all robot state from combined topic');
-        
-        // Optionally send telemetry immediately when receiving combined data
-        sendTelemetry();
-      } catch (e) {
-        console.error('Failed to parse all data:', e);
-      }
-    }
-  } catch (error) {
-    console.error(\`Error processing message from topic \${topic}:\`, error);
-  }
-});
-
-client.on('error', (error) => {
-  console.error('MQTT client error:', error);
-});
-
-// Function to send telemetry to RoboMetrics
-async function sendTelemetry() {
-  try {
-    const telemetryData = {
-      robotId: ROBOT_ID,
-      batteryLevel: robotState.batteryLevel,
-      temperature: robotState.temperature,
-      status: robotState.status
-    };
-    
-    // Only include location if we have the data
-    if (robotState.hasLocationData) {
-      telemetryData.location = robotState.location;
-    }
-    
-    console.log('Sending telemetry to RoboMetrics:', telemetryData);
-    
-    const response = await axios.post(ROBOMETRICS_ENDPOINT, telemetryData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': API_KEY
-      }
-    });
-    
-    console.log('Telemetry sent successfully:', response.data);
-  } catch (error) {
-    console.error('Failed to send telemetry:', error);
-  }
-}
-
-// Handle graceful shutdown
-process.on('SIGINT', () => {
-  console.log('Closing MQTT connection');
-  client.end();
-  process.exit(0);
-});`;
-
-  const pythonExample = `
+  const pythonExample = `#!/usr/bin/env python3
 import paho.mqtt.client as mqtt
-import requests
-import json
 import time
-import signal
-import sys
-import threading
+import json
+import requests
+import os
+import logging
+from datetime import datetime
 
-# MQTT Configuration
-MQTT_BROKER = "broker.hivemq.com"  # Public broker for example, use your own in production
-MQTT_PORT = 1883
-TOPICS = {
-    "BATTERY": "robometrics/YOUR_ROBOT_ID/battery",
-    "TEMPERATURE": "robometrics/YOUR_ROBOT_ID/temperature",
-    "STATUS": "robometrics/YOUR_ROBOT_ID/status",
-    "LOCATION": "robometrics/YOUR_ROBOT_ID/location",
-    "ALL": "robometrics/YOUR_ROBOT_ID/all"  # Combined topic for all data
-}
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # RoboMetrics configuration
-ROBOMETRICS_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
+API_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
 ROBOT_ID = "YOUR_ROBOT_ID"
-API_KEY = "YOUR_API_KEY"
+API_KEY = "YOUR_ROBOT_API_KEY"
 
-# State to hold latest robot telemetry
-robot_state = {
+# MQTT configuration
+MQTT_BROKER = "broker.hivemq.com"  # Public broker for testing, use your own in production
+MQTT_PORT = 1883
+MQTT_TOPIC_PREFIX = "robot/YOUR_ROBOT_ID/"  # Replace with your robot ID
+MQTT_CLIENT_ID = f"robometrics_bridge_{ROBOT_ID}"
+
+# Topics to subscribe to
+TOPICS = {
+    "battery": MQTT_TOPIC_PREFIX + "battery",
+    "temperature": MQTT_TOPIC_PREFIX + "temperature",
+    "status": MQTT_TOPIC_PREFIX + "status",
+    "location": MQTT_TOPIC_PREFIX + "location",
+    # Custom telemetry topics
+    "motor_speed": MQTT_TOPIC_PREFIX + "motor_speed",
+    "error_count": MQTT_TOPIC_PREFIX + "error_count",
+    "arm_position": MQTT_TOPIC_PREFIX + "arm_position"
+}
+
+# Store the latest data
+telemetry_data = {
     "batteryLevel": 100,
     "temperature": 25.0,
     "status": "OK",
     "location": {
-        "latitude": 0,
-        "longitude": 0
+        "latitude": 0.0,
+        "longitude": 0.0
     },
-    "hasLocationData": False
+    "customTelemetry": {
+        "motorSpeed": 0,
+        "errorCount": 0,
+        "armPosition": "retracted"
+    }
 }
 
-# Flag to control the telemetry sending loop
-running = True
-
-# MQTT client callbacks
+# MQTT callbacks
 def on_connect(client, userdata, flags, rc):
-    print(f"Connected to MQTT broker with result code {rc}")
-    
-    # Subscribe to all topics
-    for topic in TOPICS.values():
-        client.subscribe(topic)
-        print(f"Subscribed to {topic}")
+    if rc == 0:
+        logger.info("Connected to MQTT broker")
+        # Subscribe to all topics
+        for topic in TOPICS.values():
+            client.subscribe(topic)
+            logger.info(f"Subscribed to {topic}")
+    else:
+        logger.error(f"Failed to connect to MQTT broker, return code: {rc}")
 
 def on_message(client, userdata, msg):
     topic = msg.topic
-    payload = msg.payload.decode()
-    print(f"Received message on {topic}: {payload}")
+    payload = msg.payload.decode("utf-8")
+    logger.info(f"Received message on topic {topic}: {payload}")
     
     try:
-        # Process message based on topic
-        if topic == TOPICS["BATTERY"]:
-            robot_state["batteryLevel"] = float(payload)
-            print(f"Updated battery level: {robot_state['batteryLevel']}%")
+        # Process different topics
+        if topic == TOPICS["battery"]:
+            telemetry_data["batteryLevel"] = float(payload)
         
-        elif topic == TOPICS["TEMPERATURE"]:
-            robot_state["temperature"] = float(payload)
-            print(f"Updated temperature: {robot_state['temperature']}°C")
+        elif topic == TOPICS["temperature"]:
+            telemetry_data["temperature"] = float(payload)
         
-        elif topic == TOPICS["STATUS"]:
-            robot_state["status"] = payload
-            print(f"Updated status: {robot_state['status']}")
+        elif topic == TOPICS["status"]:
+            telemetry_data["status"] = payload
         
-        elif topic == TOPICS["LOCATION"]:
-            try:
-                location_data = json.loads(payload)
-                if "latitude" in location_data and "longitude" in location_data:
-                    robot_state["location"] = {
-                        "latitude": location_data["latitude"],
-                        "longitude": location_data["longitude"]
-                    }
-                    robot_state["hasLocationData"] = True
-                    print(f"Updated location: {robot_state['location']['latitude']}, {robot_state['location']['longitude']}")
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse location data: {e}")
+        elif topic == TOPICS["location"]:
+            location_data = json.loads(payload)
+            telemetry_data["location"]["latitude"] = location_data.get("latitude", 0.0)
+            telemetry_data["location"]["longitude"] = location_data.get("longitude", 0.0)
         
-        elif topic == TOPICS["ALL"]:
-            try:
-                all_data = json.loads(payload)
-                if "batteryLevel" in all_data:
-                    robot_state["batteryLevel"] = all_data["batteryLevel"]
-                if "temperature" in all_data:
-                    robot_state["temperature"] = all_data["temperature"]
-                if "status" in all_data:
-                    robot_state["status"] = all_data["status"]
-                if "location" in all_data:
-                    robot_state["location"] = all_data["location"]
-                    robot_state["hasLocationData"] = True
-                print("Updated all robot state from combined topic")
-                
-                # Optionally send telemetry immediately when receiving combined data
-                send_telemetry()
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse all data: {e}")
-    
+        # Custom telemetry topics
+        elif topic == TOPICS["motor_speed"]:
+            telemetry_data["customTelemetry"]["motorSpeed"] = int(payload)
+        
+        elif topic == TOPICS["error_count"]:
+            telemetry_data["customTelemetry"]["errorCount"] = int(payload)
+        
+        elif topic == TOPICS["arm_position"]:
+            telemetry_data["customTelemetry"]["armPosition"] = payload
+        
     except Exception as e:
-        print(f"Error processing message from topic {topic}: {e}")
+        logger.error(f"Error processing message: {e}")
 
-def on_disconnect(client, userdata, rc):
-    if rc != 0:
-        print(f"Unexpected disconnection. Reconnecting... (code {rc})")
-        client.reconnect()
-
-# Function to send telemetry to RoboMetrics
 def send_telemetry():
+    # Prepare the data for sending
+    data = {
+        "robotId": ROBOT_ID,
+        **telemetry_data,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
+    
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": API_KEY
+    }
+    
     try:
-        telemetry_data = {
-            "robotId": ROBOT_ID,
-            "batteryLevel": robot_state["batteryLevel"],
-            "temperature": robot_state["temperature"],
-            "status": robot_state["status"]
-        }
-        
-        # Only include location if we have the data
-        if robot_state["hasLocationData"]:
-            telemetry_data["location"] = robot_state["location"]
-        
-        print(f"Sending telemetry to RoboMetrics: {telemetry_data}")
-        
-        headers = {
-            "Content-Type": "application/json",
-            "api-key": API_KEY
-        }
-        
         response = requests.post(
-            ROBOMETRICS_ENDPOINT, 
-            headers=headers, 
-            data=json.dumps(telemetry_data)
+            API_ENDPOINT,
+            headers=headers,
+            data=json.dumps(data)
         )
-        
-        if response.status_code == 200:
-            print(f"Telemetry sent successfully: {response.json()}")
-        else:
-            print(f"Failed to send telemetry. Status code: {response.status_code}")
-            print(f"Response: {response.text}")
-            
+        logger.info(f"Telemetry sent, status: {response.status_code}")
+        if response.status_code >= 400:
+            logger.error(f"API error: {response.text}")
     except Exception as e:
-        print(f"Error sending telemetry: {e}")
+        logger.error(f"Error sending telemetry: {e}")
 
-# Function to periodically send telemetry
-def telemetry_loop():
-    while running:
-        send_telemetry()
-        time.sleep(60)  # Send every 60 seconds
+def main():
+    # Create MQTT client
+    client = mqtt.Client(MQTT_CLIENT_ID)
+    client.on_connect = on_connect
+    client.on_message = on_message
+    
+    # Connect to broker
+    try:
+        client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    except Exception as e:
+        logger.error(f"Failed to connect to MQTT broker: {e}")
+        return
+    
+    # Start the loop in a non-blocking way
+    client.loop_start()
+    
+    try:
+        # Send telemetry every 60 seconds
+        while True:
+            time.sleep(60)
+            send_telemetry()
+    except KeyboardInterrupt:
+        logger.info("Shutting down...")
+    finally:
+        client.loop_stop()
+        client.disconnect()
 
-# Handle graceful shutdown
-def signal_handler(sig, frame):
-    global running
-    print('Shutting down...')
-    running = False
-    client.disconnect()
-    sys.exit(0)
+if __name__ == "__main__":
+    main()`;
 
-signal.signal(signal.SIGINT, signal_handler)
+  const nodeExample = `const mqtt = require('mqtt');
+const axios = require('axios');
 
-# Create and configure MQTT client
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
-client.on_disconnect = on_disconnect
+// RoboMetrics configuration
+const API_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry";
+const ROBOT_ID = "YOUR_ROBOT_ID";
+const API_KEY = "YOUR_ROBOT_API_KEY";
 
-# Connect to broker
-print(f"Connecting to MQTT broker: {MQTT_BROKER}")
-client.connect(MQTT_BROKER, MQTT_PORT, 60)
+// MQTT configuration
+const MQTT_BROKER = "mqtt://broker.hivemq.com";  // Public broker for testing, use your own in production
+const MQTT_TOPIC_PREFIX = \`robot/\${ROBOT_ID}/\`;
+const MQTT_CLIENT_ID = \`robometrics_bridge_\${ROBOT_ID}_\${Math.random().toString(16).slice(2, 8)}\`;
 
-# Start the telemetry sending loop in a separate thread
-telemetry_thread = threading.Thread(target=telemetry_loop)
-telemetry_thread.daemon = True
-telemetry_thread.start()
+// Topics to subscribe to
+const TOPICS = {
+  battery: MQTT_TOPIC_PREFIX + "battery",
+  temperature: MQTT_TOPIC_PREFIX + "temperature",
+  status: MQTT_TOPIC_PREFIX + "status",
+  location: MQTT_TOPIC_PREFIX + "location",
+  // Custom telemetry topics
+  motorSpeed: MQTT_TOPIC_PREFIX + "motor_speed",
+  errorCount: MQTT_TOPIC_PREFIX + "error_count",
+  armPosition: MQTT_TOPIC_PREFIX + "arm_position"
+};
 
-# Start the MQTT client loop
-client.loop_forever()`;
+// Store the latest data
+const telemetryData = {
+  batteryLevel: 100,
+  temperature: 25.0,
+  status: "OK",
+  location: {
+    latitude: 0.0,
+    longitude: 0.0
+  },
+  customTelemetry: {
+    motorSpeed: 0,
+    errorCount: 0,
+    armPosition: "retracted"
+  }
+};
 
-  const mqttTopicsDoc = `
-# MQTT Topics for RoboMetrics Integration
+// Connect to MQTT broker
+console.log("Connecting to MQTT broker...");
+const client = mqtt.connect(MQTT_BROKER, {
+  clientId: MQTT_CLIENT_ID,
+  clean: true
+});
 
-This document describes the MQTT topics structure for integrating robots with RoboMetrics.
+client.on('connect', () => {
+  console.log("Connected to MQTT broker");
+  
+  // Subscribe to all topics
+  Object.values(TOPICS).forEach(topic => {
+    client.subscribe(topic, (err) => {
+      if (!err) {
+        console.log(\`Subscribed to \${topic}\`);
+      } else {
+        console.error(\`Error subscribing to \${topic}: \${err.message}\`);
+      }
+    });
+  });
+});
 
-## Topic Structure
+client.on('message', (topic, message) => {
+  const payload = message.toString();
+  console.log(\`Received message on topic \${topic}: \${payload}\`);
+  
+  try {
+    // Process different topics
+    if (topic === TOPICS.battery) {
+      telemetryData.batteryLevel = parseFloat(payload);
+    }
+    else if (topic === TOPICS.temperature) {
+      telemetryData.temperature = parseFloat(payload);
+    }
+    else if (topic === TOPICS.status) {
+      telemetryData.status = payload;
+    }
+    else if (topic === TOPICS.location) {
+      const locationData = JSON.parse(payload);
+      telemetryData.location.latitude = locationData.latitude || 0.0;
+      telemetryData.location.longitude = locationData.longitude || 0.0;
+    }
+    // Custom telemetry topics
+    else if (topic === TOPICS.motorSpeed) {
+      telemetryData.customTelemetry.motorSpeed = parseInt(payload, 10);
+    }
+    else if (topic === TOPICS.errorCount) {
+      telemetryData.customTelemetry.errorCount = parseInt(payload, 10);
+    }
+    else if (topic === TOPICS.armPosition) {
+      telemetryData.customTelemetry.armPosition = payload;
+    }
+  } catch (error) {
+    console.error(\`Error processing message: \${error.message}\`);
+  }
+});
 
-All topics use the prefix \`robometrics/{robot_id}/\` where \`{robot_id}\` is your robot's ID in the RoboMetrics platform.
+client.on('error', (error) => {
+  console.error(\`MQTT error: \${error.message}\`);
+});
 
-## Standard Topics
+// Send telemetry to RoboMetrics
+async function sendTelemetry() {
+  const data = {
+    robotId: ROBOT_ID,
+    ...telemetryData,
+    timestamp: new Date().toISOString()
+  };
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'api-key': API_KEY
+  };
+  
+  try {
+    const response = await axios.post(API_ENDPOINT, data, { headers });
+    console.log(\`Telemetry sent, status: \${response.status}\`);
+  } catch (error) {
+    console.error(\`Error sending telemetry: \${error.message}\`);
+    if (error.response) {
+      console.error(\`API error: \${JSON.stringify(error.response.data)}\`);
+    }
+  }
+}
 
-| Topic | Description | Payload Format | Example |
-|-------|-------------|----------------|---------|
-| \`robometrics/{robot_id}/battery\` | Battery level percentage | Float value (0-100) | \`75.5\` |
-| \`robometrics/{robot_id}/temperature\` | Temperature in Celsius | Float value | \`28.3\` |
-| \`robometrics/{robot_id}/status\` | Robot status | String: "OK", "WARNING", or "ERROR" | \`"OK"\` |
-| \`robometrics/{robot_id}/location\` | GPS coordinates | JSON object with latitude and longitude | \`{"latitude": 37.7749, "longitude": -122.4194}\` |
-| \`robometrics/{robot_id}/all\` | Combined data | JSON object with all telemetry fields | \`{"batteryLevel": 75.5, "temperature": 28.3, "status": "OK", "location": {"latitude": 37.7749, "longitude": -122.4194}}\` |
+// Send telemetry every 60 seconds
+setInterval(sendTelemetry, 60000);
 
-## Extended Topics
+// Handle shutdown
+process.on('SIGINT', () => {
+  console.log('Shutting down...');
+  client.end();
+  process.exit();
+});`;
 
-For robots with additional sensors or data points:
+  const espExample = `
+#include <Arduino.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h>
 
-| Topic | Description | Payload Format | Example |
-|-------|-------------|----------------|---------|
-| \`robometrics/{robot_id}/speed\` | Current speed | Float value in m/s | \`1.5\` |
-| \`robometrics/{robot_id}/heading\` | Orientation in degrees | Float value (0-359) | \`175.3\` |
-| \`robometrics/{robot_id}/cpu\` | CPU utilization | Float value (0-100) | \`45.2\` |
-| \`robometrics/{robot_id}/memory\` | Memory utilization | Float value (0-100) | \`62.7\` |
-| \`robometrics/{robot_id}/errors\` | Error messages | JSON array of error objects | \`[{"code": "E001", "message": "Motor overheating"}]\` |
+// WiFi configuration
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-## Publishing Frequency
+// MQTT configuration
+const char* MQTT_BROKER = "broker.hivemq.com";  // Public broker for testing, use your own in production
+const int MQTT_PORT = 1883;
+const char* MQTT_CLIENT_ID = "esp32_robometrics_bridge";
 
-For optimal performance:
-- Battery level, temperature, status: Every 1-5 minutes
-- Location: Every 10-30 seconds when moving, less frequently when stationary
-- Combined data (\`all\` topic): Every 1-5 minutes
+// RoboMetrics configuration
+const char* API_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry";
+const char* ROBOT_ID = "YOUR_ROBOT_ID";
+const char* API_KEY = "YOUR_ROBOT_API_KEY";
 
-## Quality of Service (QoS)
+// MQTT topics to subscribe to (incoming data)
+const char* TOPIC_BATTERY = "robot/incoming/battery";
+const char* TOPIC_TEMPERATURE = "robot/incoming/temperature";
+const char* TOPIC_STATUS = "robot/incoming/status";
+const char* TOPIC_LOCATION = "robot/incoming/location";
+// Custom telemetry topics
+const char* TOPIC_MOTOR_SPEED = "robot/incoming/motor_speed";
+const char* TOPIC_ERROR_COUNT = "robot/incoming/error_count";
+const char* TOPIC_ARM_POSITION = "robot/incoming/arm_position";
 
-- Use QoS level 0 for high-frequency telemetry data (location updates)
-- Use QoS level 1 for important status changes and alerts`;
+// Sensor data
+float batteryLevel = 100.0;
+float temperature = 25.0;
+float latitude = 37.7749;
+float longitude = -122.4194;
+String status = "OK";
+// Custom telemetry data
+int motorSpeed = 0;
+int errorCount = 0;
+String armPosition = "retracted";
+
+// WiFi and MQTT clients
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
+
+// Timer for sending telemetry
+unsigned long lastTelemetrySent = 0;
+const unsigned long TELEMETRY_INTERVAL = 60000; // 60 seconds
+
+// Connect to WiFi
+void setupWifi() {
+  Serial.print("Connecting to WiFi...");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  
+  Serial.println("\\nWiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+// MQTT message callback
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message received on topic: ");
+  Serial.println(topic);
+  
+  // Convert payload to string
+  char message[length + 1];
+  memcpy(message, payload, length);
+  message[length] = '\\0';
+  
+  Serial.print("Payload: ");
+  Serial.println(message);
+  
+  // Parse message based on topic
+  if (strcmp(topic, TOPIC_BATTERY) == 0) {
+    batteryLevel = atof(message);
+  } 
+  else if (strcmp(topic, TOPIC_TEMPERATURE) == 0) {
+    temperature = atof(message);
+  }
+  else if (strcmp(topic, TOPIC_STATUS) == 0) {
+    status = String(message);
+  }
+  else if (strcmp(topic, TOPIC_LOCATION) == 0) {
+    // Parse JSON location
+    DynamicJsonDocument doc(200);
+    deserializeJson(doc, message);
+    latitude = doc["latitude"] | 0.0;
+    longitude = doc["longitude"] | 0.0;
+  }
+  // Custom telemetry
+  else if (strcmp(topic, TOPIC_MOTOR_SPEED) == 0) {
+    motorSpeed = atoi(message);
+  }
+  else if (strcmp(topic, TOPIC_ERROR_COUNT) == 0) {
+    errorCount = atoi(message);
+  }
+  else if (strcmp(topic, TOPIC_ARM_POSITION) == 0) {
+    armPosition = String(message);
+  }
+}
+
+void reconnectMqtt() {
+  while (!mqttClient.connected()) {
+    Serial.print("Connecting to MQTT broker...");
+    if (mqttClient.connect(MQTT_CLIENT_ID)) {
+      Serial.println("connected");
+      
+      // Subscribe to topics
+      mqttClient.subscribe(TOPIC_BATTERY);
+      mqttClient.subscribe(TOPIC_TEMPERATURE);
+      mqttClient.subscribe(TOPIC_STATUS);
+      mqttClient.subscribe(TOPIC_LOCATION);
+      // Subscribe to custom telemetry topics
+      mqttClient.subscribe(TOPIC_MOTOR_SPEED);
+      mqttClient.subscribe(TOPIC_ERROR_COUNT);
+      mqttClient.subscribe(TOPIC_ARM_POSITION);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" retrying in 5 seconds");
+      delay(5000);
+    }
+  }
+}
+
+void sendTelemetry() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected. Reconnecting...");
+    setupWifi();
+    return;
+  }
+  
+  HTTPClient http;
+  http.begin(API_ENDPOINT);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("api-key", API_KEY);
+  
+  // Create JSON document
+  DynamicJsonDocument doc(1024);
+  doc["robotId"] = ROBOT_ID;
+  doc["batteryLevel"] = batteryLevel;
+  doc["temperature"] = temperature;
+  doc["status"] = status;
+  
+  JsonObject location = doc.createNestedObject("location");
+  location["latitude"] = latitude;
+  location["longitude"] = longitude;
+  
+  // Add custom telemetry
+  JsonObject customTelemetry = doc.createNestedObject("customTelemetry");
+  customTelemetry["motorSpeed"] = motorSpeed;
+  customTelemetry["errorCount"] = errorCount;
+  customTelemetry["armPosition"] = armPosition;
+  
+  String requestBody;
+  serializeJson(doc, requestBody);
+  
+  Serial.println("Sending telemetry data...");
+  Serial.println(requestBody);
+  
+  int httpResponseCode = http.POST(requestBody);
+  
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("HTTP Response code: " + String(httpResponseCode));
+    Serial.println(response);
+  } else {
+    Serial.print("Error on sending request: ");
+    Serial.println(httpResponseCode);
+  }
+  
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  // Connect to WiFi
+  setupWifi();
+  
+  // Configure MQTT
+  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+  mqttClient.setCallback(mqttCallback);
+}
+
+void loop() {
+  // Ensure MQTT connection
+  if (!mqttClient.connected()) {
+    reconnectMqtt();
+  }
+  mqttClient.loop();
+  
+  // Send telemetry at regular intervals
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastTelemetrySent >= TELEMETRY_INTERVAL) {
+    lastTelemetrySent = currentMillis;
+    sendTelemetry();
+  }
+}`;
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -409,37 +527,16 @@ For optimal performance:
       <CardHeader>
         <CardTitle>MQTT Integration</CardTitle>
         <CardDescription>
-          Connect your robots to RoboMetrics via MQTT. These examples show how to subscribe to MQTT topics and forward the data to our platform.
+          Connect your robots through MQTT, a lightweight messaging protocol ideal for IoT devices. These examples demonstrate how to bridge MQTT messages to the RoboMetrics platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="nodejs" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="python" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="nodejs">Node.js</TabsTrigger>
             <TabsTrigger value="python">Python</TabsTrigger>
-            <TabsTrigger value="topics">MQTT Topics</TabsTrigger>
+            <TabsTrigger value="node">Node.js</TabsTrigger>
+            <TabsTrigger value="esp">ESP32/Arduino</TabsTrigger>
           </TabsList>
-          <TabsContent value="nodejs" className="relative">
-            <div className="flex justify-end gap-2 mb-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => copyToClipboard(nodejsExample, "Node.js MQTT")}
-              >
-                <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Code
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => downloadFile(nodejsExample, "mqtt_bridge.js", "text/plain")}
-              >
-                <Download className="h-4 w-4 mr-1" /> Download
-              </Button>
-            </div>
-            <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
-              {nodejsExample}
-            </pre>
-          </TabsContent>
           <TabsContent value="python" className="relative">
             <div className="flex justify-end gap-2 mb-2">
               <Button 
@@ -461,28 +558,64 @@ For optimal performance:
               {pythonExample}
             </pre>
           </TabsContent>
-          <TabsContent value="topics" className="relative">
+          <TabsContent value="node" className="relative">
             <div className="flex justify-end gap-2 mb-2">
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => copyToClipboard(mqttTopicsDoc, "MQTT Topics")}
+                onClick={() => copyToClipboard(nodeExample, "Node.js MQTT")}
               >
-                <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Content
+                <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Code
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => downloadFile(mqttTopicsDoc, "mqtt_topics.md", "text/plain")}
+                onClick={() => downloadFile(nodeExample, "mqtt_bridge.js", "text/plain")}
               >
                 <Download className="h-4 w-4 mr-1" /> Download
               </Button>
             </div>
-            <div className="p-4 bg-muted rounded-md overflow-x-auto text-xs whitespace-pre-wrap">
-              {mqttTopicsDoc}
+            <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
+              {nodeExample}
+            </pre>
+          </TabsContent>
+          <TabsContent value="esp" className="relative">
+            <div className="flex justify-end gap-2 mb-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => copyToClipboard(espExample, "ESP32 MQTT")}
+              >
+                <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Code
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => downloadFile(espExample, "mqtt_esp32_bridge.ino", "text/plain")}
+              >
+                <Download className="h-4 w-4 mr-1" /> Download
+              </Button>
             </div>
+            <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
+              {espExample}
+            </pre>
           </TabsContent>
         </Tabs>
+        <div className="mt-6 bg-muted-foreground/10 p-4 rounded-md">
+          <h3 className="text-md font-semibold mb-2">MQTT Topic Structure</h3>
+          <p className="text-sm mb-4">
+            These examples use the following MQTT topic structure for standard and custom telemetry:
+          </p>
+          <ul className="list-disc pl-6 space-y-1 text-sm">
+            <li><code>robot/YOUR_ROBOT_ID/battery</code> - Battery level (0-100)</li>
+            <li><code>robot/YOUR_ROBOT_ID/temperature</code> - Temperature in Celsius</li>
+            <li><code>robot/YOUR_ROBOT_ID/status</code> - Robot status (OK, WARNING, ERROR)</li>
+            <li><code>robot/YOUR_ROBOT_ID/location</code> - JSON object with latitude and longitude</li>
+            <li><code>robot/YOUR_ROBOT_ID/motor_speed</code> - Custom telemetry for motor speed</li>
+            <li><code>robot/YOUR_ROBOT_ID/error_count</code> - Custom telemetry for error count</li>
+            <li><code>robot/YOUR_ROBOT_ID/arm_position</code> - Custom telemetry for arm position state</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );

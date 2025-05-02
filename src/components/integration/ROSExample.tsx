@@ -9,334 +9,436 @@ import { ClipboardCopy, Download } from "lucide-react";
 export function ROSExample() {
   const [activeTab, setActiveTab] = useState("ros1");
 
-  const ros1Example = `
-#!/usr/bin/env python3
-
+  const ros1Example = `#!/usr/bin/env python3
 import rospy
 import requests
 import json
-import math
-from std_msgs.msg import Float32, String
+from std_msgs.msg import Float32, Int32, String
 from sensor_msgs.msg import BatteryState, Temperature, NavSatFix
-from diagnostic_msgs.msg import DiagnosticStatus
+from geometry_msgs.msg import Point
 
-class RoboMetricsBridge:
-    def __init__(self):
-        rospy.init_node('robometrics_bridge')
-        
-        # Configuration
-        self.robot_id = rospy.get_param('~robot_id', 'YOUR_ROBOT_ID')
-        self.api_key = rospy.get_param('~api_key', 'YOUR_API_KEY')
-        self.api_endpoint = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
-        self.update_rate = rospy.get_param('~update_rate', 60.0)  # seconds
-        
-        # Robot state
-        self.battery_level = 100.0
-        self.temperature = 25.0
-        self.status = "OK"
-        self.location = {"latitude": 0.0, "longitude": 0.0}
-        self.has_location = False
-        
-        # Subscribers
-        rospy.Subscriber('/battery/state', BatteryState, self.battery_callback)
-        rospy.Subscriber('/battery/percentage', Float32, self.battery_percentage_callback)
-        rospy.Subscriber('/temperature', Temperature, self.temperature_callback)
-        rospy.Subscriber('/diagnostics', DiagnosticStatus, self.diagnostics_callback)
-        rospy.Subscriber('/fix', NavSatFix, self.location_callback)
-        
-        # Timer for sending data
-        rospy.Timer(rospy.Duration(self.update_rate), self.send_data)
-        
-        rospy.loginfo("RoboMetrics bridge initialized")
+# RoboMetrics configuration
+API_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
+ROBOT_ID = "YOUR_ROBOT_ID"
+API_KEY = "YOUR_ROBOT_API_KEY"
 
-    def battery_callback(self, msg):
-        # Convert battery state to percentage
-        self.battery_level = msg.percentage * 100.0
-        if math.isnan(self.battery_level):
-            # If percentage is not available, calculate from voltage
-            if msg.voltage > 0:
-                # Very simple linear mapping, adjust based on your battery
-                self.battery_level = (msg.voltage - 11.0) / (12.6 - 11.0) * 100.0
-                self.battery_level = max(0, min(100, self.battery_level))
+# Global variables to store the latest sensor values
+battery_level = 100
+temperature = 25.0
+latitude = 0.0
+longitude = 0.0
+robot_status = "OK"
+# Custom telemetry variables
+motor_speed = 0
+error_count = 0
+arm_position = "retracted"
 
-    def battery_percentage_callback(self, msg):
-        # Direct percentage input
-        self.battery_level = msg.data
+# Callback functions for ROS topics
+def battery_callback(data):
+    global battery_level
+    battery_level = data.percentage * 100
 
-    def temperature_callback(self, msg):
-        # Temperature in Celsius
-        self.temperature = msg.temperature
+def temperature_callback(data):
+    global temperature
+    temperature = data.temperature
 
-    def diagnostics_callback(self, msg):
-        # Map ROS diagnostic status to RoboMetrics status
-        if msg.level == DiagnosticStatus.OK:
-            self.status = "OK"
-        elif msg.level == DiagnosticStatus.WARN:
-            self.status = "WARNING"
-        elif msg.level == DiagnosticStatus.ERROR:
-            self.status = "ERROR"
-        else:
-            self.status = "OK"
+def location_callback(data):
+    global latitude, longitude
+    latitude = data.latitude
+    longitude = data.longitude
 
-    def location_callback(self, msg):
-        # GPS location
-        if not math.isnan(msg.latitude) and not math.isnan(msg.longitude):
-            self.location["latitude"] = msg.latitude
-            self.location["longitude"] = msg.longitude
-            self.has_location = True
+def status_callback(data):
+    global robot_status
+    robot_status = data.data
 
-    def send_data(self, event=None):
-        try:
-            # Prepare telemetry data
-            payload = {
-                "robotId": self.robot_id,
-                "batteryLevel": self.battery_level,
-                "temperature": self.temperature,
-                "status": self.status
-            }
-            
-            if self.has_location:
-                payload["location"] = self.location
-                
-            # Send data to RoboMetrics
-            headers = {
-                "Content-Type": "application/json",
-                "api-key": self.api_key
-            }
-            
-            rospy.loginfo("Sending telemetry data to RoboMetrics")
-            response = requests.post(
-                self.api_endpoint, 
-                headers=headers,
-                data=json.dumps(payload)
-            )
-            
-            if response.status_code == 200:
-                rospy.loginfo("Data sent successfully")
-            else:
-                rospy.logwarn(f"Failed to send data. Status code: {response.status_code}")
-                rospy.logwarn(f"Response: {response.text}")
-                
-        except Exception as e:
-            rospy.logerr(f"Error sending data: {e}")
+# Custom telemetry callbacks
+def motor_speed_callback(data):
+    global motor_speed
+    motor_speed = data.data
 
-if __name__ == "__main__":
+def error_count_callback(data):
+    global error_count
+    error_count = data.data
+
+def arm_position_callback(data):
+    global arm_position
+    arm_position = data.data
+
+def send_telemetry():
+    # Prepare telemetry data
+    data = {
+        "robotId": ROBOT_ID,
+        "batteryLevel": battery_level,
+        "temperature": temperature,
+        "status": robot_status,
+        "location": {
+            "latitude": latitude,
+            "longitude": longitude
+        },
+        "customTelemetry": {
+            "motorSpeed": motor_speed,
+            "errorCount": error_count,
+            "armPosition": arm_position
+        }
+    }
+    
+    # Send HTTP request
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": API_KEY
+    }
+    
     try:
-        bridge = RoboMetricsBridge()
-        rospy.spin()
+        response = requests.post(
+            API_ENDPOINT,
+            headers=headers,
+            data=json.dumps(data)
+        )
+        rospy.loginfo("Telemetry sent, status: %d", response.status_code)
+    except Exception as e:
+        rospy.logerr("Error sending telemetry: %s", str(e))
+
+def main():
+    # Initialize ROS node
+    rospy.init_node('robometrics_bridge', anonymous=True)
+    
+    # Subscribe to standard topics
+    rospy.Subscriber('battery', BatteryState, battery_callback)
+    rospy.Subscriber('temperature', Temperature, temperature_callback)
+    rospy.Subscriber('gps', NavSatFix, location_callback)
+    rospy.Subscriber('status', String, status_callback)
+    
+    # Subscribe to custom telemetry topics
+    rospy.Subscriber('motor_speed', Int32, motor_speed_callback)
+    rospy.Subscriber('error_count', Int32, error_count_callback)
+    rospy.Subscriber('arm_position', String, arm_position_callback)
+    
+    # Send telemetry at regular intervals
+    rate = rospy.Rate(1/60)  # Send every 60 seconds
+    
+    while not rospy.is_shutdown():
+        send_telemetry()
+        rate.sleep()
+
+if __name__ == '__main__':
+    try:
+        main()
     except rospy.ROSInterruptException:
         pass`;
 
-  const ros2Example = `
-#!/usr/bin/env python3
-
+  const ros2Example = `#!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
 import requests
 import json
-import math
-from std_msgs.msg import Float32
+import time
 from sensor_msgs.msg import BatteryState, Temperature, NavSatFix
-from diagnostic_msgs.msg import DiagnosticStatus
+from std_msgs.msg import Float32, Int32, String
 
-class RoboMetricsBridge(Node):
+# RoboMetrics configuration
+API_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
+ROBOT_ID = "YOUR_ROBOT_ID"
+API_KEY = "YOUR_ROBOT_API_KEY"
+
+class RoboMetricsNode(Node):
     def __init__(self):
         super().__init__('robometrics_bridge')
         
-        # Configuration
-        self.declare_parameter('robot_id', 'YOUR_ROBOT_ID')
-        self.declare_parameter('api_key', 'YOUR_API_KEY')
-        self.declare_parameter('update_rate', 60.0)
-        
-        self.robot_id = self.get_parameter('robot_id').value
-        self.api_key = self.get_parameter('api_key').value
-        self.api_endpoint = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry"
-        self.update_rate = self.get_parameter('update_rate').value  # seconds
-        
-        # Robot state
-        self.battery_level = 100.0
+        # Initialize sensor values
+        self.battery_level = 100
         self.temperature = 25.0
-        self.status = "OK"
-        self.location = {"latitude": 0.0, "longitude": 0.0}
-        self.has_location = False
+        self.latitude = 0.0
+        self.longitude = 0.0
+        self.robot_status = "OK"
+        # Custom telemetry variables
+        self.motor_speed = 0
+        self.error_count = 0
+        self.arm_position = "retracted"
         
-        # Subscribers
-        self.create_subscription(
+        # Create subscribers for standard topics
+        self.battery_sub = self.create_subscription(
             BatteryState, 
-            '/battery/state', 
-            self.battery_callback, 
-            10
-        )
-        self.create_subscription(
-            Float32, 
-            '/battery/percentage', 
-            self.battery_percentage_callback, 
-            10
-        )
-        self.create_subscription(
+            'battery',
+            self.battery_callback,
+            10)
+            
+        self.temp_sub = self.create_subscription(
             Temperature, 
-            '/temperature', 
-            self.temperature_callback, 
-            10
-        )
-        self.create_subscription(
-            DiagnosticStatus, 
-            '/diagnostics', 
-            self.diagnostics_callback, 
-            10
-        )
-        self.create_subscription(
+            'temperature',
+            self.temperature_callback,
+            10)
+            
+        self.gps_sub = self.create_subscription(
             NavSatFix, 
-            '/fix', 
-            self.location_callback, 
-            10
-        )
+            'gps',
+            self.location_callback,
+            10)
+            
+        self.status_sub = self.create_subscription(
+            String, 
+            'status',
+            self.status_callback,
+            10)
         
-        # Timer for sending data
-        self.timer = self.create_timer(self.update_rate, self.send_data)
+        # Create subscribers for custom telemetry topics
+        self.motor_speed_sub = self.create_subscription(
+            Int32, 
+            'motor_speed',
+            self.motor_speed_callback,
+            10)
+            
+        self.error_count_sub = self.create_subscription(
+            Int32, 
+            'error_count',
+            self.error_count_callback,
+            10)
+            
+        self.arm_position_sub = self.create_subscription(
+            String, 
+            'arm_position',
+            self.arm_position_callback,
+            10)
         
-        self.get_logger().info("RoboMetrics bridge initialized")
-
+        # Create timer for sending telemetry
+        self.timer = self.create_timer(60.0, self.send_telemetry)
+        self.get_logger().info('RoboMetrics bridge started')
+    
+    # Callback functions
     def battery_callback(self, msg):
-        # Convert battery state to percentage
-        self.battery_level = msg.percentage * 100.0
-        if math.isnan(self.battery_level):
-            # If percentage is not available, calculate from voltage
-            if msg.voltage > 0:
-                # Very simple linear mapping, adjust based on your battery
-                self.battery_level = (msg.voltage - 11.0) / (12.6 - 11.0) * 100.0
-                self.battery_level = max(0, min(100, self.battery_level))
-
-    def battery_percentage_callback(self, msg):
-        # Direct percentage input
-        self.battery_level = msg.data
-
+        self.battery_level = msg.percentage * 100
+    
     def temperature_callback(self, msg):
-        # Temperature in Celsius
         self.temperature = msg.temperature
-
-    def diagnostics_callback(self, msg):
-        # Map ROS diagnostic status to RoboMetrics status
-        if msg.level == DiagnosticStatus.OK:
-            self.status = "OK"
-        elif msg.level == DiagnosticStatus.WARN:
-            self.status = "WARNING"
-        elif msg.level == DiagnosticStatus.ERROR:
-            self.status = "ERROR"
-        else:
-            self.status = "OK"
-
+    
     def location_callback(self, msg):
-        # GPS location
-        if not math.isnan(msg.latitude) and not math.isnan(msg.longitude):
-            self.location["latitude"] = msg.latitude
-            self.location["longitude"] = msg.longitude
-            self.has_location = True
-
-    def send_data(self):
+        self.latitude = msg.latitude
+        self.longitude = msg.longitude
+    
+    def status_callback(self, msg):
+        self.robot_status = msg.data
+    
+    # Custom telemetry callbacks
+    def motor_speed_callback(self, msg):
+        self.motor_speed = msg.data
+    
+    def error_count_callback(self, msg):
+        self.error_count = msg.data
+    
+    def arm_position_callback(self, msg):
+        self.arm_position = msg.data
+    
+    # Send telemetry to RoboMetrics
+    def send_telemetry(self):
+        # Prepare telemetry data
+        data = {
+            "robotId": ROBOT_ID,
+            "batteryLevel": self.battery_level,
+            "temperature": self.temperature,
+            "status": self.robot_status,
+            "location": {
+                "latitude": self.latitude,
+                "longitude": self.longitude
+            },
+            "customTelemetry": {
+                "motorSpeed": self.motor_speed,
+                "errorCount": self.error_count,
+                "armPosition": self.arm_position
+            }
+        }
+        
+        # Send HTTP request
+        headers = {
+            "Content-Type": "application/json",
+            "api-key": API_KEY
+        }
+        
         try:
-            # Prepare telemetry data
-            payload = {
-                "robotId": self.robot_id,
-                "batteryLevel": self.battery_level,
-                "temperature": self.temperature,
-                "status": self.status
-            }
-            
-            if self.has_location:
-                payload["location"] = self.location
-                
-            # Send data to RoboMetrics
-            headers = {
-                "Content-Type": "application/json",
-                "api-key": self.api_key
-            }
-            
-            self.get_logger().info("Sending telemetry data to RoboMetrics")
             response = requests.post(
-                self.api_endpoint, 
+                API_ENDPOINT,
                 headers=headers,
-                data=json.dumps(payload)
+                data=json.dumps(data)
             )
-            
-            if response.status_code == 200:
-                self.get_logger().info("Data sent successfully")
-            else:
-                self.get_logger().warn(f"Failed to send data. Status code: {response.status_code}")
-                self.get_logger().warn(f"Response: {response.text}")
-                
+            self.get_logger().info(f'Telemetry sent, status: {response.status_code}')
         except Exception as e:
-            self.get_logger().error(f"Error sending data: {e}")
+            self.get_logger().error(f'Error sending telemetry: {str(e)}')
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = RoboMetricsBridge()
+def main():
+    rclpy.init()
+    node = RoboMetricsNode()
     
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
+    
+    node.destroy_node()
+    rclpy.shutdown()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()`;
 
-  const launchFileRos1 = `
-<launch>
-  <node name="robometrics_bridge" pkg="robometrics_bridge" type="robometrics_bridge.py" output="screen">
-    <param name="robot_id" value="YOUR_ROBOT_ID" />
-    <param name="api_key" value="YOUR_API_KEY" />
-    <param name="update_rate" value="60.0" />
-  </node>
-</launch>`;
+  const cppExample = `#include <ros/ros.h>
+#include <curl/curl.h>
+#include <sensor_msgs/BatteryState.h>
+#include <sensor_msgs/Temperature.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <std_msgs/Float32.h>
+#include <std_msgs/Int32.h>
+#include <std_msgs/String.h>
+#include <string>
+#include <sstream>
 
-  const launchFileRos2 = `
-from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+// RoboMetrics configuration
+const std::string API_ENDPOINT = "https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry";
+const std::string ROBOT_ID = "YOUR_ROBOT_ID";
+const std::string API_KEY = "YOUR_ROBOT_API_KEY";
 
-def generate_launch_description():
-    # Declare launch arguments
-    robot_id_arg = DeclareLaunchArgument(
-        'robot_id',
-        default_value='YOUR_ROBOT_ID',
-        description='Robot ID for RoboMetrics'
-    )
+// Global variables to store sensor values
+float battery_level = 100.0;
+float temperature = 25.0;
+double latitude = 0.0;
+double longitude = 0.0;
+std::string robot_status = "OK";
+// Custom telemetry variables
+int motor_speed = 0;
+int error_count = 0;
+std::string arm_position = "retracted";
+
+// Callback functions
+void batteryCallback(const sensor_msgs::BatteryState::ConstPtr& msg) {
+    battery_level = msg->percentage * 100.0f;
+}
+
+void temperatureCallback(const sensor_msgs::Temperature::ConstPtr& msg) {
+    temperature = msg->temperature;
+}
+
+void locationCallback(const sensor_msgs::NavSatFix::ConstPtr& msg) {
+    latitude = msg->latitude;
+    longitude = msg->longitude;
+}
+
+void statusCallback(const std_msgs::String::ConstPtr& msg) {
+    robot_status = msg->data;
+}
+
+// Custom telemetry callbacks
+void motorSpeedCallback(const std_msgs::Int32::ConstPtr& msg) {
+    motor_speed = msg->data;
+}
+
+void errorCountCallback(const std_msgs::Int32::ConstPtr& msg) {
+    error_count = msg->data;
+}
+
+void armPositionCallback(const std_msgs::String::ConstPtr& msg) {
+    arm_position = msg->data;
+}
+
+// Helper function for CURL
+size_t writeCallback(char* ptr, size_t size, size_t nmemb, std::string* data) {
+    data->append(ptr, size * nmemb);
+    return size * nmemb;
+}
+
+void sendTelemetry() {
+    CURL* curl;
+    CURLcode res;
+    std::string readBuffer;
     
-    api_key_arg = DeclareLaunchArgument(
-        'api_key',
-        default_value='YOUR_API_KEY',
-        description='API Key for RoboMetrics'
-    )
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
     
-    update_rate_arg = DeclareLaunchArgument(
-        'update_rate',
-        default_value='60.0',
-        description='Update rate in seconds for sending data'
-    )
+    if(curl) {
+        // Prepare JSON payload
+        std::stringstream json_data;
+        json_data << "{"
+                  << "\\\"robotId\\\":\\\"" << ROBOT_ID << "\\\","
+                  << "\\\"batteryLevel\\\":" << battery_level << ","
+                  << "\\\"temperature\\\":" << temperature << ","
+                  << "\\\"status\\\":\\\"" << robot_status << "\\\","
+                  << "\\\"location\\\":{"
+                  << "\\\"latitude\\\":" << latitude << ","
+                  << "\\\"longitude\\\":" << longitude
+                  << "},"
+                  << "\\\"customTelemetry\\\":{"
+                  << "\\\"motorSpeed\\\":" << motor_speed << ","
+                  << "\\\"errorCount\\\":" << error_count << ","
+                  << "\\\"armPosition\\\":\\\"" << arm_position << "\\\""
+                  << "}"
+                  << "}";
+                  
+        std::string payload = json_data.str();
+        
+        // Set up CURL request
+        curl_easy_setopt(curl, CURLOPT_URL, API_ENDPOINT.c_str());
+        
+        // Set headers
+        struct curl_slist* headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        std::string auth_header = "api-key: " + API_KEY;
+        headers = curl_slist_append(headers, auth_header.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        
+        // Set request body
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        
+        // Set callback function
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        
+        // Perform request
+        res = curl_easy_perform(curl);
+        
+        // Check for errors
+        if(res != CURLE_OK) {
+            ROS_ERROR("Failed to send telemetry: %s", curl_easy_strerror(res));
+        } else {
+            long response_code;
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+            ROS_INFO("Telemetry sent, status: %ld", response_code);
+        }
+        
+        // Clean up
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+    }
     
-    # Create the node
-    robometrics_node = Node(
-        package='robometrics_bridge',
-        executable='robometrics_bridge',
-        name='robometrics_bridge',
-        parameters=[{
-            'robot_id': LaunchConfiguration('robot_id'),
-            'api_key': LaunchConfiguration('api_key'),
-            'update_rate': LaunchConfiguration('update_rate')
-        }],
-        output='screen'
-    )
+    curl_global_cleanup();
+}
+
+int main(int argc, char** argv) {
+    // Initialize ROS
+    ros::init(argc, argv, "robometrics_bridge");
+    ros::NodeHandle nh;
     
-    return LaunchDescription([
-        robot_id_arg,
-        api_key_arg,
-        update_rate_arg,
-        robometrics_node
-    ])`;
+    // Subscribe to topics
+    ros::Subscriber battery_sub = nh.subscribe("battery", 10, batteryCallback);
+    ros::Subscriber temp_sub = nh.subscribe("temperature", 10, temperatureCallback);
+    ros::Subscriber gps_sub = nh.subscribe("gps", 10, locationCallback);
+    ros::Subscriber status_sub = nh.subscribe("status", 10, statusCallback);
+    
+    // Subscribe to custom telemetry topics
+    ros::Subscriber motor_speed_sub = nh.subscribe("motor_speed", 10, motorSpeedCallback);
+    ros::Subscriber error_count_sub = nh.subscribe("error_count", 10, errorCountCallback);
+    ros::Subscriber arm_position_sub = nh.subscribe("arm_position", 10, armPositionCallback);
+    
+    // Set up timer
+    ros::Rate rate(1.0/60.0); // 60 seconds interval
+    
+    while (ros::ok()) {
+        // Process callbacks
+        ros::spinOnce();
+        
+        // Send telemetry
+        sendTelemetry();
+        
+        // Wait for next iteration
+        rate.sleep();
+    }
+    
+    return 0;
+}`;
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -361,22 +463,22 @@ def generate_launch_description():
       <CardHeader>
         <CardTitle>ROS Integration</CardTitle>
         <CardDescription>
-          Integrate your ROS-powered robots with RoboMetrics using these bridge nodes. These examples show how to subscribe to standard ROS topics and send the data to the platform.
+          Connect ROS-based robots to RoboMetrics with these examples. You can bridge your existing ROS topics to send telemetry data to the platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="ros1" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="ros1">ROS1 Python</TabsTrigger>
-            <TabsTrigger value="ros2">ROS2 Python</TabsTrigger>
-            <TabsTrigger value="launch">Launch Files</TabsTrigger>
+            <TabsTrigger value="ros1">ROS 1 (Python)</TabsTrigger>
+            <TabsTrigger value="ros2">ROS 2 (Python)</TabsTrigger>
+            <TabsTrigger value="cpp">ROS 1 (C++)</TabsTrigger>
           </TabsList>
           <TabsContent value="ros1" className="relative">
             <div className="flex justify-end gap-2 mb-2">
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => copyToClipboard(ros1Example, "ROS1")}
+                onClick={() => copyToClipboard(ros1Example, "ROS 1 Python")}
               >
                 <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Code
               </Button>
@@ -397,7 +499,7 @@ def generate_launch_description():
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => copyToClipboard(ros2Example, "ROS2")}
+                onClick={() => copyToClipboard(ros2Example, "ROS 2 Python")}
               >
                 <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Code
               </Button>
@@ -413,57 +515,37 @@ def generate_launch_description():
               {ros2Example}
             </pre>
           </TabsContent>
-          <TabsContent value="launch" className="relative space-y-6">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-semibold">ROS1 Launch File</h3>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => copyToClipboard(launchFileRos1, "ROS1 Launch")}
-                  >
-                    <ClipboardCopy className="h-4 w-4 mr-1" /> Copy
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => downloadFile(launchFileRos1, "robometrics.launch", "text/plain")}
-                  >
-                    <Download className="h-4 w-4 mr-1" /> Download
-                  </Button>
-                </div>
-              </div>
-              <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
-                {launchFileRos1}
-              </pre>
+          <TabsContent value="cpp" className="relative">
+            <div className="flex justify-end gap-2 mb-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => copyToClipboard(cppExample, "ROS C++")}
+              >
+                <ClipboardCopy className="h-4 w-4 mr-1" /> Copy Code
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => downloadFile(cppExample, "robometrics_bridge.cpp", "text/plain")}
+              >
+                <Download className="h-4 w-4 mr-1" /> Download
+              </Button>
             </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-semibold">ROS2 Launch File</h3>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => copyToClipboard(launchFileRos2, "ROS2 Launch")}
-                  >
-                    <ClipboardCopy className="h-4 w-4 mr-1" /> Copy
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => downloadFile(launchFileRos2, "robometrics_launch.py", "text/plain")}
-                  >
-                    <Download className="h-4 w-4 mr-1" /> Download
-                  </Button>
-                </div>
-              </div>
-              <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
-                {launchFileRos2}
-              </pre>
-            </div>
+            <pre className="p-4 bg-muted rounded-md overflow-x-auto text-xs">
+              {cppExample}
+            </pre>
           </TabsContent>
         </Tabs>
+        <div className="mt-6 bg-muted-foreground/10 p-4 rounded-md">
+          <h3 className="text-md font-semibold mb-2">Custom Telemetry Tips for ROS</h3>
+          <ul className="list-disc pl-6 space-y-1 text-sm">
+            <li>Create dedicated ROS topics for your custom telemetry values</li>
+            <li>For structured data, use custom message types</li>
+            <li>The examples subscribe to <code>motor_speed</code>, <code>error_count</code>, and <code>arm_position</code> topics</li>
+            <li>Adapt the example code to include your own specific topics and data types</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );

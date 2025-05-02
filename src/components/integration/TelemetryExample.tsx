@@ -21,6 +21,11 @@ export function TelemetryExample() {
       "latitude": 37.7749,
       "longitude": -122.4194
     },
+    "customTelemetry": {
+      "motorSpeed": 1200,
+      "errorCount": 0,
+      "armPosition": "extended"
+    },
     "timestamp": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
   }'`;
 
@@ -39,6 +44,11 @@ fetch("https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry", {
     location: {
       latitude: 37.7749,
       longitude: -122.4194
+    },
+    customTelemetry: {
+      motorSpeed: 1200,
+      errorCount: 0,
+      armPosition: "extended"
     },
     timestamp: new Date().toISOString()
   })
@@ -64,6 +74,11 @@ data = {
     "location": {
         "latitude": 37.7749,
         "longitude": -122.4194
+    },
+    "customTelemetry": {
+        "motorSpeed": 1200,
+        "errorCount": 0,
+        "armPosition": "extended"
     },
     "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 }

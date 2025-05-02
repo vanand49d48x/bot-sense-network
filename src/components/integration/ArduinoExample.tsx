@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,11 +25,17 @@ const char* API_KEY = "YOUR_ROBOT_API_KEY";
 // Sensor pins
 const int BATTERY_PIN = A0;
 const int TEMPERATURE_PIN = A1;
+// Custom sensor pins
+const int MOTOR_SPEED_PIN = A2;
 
 // Variables for sensors
 float batteryVoltage = 0.0;
 float batteryPercentage = 0.0;
 float temperature = 0.0;
+// Custom sensor variables
+int motorSpeed = 0;
+int errorCount = 0;
+const char* armPosition = "retracted"; // Example of a state variable
 
 // Position (update these with GPS or other positioning if available)
 float latitude = 37.7749;
@@ -78,6 +85,18 @@ void readSensors() {
   float voltage = tempRaw * (3.3 / 1023.0);
   temperature = (voltage - 0.5) * 100; // TMP36 formula
   
+  // Read custom sensor data
+  motorSpeed = analogRead(MOTOR_SPEED_PIN) * 4; // Example scaling
+  // Simulate some custom data
+  errorCount = random(0, 5); // For demonstration
+  
+  // Example of changing a state variable
+  if (millis() % 60000 > 30000) {
+    armPosition = "extended";
+  } else {
+    armPosition = "retracted";
+  }
+  
   Serial.print("Battery: ");
   Serial.print(batteryPercentage);
   Serial.println("%");
@@ -85,6 +104,9 @@ void readSensors() {
   Serial.print("Temperature: ");
   Serial.print(temperature);
   Serial.println("°C");
+  
+  Serial.print("Motor Speed: ");
+  Serial.println(motorSpeed);
 }
 
 void sendTelemetry() {
@@ -101,7 +123,7 @@ void sendTelemetry() {
   http.addHeader("api-key", API_KEY);
   
   // Create JSON document
-  StaticJsonDocument<300> doc;
+  StaticJsonDocument<500> doc; // Increased size for custom telemetry
   doc["robotId"] = ROBOT_ID;
   doc["batteryLevel"] = batteryPercentage;
   doc["temperature"] = temperature;
@@ -110,6 +132,12 @@ void sendTelemetry() {
   JsonObject location = doc.createNestedObject("location");
   location["latitude"] = latitude;
   location["longitude"] = longitude;
+  
+  // Add custom telemetry data
+  JsonObject customTelemetry = doc.createNestedObject("customTelemetry");
+  customTelemetry["motorSpeed"] = motorSpeed;
+  customTelemetry["errorCount"] = errorCount;
+  customTelemetry["armPosition"] = armPosition;
   
   // Serialize JSON to string
   String requestBody;
@@ -149,11 +177,17 @@ const char* API_KEY = "YOUR_ROBOT_API_KEY";
 // Sensor pins
 const int BATTERY_PIN = 34; // ESP32 ADC pin
 const int TEMPERATURE_PIN = 35; // ESP32 ADC pin
+// Custom sensor pins
+const int MOTOR_SPEED_PIN = 32; // ESP32 ADC pin
 
 // Variables for sensors
 float batteryVoltage = 0.0;
 float batteryPercentage = 0.0;
 float temperature = 0.0;
+// Custom sensor variables
+int motorSpeed = 0;
+int errorCount = 0;
+const char* armPosition = "retracted"; // Example of a state variable
 
 // Position (update these with GPS or other positioning if available)
 float latitude = 37.7749;
@@ -203,6 +237,18 @@ void readSensors() {
   float voltage = tempRaw * (3.3 / 4095.0);
   temperature = (voltage - 0.5) * 100; // TMP36 formula
   
+  // Read custom sensor data
+  motorSpeed = analogRead(MOTOR_SPEED_PIN) * 4; // Example scaling
+  // Simulate some custom data
+  errorCount = random(0, 5); // For demonstration
+  
+  // Example of changing a state variable
+  if (millis() % 60000 > 30000) {
+    armPosition = "extended";
+  } else {
+    armPosition = "retracted";
+  }
+  
   Serial.print("Battery: ");
   Serial.print(batteryPercentage);
   Serial.println("%");
@@ -210,6 +256,9 @@ void readSensors() {
   Serial.print("Temperature: ");
   Serial.print(temperature);
   Serial.println("°C");
+  
+  Serial.print("Motor Speed: ");
+  Serial.println(motorSpeed);
 }
 
 void sendTelemetry() {
@@ -226,7 +275,7 @@ void sendTelemetry() {
   http.addHeader("api-key", API_KEY);
   
   // Create JSON document
-  StaticJsonDocument<300> doc;
+  StaticJsonDocument<500> doc; // Increased size for custom telemetry
   doc["robotId"] = ROBOT_ID;
   doc["batteryLevel"] = batteryPercentage;
   doc["temperature"] = temperature;
@@ -235,6 +284,12 @@ void sendTelemetry() {
   JsonObject location = doc.createNestedObject("location");
   location["latitude"] = latitude;
   location["longitude"] = longitude;
+  
+  // Add custom telemetry data
+  JsonObject customTelemetry = doc.createNestedObject("customTelemetry");
+  customTelemetry["motorSpeed"] = motorSpeed;
+  customTelemetry["errorCount"] = errorCount;
+  customTelemetry["armPosition"] = armPosition;
   
   // Serialize JSON to string
   String requestBody;
@@ -269,6 +324,7 @@ RoboMetrics::RoboMetrics(const char* robotId, const char* apiKey) {
   _temperature = 25;
   _status = "OK";
   _hasLocation = false;
+  _hasCustomTelemetry = false;
 }
 
 void RoboMetrics::setWiFi(const char* ssid, const char* password) {
@@ -312,6 +368,52 @@ void RoboMetrics::setStatus(const char* status) {
   _status = status;
 }
 
+// New methods for custom telemetry
+void RoboMetrics::beginCustomTelemetry() {
+  _customTelemetryData = "";
+  _customTelemetryData += "{";
+  _customTelemetryCommaNeeded = false;
+  _hasCustomTelemetry = true;
+}
+
+void RoboMetrics::addCustomTelemetryInt(const char* key, int value) {
+  if (_customTelemetryCommaNeeded) {
+    _customTelemetryData += ",";
+  }
+  _customTelemetryData += "\\\"";
+  _customTelemetryData += key;
+  _customTelemetryData += "\\\":";
+  _customTelemetryData += value;
+  _customTelemetryCommaNeeded = true;
+}
+
+void RoboMetrics::addCustomTelemetryFloat(const char* key, float value) {
+  if (_customTelemetryCommaNeeded) {
+    _customTelemetryData += ",";
+  }
+  _customTelemetryData += "\\\"";
+  _customTelemetryData += key;
+  _customTelemetryData += "\\\":";
+  _customTelemetryData += value;
+  _customTelemetryCommaNeeded = true;
+}
+
+void RoboMetrics::addCustomTelemetryString(const char* key, const char* value) {
+  if (_customTelemetryCommaNeeded) {
+    _customTelemetryData += ",";
+  }
+  _customTelemetryData += "\\\"";
+  _customTelemetryData += key;
+  _customTelemetryData += "\\\":\\\"";
+  _customTelemetryData += value;
+  _customTelemetryData += "\\\"";
+  _customTelemetryCommaNeeded = true;
+}
+
+void RoboMetrics::endCustomTelemetry() {
+  _customTelemetryData += "}";
+}
+
 bool RoboMetrics::sendTelemetry() {
   #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_ARCH_SAMD)
     if (WiFi.status() != WL_CONNECTED) {
@@ -326,22 +428,33 @@ bool RoboMetrics::sendTelemetry() {
     http.addHeader("Content-Type", "application/json");
     http.addHeader("api-key", _apiKey);
     
-    StaticJsonDocument<300> doc;
-    doc["robotId"] = _robotId;
-    doc["batteryLevel"] = _batteryLevel;
-    doc["temperature"] = _temperature;
-    doc["status"] = _status;
+    // Build the JSON string manually to save memory
+    String jsonData = "{\\\"robotId\\\":\\\"";
+    jsonData += _robotId;
+    jsonData += "\\\",\\\"batteryLevel\\\":";
+    jsonData += _batteryLevel;
+    jsonData += ",\\\"temperature\\\":";
+    jsonData += _temperature;
+    jsonData += ",\\\"status\\\":\\\"";
+    jsonData += _status;
+    jsonData += "\\\"";
     
     if (_hasLocation) {
-      JsonObject location = doc.createNestedObject("location");
-      location["latitude"] = _latitude;
-      location["longitude"] = _longitude;
+      jsonData += ",\\\"location\\\":{\\\"latitude\\\":";
+      jsonData += _latitude;
+      jsonData += ",\\\"longitude\\\":";
+      jsonData += _longitude;
+      jsonData += "}";
     }
     
-    String requestBody;
-    serializeJson(doc, requestBody);
+    if (_hasCustomTelemetry) {
+      jsonData += ",\\\"customTelemetry\\\":";
+      jsonData += _customTelemetryData;
+    }
     
-    int httpResponseCode = http.POST(requestBody);
+    jsonData += "}";
+    
+    int httpResponseCode = http.POST(jsonData);
     bool success = httpResponseCode > 0;
     http.end();
     
@@ -380,6 +493,14 @@ class RoboMetrics {
     void setTemperature(float temp);
     void setLocation(float latitude, float longitude);
     void setStatus(const char* status);
+    
+    // Custom telemetry methods
+    void beginCustomTelemetry();
+    void addCustomTelemetryInt(const char* key, int value);
+    void addCustomTelemetryFloat(const char* key, float value);
+    void addCustomTelemetryString(const char* key, const char* value);
+    void endCustomTelemetry();
+    
     bool sendTelemetry();
     
   private:
@@ -394,6 +515,9 @@ class RoboMetrics {
     float _latitude;
     float _longitude;
     bool _hasLocation;
+    bool _hasCustomTelemetry;
+    String _customTelemetryData;
+    bool _customTelemetryCommaNeeded;
 };
 
 #endif`;
@@ -429,6 +553,13 @@ void loop() {
   robot.setBatteryLevel(batteryLevel);
   robot.setTemperature(temperature);
   robot.setLocation(37.7749, -122.4194); // Example location
+  
+  // Add custom telemetry data
+  robot.beginCustomTelemetry();
+  robot.addCustomTelemetryInt("motorSpeed", 1200);
+  robot.addCustomTelemetryInt("errorCount", 0);
+  robot.addCustomTelemetryString("armPosition", "extended");
+  robot.endCustomTelemetry();
   
   // Send telemetry data
   bool success = robot.sendTelemetry();
