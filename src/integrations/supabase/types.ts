@@ -14,7 +14,6 @@ export type Database = {
           created_at: string
           id: string
           message: string
-          notification_sent: boolean
           resolved: boolean | null
           resolved_at: string | null
           robot_id: string
@@ -24,7 +23,6 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
-          notification_sent?: boolean
           resolved?: boolean | null
           resolved_at?: string | null
           robot_id: string
@@ -34,7 +32,6 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
-          notification_sent?: boolean
           resolved?: boolean | null
           resolved_at?: string | null
           robot_id?: string

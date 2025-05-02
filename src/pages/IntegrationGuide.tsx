@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { TelemetryExample } from "@/components/integration/TelemetryExample";
-import { ROSIntegration } from "@/components/integration/ROSIntegration";
 
 export default function IntegrationGuide() {
   return (
@@ -70,9 +69,6 @@ export default function IntegrationGuide() {
             </ul>
           </div>
         </section>
-        
-        {/* Add the ROS Integration section */}
-        <ROSIntegration />
       </div>
     </div>
   );

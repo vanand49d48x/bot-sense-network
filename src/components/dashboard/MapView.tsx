@@ -8,11 +8,6 @@ interface MapViewProps {
 }
 
 export function MapView({ robots }: MapViewProps) {
-  // Generate a robots map key based on their locations and heartbeats
-  const robotsKey = robots.filter(r => r.location).map(r => 
-    `${r.id}-${r.location?.latitude}-${r.location?.longitude}-${r.lastHeartbeat}`
-  ).join('|');
-
   // Filter robots that have location data
   const robotsWithLocation = robots.filter(robot => robot.location !== undefined);
 
@@ -27,11 +22,7 @@ export function MapView({ robots }: MapViewProps) {
       </CardHeader>
       <CardContent>
         <div className="h-64 rounded-md overflow-hidden">
-          <LeafletMap 
-            robots={robots} 
-            height="100%" 
-            key={robotsKey} // This ensures the map re-renders with new data
-          />
+          <LeafletMap robots={robots} height="100%" />
         </div>
         <div className="mt-4 text-xs text-muted-foreground">
           Showing {robotsWithLocation.length} robots with location data

@@ -94,14 +94,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-/* Add this to ensure the entire app adopts the theme colors */
-html, body, #root {
-  height: 100%;
-  width: 100%;
-}
-
-#root {
-  display: flex;
-  flex-direction: column;
-}
