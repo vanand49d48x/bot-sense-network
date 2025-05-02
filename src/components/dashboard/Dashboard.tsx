@@ -66,6 +66,7 @@ export function Dashboard() {
             setLocalRobots(prevRobots => {
               return prevRobots.map(robot => {
                 if (robot.id === payload.new.id) {
+                  console.log('Updating robot in local state:', payload.new);
                   // Cast the payload to SupabaseRobot and use the mapper function
                   const supabaseRobot = payload.new as SupabaseRobot;
                   return mapSupabaseRobotToAppRobot(supabaseRobot);
