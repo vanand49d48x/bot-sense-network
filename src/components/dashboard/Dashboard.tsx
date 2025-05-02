@@ -1,9 +1,7 @@
-
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
 import { MapView } from "./MapView";
-import { FleetStatus } from "./FleetStatus";
 import { AddRobotModal } from "./AddRobotModal";
 import { useRobots } from "@/hooks/useRobots";
 import { useAuth } from "@/context/AuthContext";
@@ -235,7 +233,6 @@ export function Dashboard() {
             </AlertDescription>
           </Alert>
           
-          <FleetStatus robots={localRobots} />
           <MapView robots={localRobots} />
           <RobotStatusGrid robots={localRobots} />
         </>
