@@ -134,8 +134,13 @@ const MapViewPage = () => {
     setIsAddZoneOpen(false);
   };
 
+  // Filter robots by selected robot
+  const filteredRobots = selectedRobot && selectedRobot !== 'all'
+    ? robots.filter(robot => robot.id === selectedRobot)
+    : robots;
+
   // Filter historical paths by selected robot
-  const filteredPaths = selectedRobot
+  const filteredPaths = selectedRobot && selectedRobot !== 'all'
     ? historicalPaths.filter(path => path.robotId === selectedRobot)
     : historicalPaths;
 
@@ -324,7 +329,7 @@ const MapViewPage = () => {
             <CardContent>
               <div className="h-[500px] rounded-md overflow-hidden mb-4">
                 <LeafletMap 
-                  robots={robots}
+                  robots={filteredRobots}
                   height="100%"
                   showTooltips={true}
                   historicalPaths={displayedHistoricalPaths}
@@ -332,7 +337,7 @@ const MapViewPage = () => {
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                {robotsWithLocation.map(robot => (
+                {filteredRobots.filter(robot => robot.location !== undefined).map(robot => (
                   <Card key={robot.id} className="bg-muted/40">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
