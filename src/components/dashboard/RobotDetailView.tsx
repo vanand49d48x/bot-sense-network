@@ -4,11 +4,13 @@ import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusBadge } from "./RobotStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Battery, Thermometer, MapPin, Clock, Info, Code, History } from "lucide-react";
+import { Battery, Thermometer, MapPin, Clock, Info, Code, History, ChartLine } from "lucide-react";
 import { CustomTelemetryDisplay } from "./CustomTelemetryDisplay";
 import { CustomTelemetryGuide } from "../integration/CustomTelemetryGuide";
 import { format } from "date-fns";
 import { TelemetryHistory } from "./TelemetryHistory";
+import { TelemetryChart } from "./TelemetryChart";
+import { RobotPathHistory } from "./RobotPathHistory";
 
 interface RobotDetailViewProps {
   robot: Robot;
@@ -26,6 +28,8 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
     }
   };
 
+  const retentionDays = userProfile?.telemetry_retention_days || 7;
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
@@ -36,8 +40,9 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="charts">Charts</TabsTrigger>
             <TabsTrigger value="telemetry">Custom Telemetry</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="integration">API Integration</TabsTrigger>
@@ -95,6 +100,13 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
             </div>
           </TabsContent>
           
+          <TabsContent value="charts">
+            <div className="space-y-6">
+              <TelemetryChart robotId={robot.id} retentionDays={retentionDays} />
+              <RobotPathHistory robot={robot} retentionDays={retentionDays} />
+            </div>
+          </TabsContent>
+          
           <TabsContent value="telemetry">
             <CustomTelemetryDisplay robot={robot} />
           </TabsContent>
@@ -102,7 +114,7 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
           <TabsContent value="history">
             <TelemetryHistory 
               robotId={robot.id} 
-              retentionDays={userProfile?.telemetryRetentionDays || 7} 
+              retentionDays={retentionDays}
             />
           </TabsContent>
           
