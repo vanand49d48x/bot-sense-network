@@ -16,6 +16,16 @@ import Alerts from "./pages/Alerts";
 import FleetStatusPage from "./pages/FleetStatusPage";
 import ProfilePage from "./pages/ProfilePage";
 
+// Legal pages
+import Privacy from "./pages/legal/Privacy";
+import Terms from "./pages/legal/Terms";
+import RiskPage from "./pages/legal/RiskPage";
+import Cookies from "./pages/legal/Cookies";
+import Security from "./pages/legal/Security";
+import DisclaimerPage from "./pages/legal/DisclaimerPage";
+import Regulatory from "./pages/legal/Regulatory";
+import Contact from "./pages/Contact";
+
 const queryClient = new QueryClient();
 
 // Protected route component
@@ -92,6 +102,17 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Legal Routes */}
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/risk-disclosure" element={<RiskPage />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/disclaimer" element={<DisclaimerPage />} />
+              <Route path="/regulatory" element={<Regulatory />} />
+              <Route path="/contact" element={<Contact />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
