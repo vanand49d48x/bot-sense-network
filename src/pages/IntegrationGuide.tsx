@@ -31,8 +31,8 @@ export default function IntegrationGuide() {
           <div className="flex items-center gap-2 mt-4 text-sm">
             <Mail className="h-4 w-4 text-primary" />
             <span>Need help with integration? Contact us at </span>
-            <a href="mailto:support@robometrics.com" className="text-primary hover:underline">
-              support@robometrics.com
+            <a href="mailto:support@robometrics.io" className="text-primary hover:underline">
+              support@robometrics.io
             </a>
           </div>
         </div>
