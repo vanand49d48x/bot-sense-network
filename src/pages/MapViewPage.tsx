@@ -222,7 +222,7 @@ const MapViewPage = () => {
                             <SelectValue placeholder="All Robots" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">All Robots</SelectItem>
+                            <SelectItem value="all">All Robots</SelectItem>
                             {robots.map(robot => (
                               <SelectItem key={robot.id} value={robot.id}>{robot.name}</SelectItem>
                             ))}
