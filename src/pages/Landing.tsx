@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -250,14 +251,22 @@ const Landing = () => {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              <span className="font-semibold">RoboMetrics</span>
+          <div className="flex flex-col space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                <span className="font-semibold">RoboMetrics</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                © {new Date().getFullYear()} RoboMetrics. All rights reserved.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} RoboMetrics. All rights reserved.
-            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Mail className="h-4 w-4" />
+              <a href="mailto:support@robometrics.com" className="hover:text-primary transition-colors">
+                support@robometrics.com
+              </a>
+            </div>
           </div>
         </div>
       </footer>

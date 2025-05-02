@@ -10,7 +10,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity, Mail } from "lucide-react";
 
 export default function IntegrationGuide() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -28,6 +28,13 @@ export default function IntegrationGuide() {
           <p className="text-muted-foreground max-w-3xl">
             Follow these instructions to connect your robots to the platform. Each robot will need its API key for authentication when sending telemetry data.
           </p>
+          <div className="flex items-center gap-2 mt-4 text-sm">
+            <Mail className="h-4 w-4 text-primary" />
+            <span>Need help with integration? Contact us at </span>
+            <a href="mailto:support@robometrics.com" className="text-primary hover:underline">
+              support@robometrics.com
+            </a>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-10">
