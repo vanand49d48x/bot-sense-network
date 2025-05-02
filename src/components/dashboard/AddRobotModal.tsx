@@ -85,22 +85,24 @@ export function AddRobotModal() {
               <Label htmlFor="type" className="text-right">
                 Type
               </Label>
-              <Select
-                value={type}
-                onValueChange={setType}
-                required
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select robot type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="delivery">Delivery Bot</SelectItem>
-                  <SelectItem value="warehouse">Warehouse Bot</SelectItem>
-                  <SelectItem value="cleaning">Cleaning Bot</SelectItem>
-                  <SelectItem value="security">Security Bot</SelectItem>
-                  <SelectItem value="assembly">Assembly Bot</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="col-span-3">
+                <Select
+                  value={type}
+                  onValueChange={setType}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select robot type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="delivery">Delivery Bot</SelectItem>
+                    <SelectItem value="warehouse">Warehouse Bot</SelectItem>
+                    <SelectItem value="cleaning">Cleaning Bot</SelectItem>
+                    <SelectItem value="security">Security Bot</SelectItem>
+                    <SelectItem value="assembly">Assembly Bot</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
