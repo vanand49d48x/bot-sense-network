@@ -2,13 +2,9 @@
 import { Robot } from "@/types/robot";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Battery, Thermometer } from "lucide-react";
 import { useState, useMemo } from "react";
-
-// Register ChartJS components
-ChartJS.register(ArcElement, Tooltip, Legend);
+import { PieChart, Pie, ResponsiveContainer, Cell, Legend, Tooltip } from "recharts";
 
 interface FleetStatusProps {
   robots: Robot[];
@@ -22,25 +18,11 @@ export function FleetStatus({ robots }: FleetStatusProps) {
     const warning = robots.filter(r => r.status === 'warning').length;
     const offline = robots.filter(r => r.status === 'offline').length;
     
-    return {
-      labels: ['Online', 'Warning', 'Offline'],
-      datasets: [
-        {
-          data: [online, warning, offline],
-          backgroundColor: [
-            'rgba(16, 185, 129, 0.8)',  // online - green
-            'rgba(245, 158, 11, 0.8)',  // warning - yellow
-            'rgba(239, 68, 68, 0.8)',   // offline - red
-          ],
-          borderColor: [
-            'rgba(16, 185, 129, 1)',
-            'rgba(245, 158, 11, 1)',
-            'rgba(239, 68, 68, 1)',
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
+    return [
+      { name: 'Online', value: online, color: '#10b981' },
+      { name: 'Warning', value: warning, color: '#f59e0b' },
+      { name: 'Offline', value: offline, color: '#ef4444' }
+    ];
   }, [robots]);
   
   const batteryData = useMemo(() => {
@@ -49,27 +31,12 @@ export function FleetStatus({ robots }: FleetStatusProps) {
     const medium = robots.filter(r => r.batteryLevel >= 50 && r.batteryLevel < 80).length;
     const high = robots.filter(r => r.batteryLevel >= 80).length;
     
-    return {
-      labels: ['Critical (<20%)', 'Low (20-49%)', 'Medium (50-79%)', 'High (80-100%)'],
-      datasets: [
-        {
-          data: [critical, low, medium, high],
-          backgroundColor: [
-            'rgba(239, 68, 68, 0.8)',   // critical - red
-            'rgba(245, 158, 11, 0.8)',  // low - yellow
-            'rgba(59, 130, 246, 0.8)',  // medium - blue
-            'rgba(16, 185, 129, 0.8)',  // high - green
-          ],
-          borderColor: [
-            'rgba(239, 68, 68, 1)',
-            'rgba(245, 158, 11, 1)',
-            'rgba(59, 130, 246, 1)',
-            'rgba(16, 185, 129, 1)',
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
+    return [
+      { name: 'Critical (<20%)', value: critical, color: '#ef4444' },
+      { name: 'Low (20-49%)', value: low, color: '#f59e0b' },
+      { name: 'Medium (50-79%)', value: medium, color: '#3b82f6' },
+      { name: 'High (80-100%)', value: high, color: '#10b981' }
+    ];
   }, [robots]);
 
   const averageBattery = useMemo(() => {
@@ -84,30 +51,25 @@ export function FleetStatus({ robots }: FleetStatusProps) {
     return Math.round((sum / robots.length) * 10) / 10; // Round to 1 decimal place
   }, [robots]);
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'right' as const,
-        labels: {
-          boxWidth: 15,
-          padding: 15,
-        },
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            const label = context.label || '';
-            const value = context.raw || 0;
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = total ? Math.round((value / total) * 100) : 0;
-            return `${label}: ${value} (${percentage}%)`;
-          }
-        }
-      }
-    },
-    cutout: '60%',
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+
+    return (
+      percent > 0.05 ? (
+        <text 
+          x={x} 
+          y={y} 
+          fill="white" 
+          textAnchor="middle" 
+          dominantBaseline="central"
+          fontSize={12}
+        >
+          {`${(percent * 100).toFixed(0)}%`}
+        </text>
+      ) : null
+    );
   };
 
   return (
@@ -161,10 +123,40 @@ export function FleetStatus({ robots }: FleetStatusProps) {
           </div>
           
           <div className="md:col-span-2 h-64 relative">
-            <Doughnut 
-              data={chartType === 'status' ? statusData : batteryData} 
-              options={chartOptions} 
-            />
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartType === 'status' ? statusData : batteryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                  outerRadius={80}
+                  innerRadius={40}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {(chartType === 'status' ? statusData : batteryData).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value, name) => [`${value} robots`, name]}
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(23, 23, 23, 0.8)', 
+                    borderRadius: '0.375rem',
+                    border: '1px solid rgba(63, 63, 70, 0.5)',
+                    color: '#fff' 
+                  }}
+                />
+                <Legend 
+                  layout="vertical" 
+                  verticalAlign="middle" 
+                  align="right"
+                  wrapperStyle={{ paddingLeft: '10px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
         
