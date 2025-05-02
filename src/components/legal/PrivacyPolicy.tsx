@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Separator } from "@/components/ui/separator";
+import DataRequestForm from "./DataRequestForm";
 
 const PrivacyPolicy = () => {
   return (
@@ -30,7 +31,17 @@ const PrivacyPolicy = () => {
         <li>Opt out of communications</li>
       </ul>
       
-      <p className="mt-6">We never sell your data. Full details at <a href="https://robometrics.io/privacy" className="text-primary underline">robometrics.io/privacy</a></p>
+      <p className="mt-6 mb-8">We never sell your data. Full details at <a href="https://robometrics.io/privacy" className="text-primary underline">robometrics.io/privacy</a></p>
+      
+      <h2 className="text-xl font-semibold mt-8 mb-4">Exercise Your Data Rights</h2>
+      <p className="mb-6">
+        Under various privacy regulations including GDPR and CCPA, you have the right to access, 
+        correct, or delete your personal data. Use the form below to submit your request, 
+        or email us directly at <a href="mailto:support@robometrics.io" className="text-primary">
+        support@robometrics.io</a>.
+      </p>
+      
+      <DataRequestForm />
       
       <Separator className="my-10" />
       
