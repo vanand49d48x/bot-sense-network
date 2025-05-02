@@ -160,7 +160,8 @@ export function AddRobotModal() {
                     <SelectValue placeholder="Select robot type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="" disabled>Select robot type</SelectItem>
+                    {/* Fixed: Replaced empty string value with a placeholder value */}
+                    <SelectItem value="placeholder" disabled>Select robot type</SelectItem>
                     
                     {/* Default robot types */}
                     <SelectItem value="delivery">Delivery Bot</SelectItem>
