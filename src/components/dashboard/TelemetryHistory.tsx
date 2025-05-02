@@ -90,7 +90,7 @@ export function TelemetryHistory({ robotId, retentionDays }: TelemetryHistoryPro
     
     const { error } = await supabase
       .from('profiles')
-      .update({ telemetry_retention_days: days })
+      .update({ telemetryRetentionDays: days })
       .eq('id', user.id);
       
     if (error) {
