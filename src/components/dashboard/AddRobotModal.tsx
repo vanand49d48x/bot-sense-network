@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export function AddRobotModal() {
   const [open, setOpen] = useState(false);
@@ -30,9 +31,20 @@ export function AddRobotModal() {
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addRobot } = useRobots();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!name || !type) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
@@ -47,6 +59,17 @@ export function AddRobotModal() {
       setType("");
       setDescription("");
       setOpen(false);
+      
+      toast({
+        title: "Robot added",
+        description: `${name} has been successfully added.`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add robot. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -55,7 +78,7 @@ export function AddRobotModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="z-10">
           <Plus className="mr-2 h-4 w-4" />
           Add Robot
         </Button>
@@ -85,13 +108,13 @@ export function AddRobotModal() {
               <Label htmlFor="type" className="text-right">
                 Type
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-3 w-full">
                 <Select
                   value={type}
                   onValueChange={setType}
                   required
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="type">
                     <SelectValue placeholder="Select robot type" />
                   </SelectTrigger>
                   <SelectContent>
