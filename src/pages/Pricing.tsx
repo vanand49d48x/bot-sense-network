@@ -105,7 +105,9 @@ const addons = [
 ];
 
 const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => (
-  <div className={`flex flex-col p-6 rounded-xl border ${tier.highlight ? 'border-primary shadow-md relative' : 'border-border'}`}>
+  <div className={`flex flex-col p-6 rounded-xl border transition-all duration-300 
+    ${tier.highlight ? 'border-primary shadow-md relative' : 'border-border'} 
+    hover:border-primary hover:shadow-md`}>
     {tier.highlight && (
       <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
         MOST POPULAR
@@ -133,7 +135,7 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => (
     <Link to={tier.link} className="mt-auto">
       <Button 
         variant={tier.highlight ? "default" : "outline"} 
-        className="w-full"
+        className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
       >
         {tier.cta}
       </Button>
@@ -168,30 +170,12 @@ const Pricing = () => {
           <h3 className="text-xl font-semibold mb-6 text-center">Add-ons (Optional per-tier or à la carte)</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {addons.map((addon, index) => (
-              <div key={index} className="bg-card p-6 rounded-lg border border-border">
+              <div key={index} className="bg-card p-6 rounded-lg border border-border hover:border-primary hover:shadow-md transition-all duration-300">
                 <h4 className="font-medium mb-2">{addon.name}</h4>
                 <p className="text-lg font-bold">{addon.price}</p>
                 <p className="text-sm text-muted-foreground">{addon.description}</p>
               </div>
             ))}
-          </div>
-        </div>
-        
-        <div className="bg-muted/50 rounded-lg p-8 mt-16">
-          <h3 className="text-xl font-semibold mb-4 text-center">Smart Pricing Strategy</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div>
-              <h4 className="font-medium mb-2">Get users fast</h4>
-              <p className="text-sm">Free tier with real dashboard ✅</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Convert hobbyists/startups</h4>
-              <p className="text-sm">Starter plan with ROS support ✅</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Capture serious users</h4>
-              <p className="text-sm">Pro & Enterprise with long history, real alerts, scaling APIs ✅</p>
-            </div>
           </div>
         </div>
         
@@ -210,3 +194,4 @@ const Pricing = () => {
 };
 
 export default Pricing;
+
