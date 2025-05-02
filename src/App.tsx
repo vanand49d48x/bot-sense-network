@@ -26,6 +26,13 @@ import DisclaimerPage from "./pages/legal/DisclaimerPage";
 import Regulatory from "./pages/legal/Regulatory";
 import Contact from "./pages/Contact";
 
+// New pages
+import About from "./pages/About";
+import Features from "./pages/Features";
+import ApiDocs from "./pages/ApiDocs";
+import Status from "./pages/Status";
+import Blog from "./pages/Blog";
+
 const queryClient = new QueryClient();
 
 // Protected route component
@@ -112,6 +119,13 @@ const App = () => (
               <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route path="/regulatory" element={<Regulatory />} />
               <Route path="/contact" element={<Contact />} />
+              
+              {/* New Routes */}
+              <Route path="/about" element={<About />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/api-docs" element={<ApiDocs />} />
+              <Route path="/status" element={<Status />} />
+              <Route path="/blog" element={<Blog />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
