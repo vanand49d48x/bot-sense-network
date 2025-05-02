@@ -30,6 +30,8 @@ export function CustomTelemetryDisplay({ robot }: CustomTelemetryDisplayProps) {
     );
   }
 
+  console.log("Custom telemetry data received:", robot.telemetryData);
+
   // Filter out standard telemetry fields that are already displayed elsewhere
   const standardFields = ["batteryLevel", "temperature", "status", "location", "timestamp"];
   const customTelemetry = Object.entries(robot.telemetryData).filter(
@@ -37,7 +39,23 @@ export function CustomTelemetryDisplay({ robot }: CustomTelemetryDisplayProps) {
   );
 
   if (customTelemetry.length === 0) {
-    return null;
+    return (
+      <Card className="mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center">
+            <span>Custom Telemetry</span>
+            <Badge variant="outline" className="ml-2">
+              No Custom Data
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Only standard telemetry data is available. Add custom fields to see them here.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   // Format value based on its type
