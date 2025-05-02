@@ -5,11 +5,12 @@ import { ArduinoExample } from "@/components/integration/ArduinoExample";
 import { ROSExample } from "@/components/integration/ROSExample";
 import { MQTTExample } from "@/components/integration/MQTTExample";
 import { EmailNotifications } from "@/components/integration/EmailNotifications";
+import { CustomTelemetryExample } from "@/components/integration/CustomTelemetryExample";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity } from "lucide-react";
 
 export default function IntegrationGuide() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -36,6 +37,7 @@ export default function IntegrationGuide() {
             <TabsTrigger value="ros">ROS</TabsTrigger>
             <TabsTrigger value="mqtt">MQTT</TabsTrigger>
             <TabsTrigger value="http">HTTP API</TabsTrigger>
+            <TabsTrigger value="custom">Custom Telemetry</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
@@ -296,6 +298,10 @@ export default function IntegrationGuide() {
                 </ul>
               </div>
             </section>
+          </TabsContent>
+          
+          <TabsContent value="custom">
+            <CustomTelemetryExample />
           </TabsContent>
 
           <TabsContent value="notifications">
