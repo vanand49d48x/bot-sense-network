@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Robot } from "@/types/robot";
+import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusCard } from "./RobotStatusCard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RobotDetailView } from "./RobotDetailView";
@@ -24,7 +24,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('api_key, custom_telemetry_types')
+        .select('id, api_key, custom_telemetry_types, first_name, last_name, avatar_url, custom_robot_types')
         .eq('id', user.id)
         .single();
         
@@ -33,7 +33,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
         return null;
       }
       
-      return data;
+      return data as UserProfile;
     },
     enabled: !!user?.id,
   });
@@ -61,7 +61,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
 
       <Dialog open={!!selectedRobot} onOpenChange={(open) => !open && setSelectedRobot(null)}>
         <DialogContent className="sm:max-w-[600px]">
-          {selectedRobot && <RobotDetailView robot={selectedRobot} userProfile={userProfile} />}
+          {selectedRobot && userProfile && <RobotDetailView robot={selectedRobot} userProfile={userProfile} />}
         </DialogContent>
       </Dialog>
     </div>
