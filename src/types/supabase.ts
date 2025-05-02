@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -47,6 +46,8 @@ export interface Database {
           avatar_url: string | null
           created_at: string
           updated_at: string
+          custom_robot_types: string[] | null
+          custom_alerts: Json[] | null
         }
         Insert: {
           id: string
@@ -55,6 +56,8 @@ export interface Database {
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
+          custom_robot_types?: string[] | null
+          custom_alerts?: Json[] | null
         }
         Update: {
           id?: string
@@ -63,6 +66,8 @@ export interface Database {
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
+          custom_robot_types?: string[] | null
+          custom_alerts?: Json[] | null
         }
       }
       robots: {
