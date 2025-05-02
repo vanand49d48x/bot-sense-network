@@ -1,9 +1,24 @@
 
 import { Button } from "@/components/ui/button";
 import { TelemetryExample } from "@/components/integration/TelemetryExample";
+import { ArduinoExample } from "@/components/integration/ArduinoExample";
+import { ROSExample } from "@/components/integration/ROSExample";
+import { MQTTExample } from "@/components/integration/MQTTExample";
+import { EmailNotifications } from "@/components/integration/EmailNotifications";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare } from "lucide-react";
 
 export default function IntegrationGuide() {
+  const [activeTab, setActiveTab] = useState("overview");
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
   return (
     <MainLayout>
       <div className="container py-10">
@@ -14,64 +29,279 @@ export default function IntegrationGuide() {
           </p>
         </div>
 
-        <div className="space-y-8">
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Getting Started</h2>
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4">
-                <h3 className="text-xl font-medium">1. Add your robot</h3>
-                <p className="text-muted-foreground">
-                  First, add your robot to the dashboard. This will generate a unique identifier and API key for your robot.
-                </p>
-                <Button asChild>
-                  <a href="/dashboard">Go to Dashboard</a>
-                </Button>
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-xl font-medium">2. Find your API key</h3>
-                <p className="text-muted-foreground">
-                  Each robot has a unique API key that must be included in all telemetry requests. 
-                  Find this in the robot's card by clicking "API Integration".
-                </p>
-              </div>
-            </div>
-          </section>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-10">
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="arduino">Arduino/ESP32</TabsTrigger>
+            <TabsTrigger value="ros">ROS</TabsTrigger>
+            <TabsTrigger value="mqtt">MQTT</TabsTrigger>
+            <TabsTrigger value="http">HTTP API</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Sending Telemetry</h2>
-            <p className="text-muted-foreground mb-6">
-              You can send telemetry data using the following endpoint: <code className="bg-muted px-1.5 py-0.5 rounded text-sm">https://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/telemetry</code>
-            </p>
+          <TabsContent value="overview">
+            <div className="space-y-8">
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Getting Started</h2>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-medium">1. Add your robot</h3>
+                    <p className="text-muted-foreground">
+                      First, add your robot to the dashboard. This will generate a unique identifier and API key for your robot.
+                    </p>
+                    <Button asChild>
+                      <Link to="/dashboard">Go to Dashboard</Link>
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-medium">2. Find your API key</h3>
+                    <p className="text-muted-foreground">
+                      Each robot has a unique API key that must be included in all telemetry requests. 
+                      Find this in the robot's card by clicking "API Integration".
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Integration Methods</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left"
+                    onClick={() => setActiveTab("arduino")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <Cpu className="h-5 w-5" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">Arduino/ESP32</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Connect Arduino or ESP32 microcontrollers
+                      </p>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left"
+                    onClick={() => setActiveTab("ros")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2" fill="none" />
+                        <path d="M5 12H19" stroke="currentColor" strokeWidth="2" />
+                        <path d="M12 5V19" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="12" cy="12" r="3" fill="currentColor" />
+                      </svg>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">ROS Integration</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Connect ROS1/ROS2 robots
+                      </p>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left"
+                    onClick={() => setActiveTab("mqtt")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <MessageSquare className="h-5 w-5" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">MQTT Protocol</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Connect via MQTT broker
+                      </p>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left"
+                    onClick={() => setActiveTab("http")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <Code className="h-5 w-5" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">HTTP API</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Direct HTTP API integration
+                      </p>
+                    </div>
+                  </Button>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold mb-4">Key Features</h2>
+                <div className="space-y-4">
+                  <div
+                    className="border rounded-lg p-4 cursor-pointer"
+                    onClick={() => toggleSection("map")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">Live Map View</h3>
+                      </div>
+                      {expandedSection === "map" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    </div>
+                    
+                    {expandedSection === "map" && (
+                      <div className="mt-4 pl-7">
+                        <p className="text-muted-foreground mb-2">
+                          The platform provides real-time visualization of all your robots on an interactive map. To enable this feature:
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Make sure to include location data in your telemetry payloads</li>
+                          <li>Format: <code className="bg-muted px-1">{"location: { latitude: number, longitude: number }"}</code></li>
+                          <li>View the map in the <Link to="/map" className="text-primary hover:underline">Map View</Link> section</li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div
+                    className="border rounded-lg p-4 cursor-pointer"
+                    onClick={() => toggleSection("notifications")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">Email Notifications</h3>
+                      </div>
+                      {expandedSection === "notifications" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    </div>
+                    
+                    {expandedSection === "notifications" && (
+                      <div className="mt-4 pl-7">
+                        <p className="text-muted-foreground mb-2">
+                          Receive email notifications when your robots require attention:
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Low battery alerts</li>
+                          <li>Robots going offline</li>
+                          <li>Error conditions</li>
+                          <li>Configure alerts in the <Link to="/alerts" className="text-primary hover:underline">Alerts</Link> section</li>
+                        </ul>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="mt-2 px-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTab("notifications");
+                          }}
+                        >
+                          View notification details
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className="border rounded-lg p-4 cursor-pointer"
+                    onClick={() => toggleSection("api")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">API Access</h3>
+                      </div>
+                      {expandedSection === "api" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    </div>
+                    
+                    {expandedSection === "api" && (
+                      <div className="mt-4 pl-7">
+                        <p className="text-muted-foreground mb-2">
+                          Access robot data and control functionality via our REST API:
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Retrieve telemetry history</li>
+                          <li>Send commands to robots</li>
+                          <li>Manage robot fleet programmatically</li>
+                        </ul>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="mt-2 px-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTab("http");
+                          }}
+                        >
+                          View API documentation
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="arduino">
+            <ArduinoExample />
+          </TabsContent>
+
+          <TabsContent value="ros">
+            <ROSExample />
+          </TabsContent>
+
+          <TabsContent value="mqtt">
+            <MQTTExample />
+          </TabsContent>
+
+          <TabsContent value="http">
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">HTTP API</h2>
+              <p className="text-muted-foreground mb-6 max-w-3xl">
+                You can send telemetry data using our HTTP API. This is the most direct integration method and works with any programming language or platform that can make HTTP requests.
+              </p>
+            </section>
             
             <TelemetryExample />
-          </section>
+            
+            <section className="mt-8">
+              <h2 className="text-2xl font-semibold mb-4">Telemetry Format</h2>
+              <div className="bg-muted p-6 rounded-lg">
+                <h3 className="text-lg font-medium mb-3">Required Fields</h3>
+                <ul className="space-y-2 list-disc pl-5">
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">robotId</code>: Your robot's ID (UUID format)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">api-key</code>: Your robot's API key (in request header)</li>
+                </ul>
+                
+                <h3 className="text-lg font-medium mt-6 mb-3">Optional Fields</h3>
+                <ul className="space-y-2 list-disc pl-5">
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">batteryLevel</code>: Battery percentage (0-100)</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">temperature</code>: Temperature in Celsius</li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">status</code>: "OK", "WARNING", or "ERROR" (updates robot status)</li>
+                  <li>
+                    <code className="bg-background px-1.5 py-0.5 rounded">location</code>: Object with location coordinates
+                    <ul className="ml-6 mt-2 space-y-1">
+                      <li>Preferred format: <code className="bg-background px-1.5 py-0.5 rounded text-xs">{"{ latitude: number, longitude: number }"}</code></li>
+                      <li>Also accepted: <code className="bg-background px-1.5 py-0.5 rounded text-xs">{"{ lat: number, lng: number }"}</code></li>
+                    </ul>
+                  </li>
+                  <li><code className="bg-background px-1.5 py-0.5 rounded">timestamp</code>: ISO timestamp (defaults to current time if omitted)</li>
+                </ul>
+              </div>
+            </section>
+          </TabsContent>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Telemetry Format</h2>
-            <div className="bg-muted p-6 rounded-lg">
-              <h3 className="text-lg font-medium mb-3">Required Fields</h3>
-              <ul className="space-y-2 list-disc pl-5">
-                <li><code className="bg-background px-1.5 py-0.5 rounded">robotId</code>: Your robot's ID (UUID format)</li>
-                <li><code className="bg-background px-1.5 py-0.5 rounded">api-key</code>: Your robot's API key (in request header)</li>
-              </ul>
-              
-              <h3 className="text-lg font-medium mt-6 mb-3">Optional Fields</h3>
-              <ul className="space-y-2 list-disc pl-5">
-                <li><code className="bg-background px-1.5 py-0.5 rounded">batteryLevel</code>: Battery percentage (0-100)</li>
-                <li><code className="bg-background px-1.5 py-0.5 rounded">temperature</code>: Temperature in Celsius</li>
-                <li><code className="bg-background px-1.5 py-0.5 rounded">status</code>: "OK", "WARNING", or "ERROR" (updates robot status)</li>
-                <li>
-                  <code className="bg-background px-1.5 py-0.5 rounded">location</code>: Object with location coordinates
-                  <ul className="ml-6 mt-2 space-y-1">
-                    <li>Preferred format: <code className="bg-background px-1.5 py-0.5 rounded text-xs">{"{ latitude: number, longitude: number }"}</code></li>
-                    <li>Also accepted: <code className="bg-background px-1.5 py-0.5 rounded text-xs">{"{ lat: number, lng: number }"}</code></li>
-                  </ul>
-                </li>
-                <li><code className="bg-background px-1.5 py-0.5 rounded">timestamp</code>: ISO timestamp (defaults to current time if omitted)</li>
-              </ul>
-            </div>
-          </section>
-        </div>
+          <TabsContent value="notifications">
+            <EmailNotifications />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
