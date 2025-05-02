@@ -33,6 +33,7 @@ import Features from "./pages/Features";
 import ApiDocs from "./pages/ApiDocs";
 import Status from "./pages/Status";
 import Blog from "./pages/Blog";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -128,6 +129,7 @@ const App = () => (
               <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/status" element={<Status />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/pricing" element={<Pricing />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
