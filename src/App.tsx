@@ -84,7 +84,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route path="/integration" element={<IntegrationGuide />} />
+              <Route 
+                path="/integration" 
+                element={
+                  <ProtectedRoute>
+                    <IntegrationGuide />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
