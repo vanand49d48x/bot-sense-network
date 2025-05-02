@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -54,7 +53,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="py-6 px-4 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold">RoboMonitor</h1>
+        <h1 className="text-xl font-bold">RoboMetrics</h1>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
