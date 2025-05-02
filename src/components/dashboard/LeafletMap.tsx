@@ -135,6 +135,22 @@ export function LeafletMap({
         font-weight: bold;
         text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.75);
       }
+      .path-arrow {
+        font-size: 20px;
+        color: #3b82f6;
+        text-shadow: 0px 0px 2px rgba(255, 255, 255, 0.8);
+        pointer-events: none;
+      }
+      .path-arrow-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.7);
+        border: 1px solid #3b82f6;
+      }
       @media (max-width: 640px) {
         .leaflet-control-container .leaflet-top {
           top: 10px;
@@ -231,24 +247,57 @@ export function LeafletMap({
           </LayerGroup>
         </LayersControl.Overlay>
         
-        {/* Historical Paths */}
+        {/* Historical Paths with Arrows */}
         <LayersControl.Overlay checked name="Historical Paths">
           <LayerGroup>
-            {historicalPaths.map((path, index) => (
-              <Polyline
-                key={index}
-                positions={path.path}
-                pathOptions={{
-                  color: path.color,
-                  weight: 3,
-                  opacity: 0.7,
-                  dashArray: '5, 5',
-                }}
-              >
-                <Tooltip>
-                  {`Path from ${new Date(path.timestamp).toLocaleString()}`}
-                </Tooltip>
-              </Polyline>
+            {historicalPaths.map((path, pathIndex) => (
+              <LayerGroup key={`path-${pathIndex}`}>
+                {/* Draw the path line */}
+                <Polyline
+                  positions={path.path}
+                  pathOptions={{
+                    color: path.color,
+                    weight: 3,
+                    opacity: 0.8,
+                  }}
+                >
+                  <Tooltip>
+                    {`Path from ${new Date(path.timestamp).toLocaleString()}`}
+                  </Tooltip>
+                </Polyline>
+                
+                {/* Add directional arrows along the path */}
+                {path.path.length > 1 && path.path.slice(0, -1).map((position, index) => {
+                  // Only place arrows every 2nd position to avoid overcrowding
+                  if (index % 2 !== 0) return null;
+                  
+                  const nextPosition = path.path[index + 1];
+                  const midPoint: [number, number] = [
+                    (position[0] + nextPosition[0]) / 2,
+                    (position[1] + nextPosition[1]) / 2
+                  ];
+                  
+                  // Calculate the angle for the arrow
+                  const angle = Math.atan2(
+                    nextPosition[1] - position[1], 
+                    nextPosition[0] - position[0]
+                  ) * 180 / Math.PI;
+                  
+                  return (
+                    <Marker
+                      key={`arrow-${index}`}
+                      position={midPoint}
+                      icon={L.divIcon({
+                        className: 'path-arrow',
+                        html: `<div class="path-arrow-container" style="transform: rotate(${angle}deg)">➔</div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                      })}
+                      interactive={false}
+                    />
+                  );
+                })}
+              </LayerGroup>
             ))}
           </LayerGroup>
         </LayersControl.Overlay>
