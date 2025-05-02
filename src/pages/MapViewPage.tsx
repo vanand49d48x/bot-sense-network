@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useRobots } from "@/hooks/useRobots";
 import { Robot } from "@/types/robot";
@@ -25,13 +24,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -43,6 +35,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 // Sample data for historical paths
 const sampleHistoricalPaths = [
@@ -96,7 +97,7 @@ const MapViewPage = () => {
   const [historicalPaths, setHistoricalPaths] = useState(sampleHistoricalPaths);
   const [geofenceZones, setGeofenceZones] = useState(sampleGeofenceZones);
   const [mapMode, setMapMode] = useState<'live' | 'paths'>('live');
-  const [selectedRobot, setSelectedRobot] = useState<string | null>(null);
+  const [selectedRobotIds, setSelectedRobotIds] = useState<string[]>(['all']);
   const [isAddZoneOpen, setIsAddZoneOpen] = useState(false);
   const [newZone, setNewZone] = useState({
     name: '',
@@ -134,15 +135,37 @@ const MapViewPage = () => {
     setIsAddZoneOpen(false);
   };
 
-  // Filter robots by selected robot
-  const filteredRobots = selectedRobot && selectedRobot !== 'all'
-    ? robots.filter(robot => robot.id === selectedRobot)
-    : robots;
+  // Function to handle robot selection
+  const handleRobotSelection = (robotId: string) => {
+    setSelectedRobotIds(current => {
+      // If "all" is being selected, return just ["all"]
+      if (robotId === 'all') return ['all'];
+      
+      // If an individual robot is selected, we need to remove "all" from the selection
+      const withoutAll = current.filter(id => id !== 'all');
+      
+      // If the robot is already selected, remove it
+      if (withoutAll.includes(robotId)) {
+        const result = withoutAll.filter(id => id !== robotId);
+        // If no robots are selected, default back to "all"
+        return result.length === 0 ? ['all'] : result;
+      } 
+      // Otherwise add the robot to the selection
+      else {
+        return [...withoutAll, robotId];
+      }
+    });
+  };
 
-  // Filter historical paths by selected robot
-  const filteredPaths = selectedRobot && selectedRobot !== 'all'
-    ? historicalPaths.filter(path => path.robotId === selectedRobot)
-    : historicalPaths;
+  // Filter robots by selected robot ids
+  const filteredRobots = selectedRobotIds.includes('all')
+    ? robots
+    : robots.filter(robot => selectedRobotIds.includes(robot.id));
+
+  // Filter historical paths by selected robot ids
+  const filteredPaths = selectedRobotIds.includes('all')
+    ? historicalPaths
+    : historicalPaths.filter(path => selectedRobotIds.includes(path.robotId));
 
   // Displayed geofence zones based on toggle
   const displayedGeofenceZones = showGeofencing ? geofenceZones : [];
@@ -219,20 +242,35 @@ const MapViewPage = () => {
                     {showHistoricalPaths && (
                       <div className="space-y-2">
                         <Label htmlFor="robot-filter">Filter by Robot</Label>
-                        <Select
-                          value={selectedRobot || undefined}
-                          onValueChange={(value) => setSelectedRobot(value)}
-                        >
-                          <SelectTrigger id="robot-filter" className="w-full">
-                            <SelectValue placeholder="All Robots" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Robots</SelectItem>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                              {selectedRobotIds.includes('all') 
+                                ? 'All Robots' 
+                                : `${selectedRobotIds.length} robot${selectedRobotIds.length > 1 ? 's' : ''} selected`}
+                              <span className="sr-only">Toggle robot selection</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-[200px]" align="start">
+                            <DropdownMenuLabel>Select Robots</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuCheckboxItem
+                              checked={selectedRobotIds.includes('all')}
+                              onCheckedChange={() => handleRobotSelection('all')}
+                            >
+                              All Robots
+                            </DropdownMenuCheckboxItem>
                             {robots.map(robot => (
-                              <SelectItem key={robot.id} value={robot.id}>{robot.name}</SelectItem>
+                              <DropdownMenuCheckboxItem
+                                key={robot.id}
+                                checked={selectedRobotIds.includes(robot.id)}
+                                onCheckedChange={() => handleRobotSelection(robot.id)}
+                              >
+                                {robot.name}
+                              </DropdownMenuCheckboxItem>
                             ))}
-                          </SelectContent>
-                        </Select>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     )}
                   </TabsContent>

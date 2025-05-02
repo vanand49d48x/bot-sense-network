@@ -5,16 +5,16 @@ import { LeafletMap } from "./LeafletMap";
 
 interface MapViewProps {
   robots: Robot[];
-  selectedRobotId?: string | null;
+  selectedRobotIds?: string[];
 }
 
-export function MapView({ robots, selectedRobotId }: MapViewProps) {
+export function MapView({ robots, selectedRobotIds }: MapViewProps) {
   // Filter robots that have location data
   const robotsWithLocation = robots.filter(robot => robot.location !== undefined);
   
-  // Apply filter by selected robot if provided
-  const filteredRobots = selectedRobotId && selectedRobotId !== 'all'
-    ? robotsWithLocation.filter(robot => robot.id === selectedRobotId)
+  // Apply filter by selected robot ids if provided
+  const filteredRobots = selectedRobotIds && selectedRobotIds.length > 0 && !selectedRobotIds.includes('all')
+    ? robotsWithLocation.filter(robot => selectedRobotIds.includes(robot.id))
     : robotsWithLocation;
 
   if (filteredRobots.length === 0) {
