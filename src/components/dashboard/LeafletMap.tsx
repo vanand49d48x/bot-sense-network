@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Robot } from "@/types/robot";
 import L from 'leaflet';
@@ -29,9 +29,10 @@ const createStatusIcon = (status: 'online' | 'offline' | 'warning') => {
 interface LeafletMapProps {
   robots: Robot[];
   height?: string;
+  showTooltips?: boolean;
 }
 
-export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
+export function LeafletMap({ robots, height = "100%", showTooltips = false }: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
@@ -53,6 +54,17 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
         100% {
           box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
         }
+      }
+      .leaflet-tooltip {
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+      .leaflet-tooltip-top:before {
+        border-top-color: rgba(255, 255, 255, 0.9);
       }
     `;
     document.head.appendChild(style);
@@ -97,6 +109,22 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
           ]}
           icon={createStatusIcon(robot.status)}
         >
+          {showTooltips && (
+            <Tooltip direction="top" offset={[0, -8]} opacity={1} permanent={false}>
+              <div className="font-medium">{robot.name}</div>
+              <div className="grid grid-cols-2 gap-x-2 text-xs mt-1">
+                <span>Status:</span>
+                <span className={`${
+                  robot.status === 'online' ? 'text-green-600' :
+                  robot.status === 'warning' ? 'text-yellow-600' : 'text-red-600'
+                }`}>{robot.status}</span>
+                <span>Battery:</span>
+                <span>{robot.batteryLevel}%</span>
+                <span>Temperature:</span>
+                <span>{robot.temperature}°C</span>
+              </div>
+            </Tooltip>
+          )}
           <Popup>
             <div className="text-sm">
               <strong>{robot.name}</strong><br />
@@ -105,7 +133,9 @@ export function LeafletMap({ robots, height = "100%" }: LeafletMapProps) {
               Status: <span className={`
                 ${robot.status === 'online' ? 'text-green-500' :
                   robot.status === 'warning' ? 'text-yellow-500' : 'text-red-500'}
-              `}>{robot.status}</span>
+              `}>{robot.status}</span><br />
+              IP: {robot.ipAddress}<br />
+              Last Seen: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
             </div>
           </Popup>
         </Marker>

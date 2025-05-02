@@ -4,7 +4,7 @@ import { useRobots } from "@/hooks/useRobots";
 import { Robot } from "@/types/robot";
 import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, AlertTriangle, Battery } from "lucide-react";
+import { MapPin, AlertTriangle, Battery, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { 
   HoverCard,
@@ -12,6 +12,11 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { LeafletMap } from "@/components/dashboard/LeafletMap";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const MapViewPage = () => {
   const { robots: supabaseRobots, loading } = useRobots();
@@ -47,6 +52,16 @@ const MapViewPage = () => {
               View and monitor your robot fleet's locations in real-time
             </p>
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="rounded-full bg-muted p-2 cursor-help">
+                <Info className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Hover over robots on the map for more information</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
         
         {robotsWithLocation.length > 0 ? (
@@ -59,7 +74,7 @@ const MapViewPage = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[500px] rounded-md overflow-hidden mb-4">
-                <LeafletMap robots={robots} height="100%" />
+                <LeafletMap robots={robots} height="100%" showTooltips={true} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 {robotsWithLocation.map(robot => (
