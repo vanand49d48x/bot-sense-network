@@ -45,11 +45,11 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
         
         {/* Footer */}
-        <footer className="border-t border-border/40 bg-muted/30 py-8 px-4 md:px-6">
+        <footer className="border-t border-border/40 bg-muted/30 py-8 px-4 md:px-6 w-full">
           <div className="container mx-auto">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
-              {/* About */}
-              <div>
+              {/* About - Fixed column width and ensured visibility */}
+              <div className="lg:col-span-1">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Info size={16} className="text-primary" />
                   About
@@ -62,7 +62,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </div>
               
               {/* Legal */}
-              <div>
+              <div className="lg:col-span-1">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <FileText size={16} className="text-primary" />
                   Legal
@@ -79,7 +79,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </div>
               
               {/* Product */}
-              <div>
+              <div className="lg:col-span-1">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Book size={16} className="text-primary" />
                   Product
@@ -98,7 +98,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </div>
               
               {/* Company */}
-              <div>
+              <div className="lg:col-span-1">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Calendar size={16} className="text-primary" />
                   Company
@@ -136,7 +136,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </div>
               
               {/* Contact */}
-              <div>
+              <div className="lg:col-span-1">
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Mail size={16} className="text-primary" />
                   Contact
