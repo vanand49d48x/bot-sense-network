@@ -22,7 +22,7 @@ export function MapView({ robots }: MapViewProps) {
       </CardHeader>
       <CardContent>
         <div className="h-64 rounded-md overflow-hidden">
-          <LeafletMap robots={robots} height="100%" />
+          <LeafletMap robots={robots} height="100%" showTooltips={true} />
         </div>
         <div className="mt-4 text-xs text-muted-foreground">
           Showing {robotsWithLocation.length} robots with location data
