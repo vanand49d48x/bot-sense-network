@@ -247,12 +247,12 @@ export function LeafletMap({
           </LayerGroup>
         </LayersControl.Overlay>
         
-        {/* Historical Paths with Arrows */}
+        {/* Historical Paths with Directional Arrows */}
         <LayersControl.Overlay checked name="Historical Paths">
           <LayerGroup>
             {historicalPaths.map((path, pathIndex) => (
               <LayerGroup key={`path-${pathIndex}`}>
-                {/* Draw the path line */}
+                {/* Draw the continuous path line */}
                 <Polyline
                   positions={path.path}
                   pathOptions={{
