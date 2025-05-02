@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, api-key, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
@@ -19,26 +19,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Extract data from request
-    let robotId;
-    try {
-      const requestData = await req.json();
-      robotId = requestData.robotId;
-      
-      if (!robotId) {
-        return new Response(
-          JSON.stringify({ error: "Robot ID is required" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-    } catch (error) {
+    const { robotId } = await req.json();
+
+    if (!robotId) {
       return new Response(
-        JSON.stringify({ error: "Invalid JSON in request body", details: error.message }),
+        JSON.stringify({ error: "Robot ID is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
-
-    console.log(`Generating simulated telemetry for robot: ${robotId}`);
 
     // Get the robot information first
     const { data: robot, error: robotError } = await supabaseClient
@@ -48,14 +36,11 @@ serve(async (req) => {
       .single();
 
     if (robotError || !robot) {
-      console.error("Robot lookup error:", robotError?.message || "Robot not found");
       return new Response(
         JSON.stringify({ error: "Robot not found", details: robotError }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
       );
     }
-
-    console.log(`Found robot: ${robot.name}`);
 
     // Generate randomized telemetry data
     const batteryDrain = Math.random() * 5; // 0-5% battery drain
@@ -95,14 +80,11 @@ serve(async (req) => {
       }]);
 
     if (telemetryError) {
-      console.error("Failed to insert telemetry:", telemetryError);
       return new Response(
         JSON.stringify({ error: "Failed to insert telemetry", details: telemetryError }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
-
-    console.log(`Successfully inserted telemetry data for robot ${robotId}`);
 
     // Create alert if needed
     if (newBatteryLevel < 20 || newTemperature > 40 || generateError) {
@@ -120,7 +102,6 @@ serve(async (req) => {
         alertMessage = `Error detected: ${errorCodes.join(", ")}`;
       }
 
-      console.log(`Creating alert for robot ${robotId}: ${alertType} - ${alertMessage}`);
       await supabaseClient.from("alerts").insert([{
         robot_id: robotId,
         type: alertType,
@@ -128,32 +109,17 @@ serve(async (req) => {
       }]);
     }
 
-    // Also update the robot status
-    await supabaseClient
-      .from("robots")
-      .update({
-        battery_level: newBatteryLevel,
-        temperature: newTemperature,
-        location: newLocation,
-        last_ping: new Date().toISOString(),
-        status: errorCodes.length > 0 ? "offline" : newBatteryLevel < 20 ? "warning" : "online"
-      })
-      .eq("id", robotId);
-
     return new Response(
       JSON.stringify({ 
         success: true, 
         robot_id: robotId,
         battery_level: newBatteryLevel,
-        temperature: newTemperature,
-        location: newLocation,
-        timestamp: new Date().toISOString()
+        temperature: newTemperature
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
-    console.error("Error in robot-simulator function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

@@ -8,31 +8,16 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log("Telemetry function called");
-  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Log the environment variables (excluding sensitive info)
-    console.log("SUPABASE_URL available:", !!Deno.env.get("SUPABASE_URL"));
-    console.log("SUPABASE_SERVICE_ROLE_KEY available:", !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
-    
-    // Create Supabase client with service role
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error("Missing required environment variables:", {
-        hasUrl: !!supabaseUrl,
-        hasServiceKey: !!supabaseServiceRoleKey
-      });
-      throw new Error("Server configuration error: Missing environment variables");
-    }
-    
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
     if (req.method !== "POST") {
       return new Response(
@@ -41,38 +26,17 @@ serve(async (req) => {
       );
     }
 
-    // Log all headers for debugging (excluding actual key values)
-    const headersLog = {};
-    req.headers.forEach((value, key) => {
-      headersLog[key] = key.toLowerCase().includes("key") || key.toLowerCase().includes("auth") ? 
-        "VALUE_HIDDEN_FOR_SECURITY" : value;
-    });
-    console.log("Headers received:", JSON.stringify(headersLog));
-    
-    // Check for API key in various header formats
-    const apiKey = req.headers.get("api-key") || 
-                  req.headers.get("apikey") || 
-                  req.headers.get("API-KEY") || 
-                  req.headers.get("APIKEY");
-    
-    console.log("API Key format detected:", apiKey ? "Present" : "Missing");
-    
+    // Check API key in header
+    const apiKey = req.headers.get("api-key");
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ 
-          error: "API Key is required", 
-          details: "Please provide your API key in the 'api-key' header",
-          receivedHeaders: Object.keys(headersLog)
-        }),
+        JSON.stringify({ error: "API Key is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    console.log("Parsing request body...");
     const telemetryData = await req.json();
     const { robotId, batteryLevel, temperature, status, location, timestamp } = telemetryData;
-    
-    console.log("Received telemetry for robotId:", robotId);
 
     if (!robotId) {
       return new Response(
@@ -80,9 +44,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
-
-    console.log(`Processing telemetry for robot ${robotId}`);
-    console.log(`API key provided: ${apiKey ? "Present (hidden)" : "Missing"}`);
 
     // Find the user who owns the API key
     const { data: profileData, error: profileError } = await supabaseClient
@@ -92,17 +53,11 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      console.error("Profile lookup error:", profileError?.message || "Invalid API key");
       return new Response(
-        JSON.stringify({ 
-          error: "Invalid API key",
-          details: "The provided API key could not be found in any user profile"
-        }),
+        JSON.stringify({ error: "Invalid API key" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
-
-    console.log(`Found user profile with ID: ${profileData.id}`);
 
     // Verify the robot exists and belongs to the user
     let { data: robot, error: robotError } = await supabaseClient
@@ -112,7 +67,7 @@ serve(async (req) => {
       .eq("user_id", profileData.id)
       .single();
 
-    if (!robot || robotError) {
+    if (!robot) {
       // Try to find any robot with this ID
       const { data: allRobots, error: listError } = await supabaseClient
         .from("robots")
@@ -123,7 +78,6 @@ serve(async (req) => {
         robot = allRobots.find(r => r.id === robotId);
         
         if (!robot || robot.user_id !== profileData.id) {
-          console.error(`Robot ${robotId} does not belong to user ${profileData.id}`);
           return new Response(
             JSON.stringify({ 
               error: "Invalid robot ID or you don't have access to this robot", 
@@ -133,15 +87,12 @@ serve(async (req) => {
           );
         }
       } else {
-        console.error("No robots found in system");
         return new Response(
           JSON.stringify({ error: "No robots found in system" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
         );
       }
     }
-
-    console.log(`Verified robot ${robotId} belongs to user ${profileData.id}`);
 
     // Process and validate telemetry data
     // Convert location from client format (lat/lng) to database format (latitude/longitude) if needed
@@ -175,8 +126,6 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Successfully inserted telemetry data for robot ${robotId}`);
-
     // Update robot status (last_ping, battery_level, etc.)
     await supabaseClient
       .from("robots")
@@ -190,12 +139,7 @@ serve(async (req) => {
       .eq("id", robotId);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Telemetry data received",
-        robotId: robotId,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify({ success: true, message: "Telemetry data received" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
