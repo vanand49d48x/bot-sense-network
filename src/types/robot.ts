@@ -26,5 +26,5 @@ export interface UserProfile {
   avatar_url: string | null;
   api_key: string | null;
   custom_robot_types: string[] | null;
-  custom_telemetry_types?: string[] | null;
+  custom_telemetry_types: string[] | null;
 }

@@ -115,6 +115,17 @@ serve(async (req) => {
       // We'll use status to update the robot's status below
     };
 
+    // Store raw telemetry data
+    let telemetryDataJson = {};
+    
+    // Add all fields from the original request
+    // This preserves the complete payload in its original format
+    for (const [key, value] of Object.entries(telemetryData)) {
+      if (key !== 'robotId') { // Skip robotId as it's redundant
+        telemetryDataJson[key] = value;
+      }
+    }
+
     // Check for custom telemetry types and validate against user's allowed types
     if (customTelemetry && typeof customTelemetry === 'object') {
       const userCustomTypes = profileData.custom_telemetry_types || [];
@@ -170,13 +181,9 @@ serve(async (req) => {
       battery_level: batteryLevel,
       temperature: temperature,
       location: locationData,
-      last_ping: new Date().toISOString()
+      last_ping: new Date().toISOString(),
+      telemetry_data: telemetryDataJson // Store the complete telemetry payload
     };
-    
-    // If custom telemetry data exists, add it as a JSON column
-    if (customTelemetry && typeof customTelemetry === 'object') {
-      robotUpdate.telemetry_data = customTelemetry;
-    }
     
     await supabaseClient
       .from("robots")

@@ -57,6 +57,7 @@ export type Database = {
           created_at: string
           custom_alerts: Json[] | null
           custom_robot_types: string[] | null
+          custom_telemetry_types: string[] | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -68,6 +69,7 @@ export type Database = {
           created_at?: string
           custom_alerts?: Json[] | null
           custom_robot_types?: string[] | null
+          custom_telemetry_types?: string[] | null
           first_name?: string | null
           id: string
           last_name?: string | null
@@ -79,6 +81,7 @@ export type Database = {
           created_at?: string
           custom_alerts?: Json[] | null
           custom_robot_types?: string[] | null
+          custom_telemetry_types?: string[] | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -97,6 +100,7 @@ export type Database = {
           location: Json | null
           name: string
           status: string
+          telemetry_data: Json | null
           temperature: number | null
           type: string
           updated_at: string
@@ -112,6 +116,7 @@ export type Database = {
           location?: Json | null
           name: string
           status?: string
+          telemetry_data?: Json | null
           temperature?: number | null
           type: string
           updated_at?: string
@@ -127,6 +132,7 @@ export type Database = {
           location?: Json | null
           name?: string
           status?: string
+          telemetry_data?: Json | null
           temperature?: number | null
           type?: string
           updated_at?: string

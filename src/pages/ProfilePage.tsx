@@ -782,7 +782,7 @@ export default function ProfilePage() {
                           <SelectItem value="error">Errors</SelectItem>
                           {customTelemetryTypes.length > 0 && (
                             <>
-                              <SelectItem disabled>
+                              <SelectItem value="separator" disabled>
                                 <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
                               </SelectItem>
                               {customTelemetryTypes.map((type, index) => (
@@ -935,7 +935,7 @@ export default function ProfilePage() {
                                         <SelectItem value="error">Errors</SelectItem>
                                         {customTelemetryTypes.length > 0 && (
                                           <>
-                                            <SelectItem disabled>
+                                            <SelectItem value="separator" disabled>
                                               <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
                                             </SelectItem>
                                             {customTelemetryTypes.map((type, index) => (
