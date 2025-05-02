@@ -38,7 +38,7 @@ export function LeafletMap({ robots, height = "100%", showTooltips = false }: Le
   useEffect(() => {
     setIsClient(true);
     
-    // Add the pulse animation CSS
+    // Add the pulse animation CSS and enhanced tooltip styles
     const style = document.createElement('style');
     style.innerHTML = `
       .pulse-animation {
@@ -56,15 +56,47 @@ export function LeafletMap({ robots, height = "100%", showTooltips = false }: Le
         }
       }
       .leaflet-tooltip {
-        background-color: rgba(255, 255, 255, 0.9);
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 8px;
+        background-color: rgba(26, 31, 44, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 10px 12px;
         font-size: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #FFFFFF;
+        max-width: 220px;
+        transition: all 0.2s ease;
       }
       .leaflet-tooltip-top:before {
-        border-top-color: rgba(255, 255, 255, 0.9);
+        border-top-color: rgba(26, 31, 44, 0.95);
+      }
+      .tooltip-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 4px;
+      }
+      .tooltip-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 8px;
+      }
+      .tooltip-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 11px;
+      }
+      .tooltip-value {
+        font-weight: 500;
+        text-align: right;
+      }
+      .tooltip-value-online {
+        color: #10b981;
+      }
+      .tooltip-value-warning {
+        color: #f59e0b;
+      }
+      .tooltip-value-offline {
+        color: #ef4444;
       }
     `;
     document.head.appendChild(style);
@@ -110,18 +142,19 @@ export function LeafletMap({ robots, height = "100%", showTooltips = false }: Le
           icon={createStatusIcon(robot.status)}
         >
           {showTooltips && (
-            <Tooltip direction="top" offset={[0, -8]} opacity={1} permanent={false}>
-              <div className="font-medium">{robot.name}</div>
-              <div className="grid grid-cols-2 gap-x-2 text-xs mt-1">
-                <span>Status:</span>
-                <span className={`${
-                  robot.status === 'online' ? 'text-green-600' :
-                  robot.status === 'warning' ? 'text-yellow-600' : 'text-red-600'
-                }`}>{robot.status}</span>
-                <span>Battery:</span>
-                <span>{robot.batteryLevel}%</span>
-                <span>Temperature:</span>
-                <span>{robot.temperature}°C</span>
+            <Tooltip direction="top" offset={[0, -8]} opacity={1} permanent={false} className="custom-tooltip">
+              <div className="tooltip-title">{robot.name}</div>
+              <div className="tooltip-grid">
+                <span className="tooltip-label">Status:</span>
+                <span className={`tooltip-value tooltip-value-${robot.status}`}>
+                  {robot.status.charAt(0).toUpperCase() + robot.status.slice(1)}
+                </span>
+                <span className="tooltip-label">Battery:</span>
+                <span className="tooltip-value">{robot.batteryLevel}%</span>
+                <span className="tooltip-label">Temperature:</span>
+                <span className="tooltip-value">{robot.temperature}°C</span>
+                <span className="tooltip-label">Last Seen:</span>
+                <span className="tooltip-value">{new Date(robot.lastHeartbeat).toLocaleTimeString()}</span>
               </div>
             </Tooltip>
           )}
