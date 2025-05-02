@@ -99,7 +99,10 @@ export function MainLayout({ children }: MainLayoutProps) {
               
               {/* Company */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Company</h3>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Calendar size={16} className="text-primary" />
+                  Company
+                </h3>
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm mb-2">Subscribe to our newsletter</p>
@@ -134,7 +137,10 @@ export function MainLayout({ children }: MainLayoutProps) {
               
               {/* Contact */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Contact</h3>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Mail size={16} className="text-primary" />
+                  Contact
+                </h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <Mail size={16} className="text-primary" />
