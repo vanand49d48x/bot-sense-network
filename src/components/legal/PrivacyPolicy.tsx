@@ -30,7 +30,7 @@ const PrivacyPolicy = () => {
         <li>Opt out of communications</li>
       </ul>
       
-      <p className="mt-6">We never sell your data. Full details at <a href="https://robometrics.xyz/privacy" className="text-primary underline">robometrics.xyz/privacy</a></p>
+      <p className="mt-6">We never sell your data. Full details at <a href="https://robometrics.io/privacy" className="text-primary underline">robometrics.io/privacy</a></p>
       
       <Separator className="my-10" />
       

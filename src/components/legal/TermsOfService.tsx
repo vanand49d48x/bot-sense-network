@@ -17,7 +17,7 @@ const TermsOfService = () => {
         <li>We reserve the right to suspend access for abuse.</li>
       </ul>
       
-      <p className="mb-6">Use of RoboMetrics constitutes acceptance of these terms. Full terms at <a href="https://robometrics.xyz/terms" className="text-primary underline">robometrics.xyz/terms</a></p>
+      <p className="mb-6">Use of RoboMetrics constitutes acceptance of these terms. Full terms at <a href="https://robometrics.io/terms" className="text-primary underline">robometrics.io/terms</a></p>
       
       <Separator className="my-10" />
       

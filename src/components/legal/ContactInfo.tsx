@@ -34,7 +34,7 @@ const ContactInfo = () => {
       <p className="mb-8">Monday - Friday: 9:00 AM - 5:00 PM (EST)</p>
       
       <p className="text-sm text-muted-foreground">
-        Copyright: © 2025 RoboMetrics. All rights reserved.
+        Copyright: © {new Date().getFullYear()} RoboMetrics. All rights reserved.
       </p>
     </div>
   );
