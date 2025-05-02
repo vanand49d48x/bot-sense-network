@@ -144,19 +144,52 @@ serve(async (req) => {
         .single();
         
       if (alertsData?.custom_alerts && Array.isArray(alertsData.custom_alerts)) {
+        console.log("Custom alert settings:", JSON.stringify(alertsData.custom_alerts));
+        
         for (const alert of alertsData.custom_alerts) {
-          if (alert.enabled && alert.customTelemetry && incomingTypes.includes(alert.type)) {
+          if (alert.enabled && incomingTypes.includes(alert.type)) {
             const telemetryValue = customTelemetry[alert.type];
+            console.log(`Checking alert for ${alert.type}: value=${telemetryValue}, threshold=${alert.threshold}`);
             
             // If this is a numeric value and exceeds threshold, create an alert
             if (typeof telemetryValue === 'number' && telemetryValue >= alert.threshold) {
-              await supabaseClient.from("alerts").insert({
-                robot_id: robotId,
-                type: alert.type,
-                message: `${alert.type} value of ${telemetryValue} exceeds threshold of ${alert.threshold}`,
-                resolved: false
-              });
+              console.log(`Creating alert for ${alert.type} with value ${telemetryValue}`);
+              
+              const { data: alertInsert, error: alertError } = await supabaseClient
+                .from("alerts")
+                .insert({
+                  robot_id: robotId,
+                  type: alert.type,
+                  message: `${alert.type} value of ${telemetryValue} exceeds threshold of ${alert.threshold}`,
+                  resolved: false
+                });
+                
+              if (alertError) {
+                console.error("Error creating alert:", alertError);
+              }
             }
+          }
+        }
+      }
+      
+      // Also check for standard thresholds for ABCD if not in custom alerts
+      if (customTelemetry.ABCD !== undefined && typeof customTelemetry.ABCD === 'number') {
+        const abcdValue = customTelemetry.ABCD;
+        // Default threshold for ABCD if not set in custom alerts
+        if (abcdValue > 40) {
+          const hasCustomAlert = alertsData?.custom_alerts?.some(alert => 
+            alert.type === 'ABCD' && alert.enabled
+          );
+          
+          // Only create a default alert if there's no custom alert for this type
+          if (!hasCustomAlert) {
+            console.log(`Creating default alert for ABCD with value ${abcdValue}`);
+            await supabaseClient.from("alerts").insert({
+              robot_id: robotId,
+              type: 'ABCD',
+              message: `ABCD value of ${abcdValue} exceeds default threshold of 40`,
+              resolved: false
+            });
           }
         }
       }
@@ -191,7 +224,7 @@ serve(async (req) => {
       .eq("id", robotId);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Telemetry data received" }),
+      JSON.stringify({ success: true, message: "Telemetry data received", alertsProcessed: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

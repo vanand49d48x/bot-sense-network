@@ -1,4 +1,3 @@
-
 import { Robot } from "@/types/robot";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,11 +33,25 @@ export function CustomTelemetryDisplay({ robot }: CustomTelemetryDisplayProps) {
 
   // Filter out standard telemetry fields that are already displayed elsewhere
   const standardFields = ["batteryLevel", "temperature", "status", "location", "timestamp"];
-  const customTelemetry = Object.entries(robot.telemetryData).filter(
-    ([key]) => !standardFields.includes(key)
+  
+  // Extract custom telemetry data
+  let customTelemetryEntries: [string, any][] = [];
+  
+  // Check if customTelemetry object exists and extract its entries
+  if (robot.telemetryData.customTelemetry && typeof robot.telemetryData.customTelemetry === 'object') {
+    customTelemetryEntries = Object.entries(robot.telemetryData.customTelemetry);
+    console.log("Extracted custom telemetry entries:", customTelemetryEntries);
+  }
+  
+  // Also include any other non-standard fields at the root level
+  const rootLevelCustom = Object.entries(robot.telemetryData).filter(
+    ([key]) => !standardFields.includes(key) && key !== 'customTelemetry'
   );
+  
+  // Combine both sources of custom telemetry
+  const allCustomTelemetry = [...customTelemetryEntries, ...rootLevelCustom];
 
-  if (customTelemetry.length === 0) {
+  if (allCustomTelemetry.length === 0) {
     return (
       <Card className="mb-4">
         <CardHeader className="pb-2">
@@ -72,7 +85,10 @@ export function CustomTelemetryDisplay({ robot }: CustomTelemetryDisplayProps) {
   const isAlertValue = (key: string, value: any) => {
     // This can be enhanced with user-defined thresholds from the profile settings
     if (typeof value === "number") {
-      // Example threshold logic - can be customized for specific metrics
+      // Add specific handling for ABCD
+      if (key === "ABCD" && value > 40) return true;
+      
+      // Other threshold logic
       if (key.toLowerCase().includes("error") && value > 0) return true;
       if (key.toLowerCase().includes("temperature") && value > 40) return true;
       if (key.toLowerCase().includes("pressure") && value > 100) return true;
@@ -87,7 +103,7 @@ export function CustomTelemetryDisplay({ robot }: CustomTelemetryDisplayProps) {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
-          {customTelemetry.map(([key, value]) => {
+          {allCustomTelemetry.map(([key, value]) => {
             const isAlert = isAlertValue(key, value);
             return (
               <div 
