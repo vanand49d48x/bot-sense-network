@@ -11,6 +11,8 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import IntegrationGuide from "./pages/IntegrationGuide";
 import Landing from "./pages/Landing";
+import MapViewPage from "./pages/MapViewPage";
+import Alerts from "./pages/Alerts";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,22 @@ const App = () => (
                     <Index />
                   </ProtectedRoute>
                 } 
+              />
+              <Route 
+                path="/map" 
+                element={
+                  <ProtectedRoute>
+                    <MapViewPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route 
+                path="/alerts" 
+                element={
+                  <ProtectedRoute>
+                    <Alerts />
+                  </ProtectedRoute>
+                }
               />
               <Route path="/integration" element={<IntegrationGuide />} />
               <Route path="*" element={<NotFound />} />

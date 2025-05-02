@@ -1,4 +1,5 @@
 
+import { Link } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -24,19 +25,14 @@ export function AppSidebar() {
       url: "/dashboard",
     },
     {
-      title: "Fleet Status",
-      icon: Battery,
-      url: "#",
-    },
-    {
       title: "Map View",
       icon: MapPin,
-      url: "#",
+      url: "/map",
     },
     {
       title: "Alerts",
       icon: Bell,
-      url: "#",
+      url: "/alerts",
     }
   ];
 
@@ -53,10 +49,10 @@ export function AppSidebar() {
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center space-x-2">
+                    <Link to={item.url} className="flex items-center space-x-2">
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
