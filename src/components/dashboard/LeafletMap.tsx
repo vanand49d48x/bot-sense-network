@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, Circle, LayerGroup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Robot } from "@/types/robot";
 import L from 'leaflet';
@@ -26,13 +26,42 @@ const createStatusIcon = (status: 'online' | 'offline' | 'warning') => {
   });
 };
 
+interface GeofenceZone {
+  id: string;
+  name: string;
+  center: [number, number];
+  radius: number; // in meters
+  color: string;
+}
+
+interface HistoricalPath {
+  robotId: string;
+  path: [number, number][];
+  timestamp: string;
+  color: string;
+}
+
 interface LeafletMapProps {
   robots: Robot[];
   height?: string;
   showTooltips?: boolean;
+  historicalPaths?: HistoricalPath[];
+  geofenceZones?: GeofenceZone[];
+  buildingOverlays?: Array<{
+    name: string;
+    bounds: [[number, number], [number, number]];
+    imageUrl: string;
+  }>;
 }
 
-export function LeafletMap({ robots, height = "100%", showTooltips = false }: LeafletMapProps) {
+export function LeafletMap({ 
+  robots, 
+  height = "100%", 
+  showTooltips = false,
+  historicalPaths = [],
+  geofenceZones = [],
+  buildingOverlays = []
+}: LeafletMapProps) {
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
@@ -98,6 +127,25 @@ export function LeafletMap({ robots, height = "100%", showTooltips = false }: Le
       .tooltip-value-offline {
         color: #ef4444;
       }
+      .geofence-label {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        color: white;
+        font-weight: bold;
+        text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.75);
+      }
+      @media (max-width: 640px) {
+        .leaflet-control-container .leaflet-top {
+          top: 10px;
+        }
+        .leaflet-control-container .leaflet-bottom {
+          bottom: 10px;
+        }
+        .leaflet-control-zoom {
+          margin-left: 10px !important;
+        }
+      }
     `;
     document.head.appendChild(style);
 
@@ -127,11 +175,86 @@ export function LeafletMap({ robots, height = "100%", showTooltips = false }: Le
       center={center} 
       zoom={robotsWithLocation.length > 1 ? 10 : 13} 
       style={{ height, width: "100%" }}
+      className="z-0 rounded-md overflow-hidden"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      
+      <LayersControl position="topright">
+        {/* Base map layers */}
+        <LayersControl.BaseLayer checked name="OpenStreetMap">
+          <TileLayer 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+        </LayersControl.BaseLayer>
+        
+        <LayersControl.BaseLayer name="Satellite">
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+          />
+        </LayersControl.BaseLayer>
+        
+        {/* Building overlays */}
+        {buildingOverlays.map((overlay, index) => (
+          <LayersControl.Overlay key={index} name={`${overlay.name} Floor Plan`}>
+            <LayerGroup>
+              {/* Implement custom image overlay for building floor plans */}
+              {/* This would require converting floor plans to georeferenced images */}
+            </LayerGroup>
+          </LayersControl.Overlay>
+        ))}
+        
+        {/* Geofence Zones */}
+        <LayersControl.Overlay checked name="Geofence Zones">
+          <LayerGroup>
+            {geofenceZones.map((zone) => (
+              <Circle
+                key={zone.id}
+                center={zone.center}
+                radius={zone.radius}
+                pathOptions={{
+                  color: zone.color,
+                  fillColor: zone.color,
+                  fillOpacity: 0.2,
+                  weight: 2,
+                }}
+              >
+                <Tooltip permanent direction="center" className="geofence-label">
+                  {zone.name}
+                </Tooltip>
+              </Circle>
+            ))}
+          </LayerGroup>
+        </LayersControl.Overlay>
+        
+        {/* Historical Paths */}
+        <LayersControl.Overlay checked name="Historical Paths">
+          <LayerGroup>
+            {historicalPaths.map((path, index) => (
+              <Polyline
+                key={index}
+                positions={path.path}
+                pathOptions={{
+                  color: path.color,
+                  weight: 3,
+                  opacity: 0.7,
+                  dashArray: '5, 5',
+                }}
+              >
+                <Tooltip>
+                  {`Path from ${new Date(path.timestamp).toLocaleString()}`}
+                </Tooltip>
+              </Polyline>
+            ))}
+          </LayerGroup>
+        </LayersControl.Overlay>
+      </LayersControl>
+      
+      {/* Robot markers */}
       {robotsWithLocation.map(robot => (
         <Marker
           key={robot.id}
