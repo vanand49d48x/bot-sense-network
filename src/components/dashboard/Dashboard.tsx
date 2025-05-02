@@ -1,3 +1,4 @@
+
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
@@ -162,47 +163,12 @@ export function Dashboard() {
           console.error('Error subscribing to realtime updates');
         }
       });
-
-    // This function enables realtime for tables using a SQL function
-    const setupRealtimeTables = async () => {
-      try {
-        console.log("Enabling realtime for tables via direct SQL approach...");
-        
-        // Enable realtime for robots table directly
-        const { data: robotsData, error: robotsError } = await supabase.from('robots')
-          .select('id')
-          .limit(1);
-          
-        if (robotsError) {
-          console.error("Error querying robots table:", robotsError);
-        } else {
-          console.log("Successfully queried robots table for realtime");
-        }
-        
-        // Enable realtime for telemetry table directly
-        const { data: telemetryData, error: telemetryError } = await supabase.from('telemetry')
-          .select('id')
-          .limit(1);
-          
-        if (telemetryError) {
-          console.error("Error querying telemetry table:", telemetryError);
-        } else {
-          console.log("Successfully queried telemetry table for realtime");
-        }
-      } catch (error) {
-        console.error("Error setting up realtime tables:", error);
-      }
-    };
-    
-    // Call the setup function
-    setupRealtimeTables();
-    
-    // Cleanup subscriptions when component unmounts
+      
     return () => {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, []); // Remove localRobots from dependency to avoid unnecessary resubscriptions
+  }, []); // Remove dependency array to prevent resubscription loops
   
   if (loading) {
     return (
