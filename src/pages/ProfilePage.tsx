@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,13 +18,25 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Json } from "@/types/supabase";
 import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type AlertType = "battery" | "temperature" | "offline" | "error";
-type AlertThreshold = {
+
+// Condition object that defines a single alert condition
+type AlertCondition = {
   type: AlertType;
   threshold: number;
-  enabled: boolean;
-  andCondition: boolean; // Changed from optional to required property
+};
+
+// Main alert threshold with multiple conditions
+type AlertThreshold = {
+  type: AlertType;           // Primary alert type
+  threshold: number;         // Primary threshold
+  enabled: boolean;          // Is this alert enabled
+  andCondition: boolean;     // Use AND or OR logic for additional conditions
+  additionalConditions?: AlertCondition[]; // Additional conditions to check
 };
 
 export default function ProfilePage() {
@@ -37,6 +48,11 @@ export default function ProfilePage() {
   const [alertThreshold, setAlertThreshold] = useState<number>(20);
   const [useAndCondition, setUseAndCondition] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState<AlertThreshold | null>(null);
+  const [isAddingCondition, setIsAddingCondition] = useState(false);
+  const [additionalConditionType, setAdditionalConditionType] = useState<AlertType>("temperature");
+  const [additionalThreshold, setAdditionalThreshold] = useState<number>(35);
+  const [isOpenConditions, setIsOpenConditions] = useState<{[key: string]: boolean}>({});
   
   useEffect(() => {
     if (user) {
@@ -94,7 +110,13 @@ export default function ProfilePage() {
               type: alert.type as AlertType,
               threshold: Number(alert.threshold),
               enabled: Boolean(alert.enabled),
-              andCondition: 'andCondition' in alert ? Boolean(alert.andCondition) : false
+              andCondition: 'andCondition' in alert ? Boolean(alert.andCondition) : false,
+              additionalConditions: 'additionalConditions' in alert && Array.isArray(alert.additionalConditions)
+                ? (alert.additionalConditions as any[]).map(cond => ({
+                    type: cond.type as AlertType,
+                    threshold: Number(cond.threshold)
+                  }))
+                : []
             };
           }
           // Return a default alert for any invalid data
@@ -102,7 +124,8 @@ export default function ProfilePage() {
             type: 'battery' as AlertType,
             threshold: 20,
             enabled: false,
-            andCondition: false
+            andCondition: false,
+            additionalConditions: []
           };
         });
         
@@ -110,10 +133,10 @@ export default function ProfilePage() {
       } else {
         // Set default alerts if none exist
         setCustomAlerts([
-          { type: "battery", threshold: 20, enabled: true, andCondition: false },
-          { type: "temperature", threshold: 35, enabled: true, andCondition: false },
-          { type: "offline", threshold: 0, enabled: true, andCondition: false },
-          { type: "error", threshold: 0, enabled: true, andCondition: false }
+          { type: "battery", threshold: 20, enabled: true, andCondition: false, additionalConditions: [] },
+          { type: "temperature", threshold: 35, enabled: true, andCondition: false, additionalConditions: [] },
+          { type: "offline", threshold: 0, enabled: true, andCondition: false, additionalConditions: [] },
+          { type: "error", threshold: 0, enabled: true, andCondition: false, additionalConditions: [] }
         ]);
       }
     } catch (error: any) {
@@ -122,10 +145,10 @@ export default function ProfilePage() {
       
       // Set default alerts on error
       setCustomAlerts([
-        { type: "battery", threshold: 20, enabled: true, andCondition: false },
-        { type: "temperature", threshold: 35, enabled: true, andCondition: false },
-        { type: "offline", threshold: 0, enabled: true, andCondition: false },
-        { type: "error", threshold: 0, enabled: true, andCondition: false }
+        { type: "battery", threshold: 20, enabled: true, andCondition: false, additionalConditions: [] },
+        { type: "temperature", threshold: 35, enabled: true, andCondition: false, additionalConditions: [] },
+        { type: "offline", threshold: 0, enabled: true, andCondition: false, additionalConditions: [] },
+        { type: "error", threshold: 0, enabled: true, andCondition: false, additionalConditions: [] }
       ]);
     } finally {
       setIsLoading(false);
@@ -206,7 +229,8 @@ export default function ProfilePage() {
           ...updatedAlerts[existingAlertIndex],
           threshold: alertThreshold,
           enabled: true,
-          andCondition: useAndCondition
+          andCondition: useAndCondition,
+          additionalConditions: updatedAlerts[existingAlertIndex].additionalConditions || []
         };
       } else {
         // Add new alert
@@ -216,7 +240,8 @@ export default function ProfilePage() {
             type: alertType,
             threshold: alertThreshold,
             enabled: true,
-            andCondition: useAndCondition
+            andCondition: useAndCondition,
+            additionalConditions: []
           }
         ];
       }
@@ -233,6 +258,80 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error('Error updating alert threshold:', error.message);
       toast.error('Failed to update alert threshold');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addConditionToAlert = async (alertType: AlertType) => {
+    try {
+      setIsLoading(true);
+      
+      const updatedAlerts = customAlerts.map(alert => {
+        if (alert.type === alertType) {
+          // Create a new additional condition
+          const newCondition: AlertCondition = {
+            type: additionalConditionType,
+            threshold: additionalThreshold
+          };
+          
+          // Add the condition to the alert
+          return {
+            ...alert,
+            additionalConditions: [...(alert.additionalConditions || []), newCondition]
+          };
+        }
+        return alert;
+      });
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_alerts: updatedAlerts })
+        .eq('id', user?.id);
+        
+      if (error) throw error;
+      
+      setCustomAlerts(updatedAlerts);
+      setIsAddingCondition(false);
+      toast.success('Additional condition added');
+    } catch (error: any) {
+      console.error('Error adding condition:', error.message);
+      toast.error('Failed to add condition');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeConditionFromAlert = async (alertType: AlertType, conditionIndex: number) => {
+    try {
+      setIsLoading(true);
+      
+      const updatedAlerts = customAlerts.map(alert => {
+        if (alert.type === alertType && alert.additionalConditions) {
+          // Remove the condition at the specified index
+          const updatedConditions = [...alert.additionalConditions];
+          updatedConditions.splice(conditionIndex, 1);
+          
+          return {
+            ...alert,
+            additionalConditions: updatedConditions
+          };
+        }
+        return alert;
+      });
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_alerts: updatedAlerts })
+        .eq('id', user?.id);
+        
+      if (error) throw error;
+      
+      setCustomAlerts(updatedAlerts);
+      toast.success('Condition removed');
+    } catch (error: any) {
+      console.error('Error removing condition:', error.message);
+      toast.error('Failed to remove condition');
     } finally {
       setIsLoading(false);
     }
@@ -288,6 +387,13 @@ export default function ProfilePage() {
     }
   };
 
+  const toggleConditionsPanel = (alertType: AlertType) => {
+    setIsOpenConditions(prev => ({
+      ...prev,
+      [alertType]: !prev[alertType]
+    }));
+  };
+
   const getAlertIcon = (type: AlertType) => {
     switch (type) {
       case "battery":
@@ -315,16 +421,33 @@ export default function ProfilePage() {
   };
 
   const getAlertDescription = (alert: AlertThreshold) => {
-    const andText = alert.andCondition ? " AND other conditions" : "";
+    const condCount = alert.additionalConditions?.length || 0;
+    const condText = condCount > 0 
+      ? `with ${condCount} additional condition${condCount > 1 ? 's' : ''} (${alert.andCondition ? 'AND' : 'OR'})` 
+      : "";
+    
     switch (alert.type) {
       case "battery":
-        return `Alert when battery is below ${alert.threshold}%${andText}`;
+        return `Alert when battery is below ${alert.threshold}% ${condText}`;
       case "temperature":
-        return `Alert when temperature exceeds ${alert.threshold}°C${andText}`;
+        return `Alert when temperature exceeds ${alert.threshold}°C ${condText}`;
       case "offline":
-        return `Alert when robot goes offline${andText}`;
+        return `Alert when robot goes offline ${condText}`;
       case "error":
-        return `Alert when robot reports errors${andText}`;
+        return `Alert when robot reports errors ${condText}`;
+    }
+  };
+
+  const getConditionDescription = (condition: AlertCondition) => {
+    switch (condition.type) {
+      case "battery":
+        return `Battery below ${condition.threshold}%`;
+      case "temperature":
+        return `Temperature exceeds ${condition.threshold}°C`;
+      case "offline":
+        return `Robot is offline`;
+      case "error":
+        return `Robot has errors`;
     }
   };
 
@@ -447,7 +570,6 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   
-                  {/* New AND condition checkbox */}
                   <div className="flex items-center space-x-2">
                     <Switch 
                       id="and-condition" 
@@ -455,7 +577,7 @@ export default function ProfilePage() {
                       onCheckedChange={setUseAndCondition}
                     />
                     <Label htmlFor="and-condition">
-                      Combine with other conditions (AND)
+                      Combine with other conditions using AND logic (default is OR)
                     </Label>
                   </div>
 
@@ -509,6 +631,104 @@ export default function ProfilePage() {
                             </Button>
                           </div>
                         </div>
+                        
+                        {/* Additional Conditions Panel */}
+                        <Collapsible 
+                          open={isOpenConditions[alert.type]} 
+                          onOpenChange={() => toggleConditionsPanel(alert.type)}
+                          className="mt-2"
+                        >
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="w-full flex justify-between p-2 h-8">
+                              <span>Additional Conditions</span>
+                              <span>{isOpenConditions[alert.type] ? "Hide" : "Show"}</span>
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="space-y-2 pt-2">
+                            {/* List existing conditions */}
+                            {alert.additionalConditions && alert.additionalConditions.length > 0 ? (
+                              <div className="space-y-2">
+                                {alert.additionalConditions.map((condition, condIndex) => (
+                                  <div key={condIndex} className="flex items-center justify-between bg-background p-2 rounded border">
+                                    <span>{getConditionDescription(condition)}</span>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => removeConditionFromAlert(alert.type, condIndex)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No additional conditions</p>
+                            )}
+                            
+                            {/* Add new condition UI */}
+                            {selectedAlert?.type === alert.type && isAddingCondition ? (
+                              <div className="bg-background p-3 rounded border space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label htmlFor="condition-type">Condition Type</Label>
+                                    <Select 
+                                      value={additionalConditionType} 
+                                      onValueChange={(value) => setAdditionalConditionType(value as AlertType)}
+                                    >
+                                      <SelectTrigger id="condition-type">
+                                        <SelectValue placeholder="Select condition" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="battery">Low Battery</SelectItem>
+                                        <SelectItem value="temperature">High Temperature</SelectItem>
+                                        <SelectItem value="offline">Offline Status</SelectItem>
+                                        <SelectItem value="error">Errors</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="condition-threshold">Threshold</Label>
+                                    <Input 
+                                      id="condition-threshold"
+                                      type="number" 
+                                      value={additionalThreshold}
+                                      onChange={(e) => setAdditionalThreshold(Number(e.target.value))}
+                                      disabled={additionalConditionType === "offline" || additionalConditionType === "error"}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setIsAddingCondition(false)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => addConditionToAlert(alert.type)}
+                                  >
+                                    Add
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full mt-1"
+                                onClick={() => {
+                                  setSelectedAlert(alert);
+                                  setIsAddingCondition(true);
+                                }}
+                              >
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                Add Condition
+                              </Button>
+                            )}
+                          </CollapsibleContent>
+                        </Collapsible>
                       </div>
                     ))}
                   </div>
