@@ -16,6 +16,7 @@ interface RobotStatusGridProps {
 export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
   const [selectedRobot, setSelectedRobot] = useState<Robot | null>(null);
   const [localRobots, setLocalRobots] = useState<Robot[]>([]);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { user } = useAuth();
   
   // Load user profile to get custom telemetry types
@@ -183,6 +184,15 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
     );
   }
 
+  const handleOpenDetail = (robot: Robot) => {
+    setSelectedRobot(robot);
+    setIsDetailOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailOpen(false);
+  };
+
   // Use localRobots for rendering to ensure real-time updates are displayed
   const displayRobots = localRobots.length > 0 ? localRobots : robots;
 
@@ -192,17 +202,20 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayRobots.map((robot) => (
-          <div key={robot.id} onClick={() => setSelectedRobot(robot)} className="cursor-pointer">
+          <div key={robot.id} onClick={() => handleOpenDetail(robot)} className="cursor-pointer">
             <RobotStatusCard robot={robot} />
           </div>
         ))}
       </div>
 
-      <Dialog open={!!selectedRobot} onOpenChange={(open) => !open && setSelectedRobot(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          {selectedRobot && userProfile && <RobotDetailView robot={selectedRobot} userProfile={userProfile} />}
-        </DialogContent>
-      </Dialog>
+      {selectedRobot && userProfile && (
+        <RobotDetailView 
+          robot={selectedRobot} 
+          userProfile={userProfile} 
+          isOpen={isDetailOpen} 
+          onClose={handleCloseDetail} 
+        />
+      )}
     </div>
   );
 }

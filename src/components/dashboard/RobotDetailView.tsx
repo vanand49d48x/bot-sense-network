@@ -195,7 +195,7 @@ export function RobotDetailView({ robot, userProfile, isOpen, onClose }: RobotDe
               <div className="text-xs text-muted-foreground space-y-1">
                 <p>ID: {robot.id}</p>
                 <p>Status: {robot.status}</p>
-                <p>Last Updated: {formatDate(robot.lastUpdated)}</p>
+                <p>Last Updated: {formatDate(robot.lastHeartbeat)}</p>
               </div>
             </div>
           </ResizablePanel>
