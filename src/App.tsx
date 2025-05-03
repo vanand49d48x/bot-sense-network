@@ -18,6 +18,7 @@ import Alerts from "./pages/Alerts";
 import FleetStatusPage from "./pages/FleetStatusPage";
 import ProfilePage from "./pages/ProfilePage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import CheckoutPage from "./pages/CheckoutPage";
 
 // Legal pages
 import Privacy from "./pages/legal/Privacy";
@@ -67,6 +68,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
                 <Route 
                   path="/dashboard" 
                   element={

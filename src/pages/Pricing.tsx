@@ -3,128 +3,26 @@ import React, { useEffect } from "react";
 import { Check } from "lucide-react";
 import PlaceholderLayout from "@/components/layout/PlaceholderLayout";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/context/CartContext";
-import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/AuthContext";
-
-const tiers = [
-  {
-    id: "tier_free",
-    name: "Free",
-    price: 0,
-    period: "month",
-    description: "For hobbyists and solo developers",
-    features: [
-      "1 robot",
-      "3 days telemetry history",
-      "Live dashboard",
-      "Basic API access",
-    ],
-    cta: "Start for Free",
-    link: "/auth",
-    highlight: false,
-  },
-  {
-    id: "tier_starter",
-    name: "Starter",
-    price: 1900,
-    period: "month",
-    description: "For startup teams and testers",
-    features: [
-      "Up to 5 robots",
-      "7 days history",
-      "Email alerts",
-      "ROS/Arduino SDK support",
-    ],
-    cta: "Get Started",
-    link: "/auth",
-    highlight: false,
-  },
-  {
-    id: "tier_growth",
-    name: "Growth",
-    price: 4900,
-    period: "month",
-    description: "For growing teams and labs",
-    features: [
-      "25 robots",
-      "30-day telemetry retention",
-      "Custom metrics",
-      "Real-time alerts",
-      "Location map",
-    ],
-    cta: "Choose Growth",
-    link: "/auth",
-    highlight: true,
-  },
-  {
-    id: "tier_pro",
-    name: "Pro",
-    price: 14900,
-    period: "month",
-    description: "For industrial use and fleets",
-    features: [
-      "100+ robots",
-      "90-day history",
-      "SLA + Priority support",
-      "Custom alerting rules",
-      "Export + team access",
-    ],
-    cta: "Choose Pro",
-    link: "/auth",
-    highlight: false,
-  },
-  {
-    id: "tier_enterprise",
-    name: "Enterprise",
-    price: 0, // Custom pricing
-    period: "",
-    description: "For OEMs and manufacturers",
-    features: [
-      "Unlimited robots",
-      "Custom data retention",
-      "SSO / Audit logs",
-      "Dedicated onboarding",
-      "On-premise / MQTT support",
-    ],
-    cta: "Contact Sales",
-    link: "/contact",
-    highlight: false,
-  },
-];
-
-const addons = [
-  {
-    id: "addon_storage",
-    name: "Additional telemetry storage",
-    price: 500,
-    description: "Per extra 30 days",
-    type: 'addon'
-  },
-  {
-    id: "addon_robot",
-    name: "Extra robot",
-    price: 200,
-    description: "Per bot on Free/Starter plans",
-    type: 'addon'
-  },
-  {
-    id: "addon_seats",
-    name: "Team seats",
-    price: 1000,
-    description: "Per extra admin",
-    type: 'addon'
-  }
-];
+import { tiers, addons } from "@/data/pricingData";
 
 const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
   const { addToCart, isInCart } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const handleAddToCart = () => {
     if (tier.price === 0 && tier.name === "Enterprise") {
       // For Enterprise, redirect to contact page
+      navigate("/contact");
+      return;
+    }
+    
+    if (tier.price === 0 && tier.name === "Free") {
+      // For Free tier, redirect to dashboard or auth
+      navigate(user ? "/dashboard" : "/auth");
       return;
     }
     
@@ -135,6 +33,9 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
       type: 'subscription',
       period: tier.period
     });
+    
+    // Navigate to checkout page
+    navigate("/checkout");
   };
   
   const inCart = isInCart(tier.id);
@@ -177,20 +78,18 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
           </Button>
         </Link>
       ) : tier.name === "Free" ? (
-        <Link to={user ? "/dashboard" : "/auth"} className="mt-auto">
-          <Button 
-            variant="outline" 
-            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
-          >
-            {user ? "Access Dashboard" : "Start for Free"}
-          </Button>
-        </Link>
+        <Button 
+          variant="outline"
+          className="w-full hover:bg-primary hover:text-primary-foreground transition-colors mt-auto"
+          onClick={handleAddToCart}
+        >
+          {user ? "Access Dashboard" : "Start for Free"}
+        </Button>
       ) : (
         <Button 
           variant={tier.highlight ? "default" : "outline"}
           className="w-full hover:bg-primary hover:text-primary-foreground transition-colors mt-auto"
           onClick={handleAddToCart}
-          disabled={inCart}
         >
           {inCart ? "Added to Cart" : tier.cta}
         </Button>
@@ -201,6 +100,7 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
 
 const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
   const { addToCart, isInCart } = useCart();
+  const navigate = useNavigate();
   
   const handleAddToCart = () => {
     addToCart({
@@ -210,6 +110,9 @@ const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
       type: 'addon',
       quantity: 1
     });
+    
+    // Navigate to checkout page
+    navigate("/checkout");
   };
   
   const inCart = isInCart(addon.id);
@@ -224,7 +127,6 @@ const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
         size="sm" 
         className="w-full"
         onClick={handleAddToCart}
-        disabled={inCart}
       >
         {inCart ? "Added to Cart" : "Add to Cart"}
       </Button>
