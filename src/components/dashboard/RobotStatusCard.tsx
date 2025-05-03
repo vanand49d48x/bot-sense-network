@@ -76,8 +76,6 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
     });
   };
 
-  const location = robot.location as { latitude: number, longitude: number } | null;
-
   return (
     <Card className="animate-fade-in hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">

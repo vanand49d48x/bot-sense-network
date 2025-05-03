@@ -1,11 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Robot } from "@/types/robot";
 
 interface DashboardHeaderProps {
   onRefresh: () => void;
-  robots?: Robot[]; // Added robots as an optional prop
+  robots: Robot[];
 }
 
 export function DashboardHeader({ onRefresh, robots }: DashboardHeaderProps) {

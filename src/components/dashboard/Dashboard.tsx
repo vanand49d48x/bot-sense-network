@@ -11,6 +11,7 @@ import { useSubscription } from "@/context/SubscriptionContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { fetchRobots } from "@/services/robotService";
+import { Robot } from "@/types/robot";
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -51,7 +52,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader onRefresh={handleRefresh} robots={robots} />
+      <DashboardHeader onRefresh={handleRefresh} robots={robots as Robot[]} />
       
       {location.search.includes('payment=success') && (
         <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900">
@@ -73,8 +74,8 @@ export function Dashboard() {
         </Alert>
       )}
       
-      <StatCards robots={robots} />
-      <RobotStatusGrid robots={robots} />
+      <StatCards robots={robots as Robot[]} />
+      <RobotStatusGrid robots={robots as Robot[]} />
     </div>
   );
 }
