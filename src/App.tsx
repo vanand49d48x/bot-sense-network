@@ -16,6 +16,8 @@ import MapViewPage from "./pages/MapViewPage";
 import Alerts from "./pages/Alerts";
 import FleetStatusPage from "./pages/FleetStatusPage";
 import ProfilePage from "./pages/ProfilePage";
+import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 
 // Legal pages
 import Privacy from "./pages/legal/Privacy";
@@ -63,6 +65,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/checkout-success" element={<CheckoutSuccessPage />} />
               <Route 
                 path="/dashboard" 
                 element={

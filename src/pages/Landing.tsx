@@ -5,6 +5,7 @@ import { Battery, AlertTriangle, MapPin, Shield, Activity,
          Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
+import { PricingSection } from "@/components/pricing/PricingSection";
 
 const Landing = () => {
   return (
@@ -44,9 +45,9 @@ const Landing = () => {
                 Start Free Trial
               </Button>
             </Link>
-            <Link to="/integration">
+            <Link to="#pricing">
               <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                Learn More
+                See Pricing
               </Button>
             </Link>
           </div>
@@ -194,6 +195,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
 
       {/* Perfect For */}
       <section className="py-16 container mx-auto px-4">
