@@ -126,11 +126,6 @@ const updateRobotData = () => {
   return robots;
 };
 
-// Export this function to be used in Dashboard.tsx
-export const fetchRobots = () => {
-  return updateRobotData();
-};
-
 const getRobots = (): Robot[] => {
   return updateRobotData();
 };
