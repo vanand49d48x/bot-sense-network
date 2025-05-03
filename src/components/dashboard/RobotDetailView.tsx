@@ -12,6 +12,7 @@ import { TelemetryHistory } from "./TelemetryHistory";
 import { TelemetryChart } from "./TelemetryChart";
 import { RobotPathHistory } from "./RobotPathHistory";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface RobotDetailViewProps {
   robot: Robot;
@@ -20,6 +21,7 @@ interface RobotDetailViewProps {
 
 export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
   const [activeTab, setActiveTab] = useState("details");
+  const isMobile = useIsMobile();
 
   const formatDate = (dateString: string) => {
     try {
@@ -34,26 +36,35 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <CardTitle className="text-xl">{robot.name}</CardTitle>
           <RobotStatusBadge status={robot.status} />
         </div>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 mb-4">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="charts">Charts</TabsTrigger>
-            <TabsTrigger value="telemetry">Custom Telemetry</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-            <TabsTrigger value="integration">API Integration</TabsTrigger>
+          <TabsList className={`grid ${isMobile ? 'grid-cols-2 gap-1' : 'grid-cols-5'} mb-4`}>
+            <TabsTrigger value="details" className="text-xs sm:text-sm">Details</TabsTrigger>
+            <TabsTrigger value="charts" className="text-xs sm:text-sm">Charts</TabsTrigger>
+            {!isMobile && (
+              <TabsTrigger value="telemetry" className="text-xs sm:text-sm">Custom Telemetry</TabsTrigger>
+            )}
+            <TabsTrigger value="history" className="text-xs sm:text-sm">History</TabsTrigger>
+            {isMobile ? (
+              <TabsTrigger value="integration" className="text-xs sm:text-sm">API</TabsTrigger>
+            ) : (
+              <TabsTrigger value="integration" className="text-xs sm:text-sm">API Integration</TabsTrigger>
+            )}
+            {isMobile && (
+              <TabsTrigger value="telemetry" className="text-xs sm:text-sm col-span-2">Custom Telemetry</TabsTrigger>
+            )}
           </TabsList>
           
-          <div className="h-[400px]">
+          <div className="h-[400px] md:h-[450px]">
             <TabsContent value="details" className="mt-0 h-full">
               <ScrollArea className="h-full pr-4">
                 <div className="grid gap-3">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="flex items-center gap-2">
                       <Info className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Model:</span>
@@ -66,7 +77,7 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                     <div className="bg-muted p-3 rounded-md">
                       <div className="flex items-center">
                         <Battery className={`h-5 w-5 mr-2 ${robot.batteryLevel < 20 ? 'text-red-500' : 'text-green-500'}`} />
