@@ -112,32 +112,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // First try to sign out with the current session
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Error during sign out:", error.message);
-        toast({
-          title: "Error signing out",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Only clear local state after successful sign out
+      // Always clear local state first to ensure UI responsiveness
       setUser(null);
       setSession(null);
+      
+      try {
+        // Then attempt to sign out from Supabase
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+          console.error("Error during sign out:", error.message);
+          // We don't need to show an error toast here since we already cleared the local state
+        }
+      } catch (error: any) {
+        // Catch any exceptions during sign out but don't show to the user
+        // since we already cleared the local state
+        console.error("Exception during sign out:", error);
+      }
       
       toast({
         title: "Signed out",
         description: "You have been successfully logged out.",
       });
     } catch (error: any) {
-      console.error("Exception during sign out:", error);
+      console.error("Exception in signOut function:", error);
       toast({
         title: "Error signing out",
-        description: error.message,
+        description: "An unexpected error occurred.",
         variant: "destructive",
       });
     }
