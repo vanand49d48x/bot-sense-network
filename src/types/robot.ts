@@ -29,4 +29,5 @@ export interface UserProfile {
   custom_telemetry_types?: string[] | null;
   custom_alerts?: any[] | null;
   telemetry_retention_days?: number;
+  subscription_plan?: string | null;
 }
