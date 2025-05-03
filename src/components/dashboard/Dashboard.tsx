@@ -19,11 +19,16 @@ export function Dashboard() {
   const { isSubscribed, plan, checkSubscription } = useSubscription();
   
   // Fetch robots data
-  const { data: robots = [], isLoading, isError } = useQuery({
+  const { data: robots = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["robots", user?.id],
     queryFn: fetchRobots,
     enabled: !!user,
   });
+  
+  // Handle refresh action
+  const handleRefresh = () => {
+    refetch();
+  };
   
   // Check for payment status in URL params on mount
   useEffect(() => {
@@ -42,11 +47,11 @@ export function Dashboard() {
       // Check subscription status after a successful payment
       checkSubscription();
     }
-  }, []);
+  }, [location, toast, checkSubscription]);
 
   return (
     <div className="space-y-6">
-      <DashboardHeader robots={robots} />
+      <DashboardHeader onRefresh={handleRefresh} robots={robots} />
       
       {location.search.includes('payment=success') && (
         <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900">
