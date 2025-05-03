@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +17,11 @@ const Auth = () => {
   const [loading, setLoading] = React.useState(false);
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the default tab from URL query parameter if present
+  const searchParams = new URLSearchParams(location.search);
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
 
   useEffect(() => {
     if (user) {
@@ -105,7 +110,7 @@ const Auth = () => {
               </div>
             </div>
 
-            <Tabs defaultValue="signin">
+            <Tabs defaultValue={defaultTab}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>

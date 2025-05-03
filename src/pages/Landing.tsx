@@ -21,7 +21,7 @@ const Landing = () => {
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
             </Link>
-            <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/auth?tab=signup" className="text-muted-foreground hover:text-foreground transition-colors">
               Sign Up
             </Link>
           </div>
@@ -39,7 +39,7 @@ const Landing = () => {
             Stay ahead of failures, maximize uptime, and manage fleets smarter.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
+            <Link to="/auth?tab=signup">
               <Button size="lg" className="px-8 py-6 text-lg">
                 Start Free Trial
               </Button>
@@ -215,7 +215,7 @@ const Landing = () => {
             Sign up free and start monitoring your first robot in minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
+            <Link to="/auth?tab=signup">
               <Button size="lg" className="px-8 py-6 text-lg">
                 Start Free Trial
               </Button>
