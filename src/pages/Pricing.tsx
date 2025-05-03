@@ -12,6 +12,12 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
   const navigate = useNavigate();
   
   const handleSubscribe = () => {
+    // If user is not authenticated and trying to access paid plans, redirect to auth
+    if (!user && tier.price > 0) {
+      navigate("/auth");
+      return;
+    }
+    
     if (tier.price === 0 && tier.name === "Enterprise") {
       // For Enterprise, redirect to contact page
       navigate("/contact");
@@ -71,8 +77,14 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
 
 const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const handleAddAddon = () => {
+    // Redirect to auth if not logged in
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
     navigate(`/checkout?addon=${addon.id.replace('addon_', '')}`);
   };
 

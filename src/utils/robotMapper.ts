@@ -1,5 +1,24 @@
 
-import { Robot, SupabaseRobot } from "@/types/robot";
+import { Robot } from "@/types/robot";
+
+// Define the SupabaseRobot type directly here since it's not exported from types/robot.ts
+export type SupabaseRobot = {
+  id: string;
+  name: string;
+  robot_type: string;
+  status: string;
+  last_heartbeat?: string;
+  battery_level?: number;
+  temperature?: number;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  api_key?: string;
+  created_at: string;
+  description?: string;
+  telemetry_data?: Record<string, any>;
+};
 
 /**
  * Maps a Supabase robot to the application Robot type
@@ -23,9 +42,6 @@ export function mapSupabaseRobotToAppRobot(robot: SupabaseRobot): Robot {
     robotType: robot.robot_type,
     created_at: robot.created_at,
     description: robot.description,
-    telemetryData: (robot as any).telemetry_data || {}, // Using type assertion to handle the mismatch
+    telemetryData: robot.telemetry_data || {}, // Using the correct field
   };
 }
-
-// Export SupabaseRobot type so it can be imported elsewhere
-export { SupabaseRobot };
