@@ -19,6 +19,25 @@ const Landing = () => {
             <span className="text-xl font-bold">RoboMetrics</span>
           </div>
           <div className="flex items-center gap-4">
+            <nav>
+              <ul className="flex items-center gap-6">
+                <li>
+                  <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                    About
+                  </Link>
+                </li>
+              </ul>
+            </nav>
             <ThemeToggle />
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login

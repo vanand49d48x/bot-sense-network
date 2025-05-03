@@ -1,154 +1,62 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+import { Json } from "./utils";
 
-export interface Database {
-  public: {
-    Tables: {
-      alerts: {
-        Row: {
-          id: string
-          robot_id: string
-          type: string
-          message: string
-          resolved: boolean
-          created_at: string
-          resolved_at: string | null
-        }
-        Insert: {
-          id?: string
-          robot_id: string
-          type: string
-          message: string
-          resolved?: boolean
-          created_at?: string
-          resolved_at?: string | null
-        }
-        Update: {
-          id?: string
-          robot_id?: string
-          type?: string
-          message?: string
-          resolved?: boolean
-          created_at?: string
-          resolved_at?: string | null
-        }
-      }
-      profiles: {
-        Row: {
-          id: string
-          first_name: string | null
-          last_name: string | null
-          avatar_url: string | null
-          created_at: string
-          updated_at: string
-          custom_robot_types: string[] | null
-          custom_alerts: Json[] | null
-        }
-        Insert: {
-          id: string
-          first_name?: string | null
-          last_name?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-          custom_robot_types?: string[] | null
-          custom_alerts?: Json[] | null
-        }
-        Update: {
-          id?: string
-          first_name?: string | null
-          last_name?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-          custom_robot_types?: string[] | null
-          custom_alerts?: Json[] | null
-        }
-      }
-      robots: {
-        Row: {
-          id: string
-          name: string
-          type: string
-          description: string | null
-          status: string
-          last_ping: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          battery_level: number
-          temperature: number
-          location: Json
-          api_key: string  // Add this line for the API key
-        }
-        Insert: {
-          id?: string
-          name: string
-          type: string
-          description?: string | null
-          status?: string
-          last_ping?: string
-          created_at?: string
-          updated_at?: string
-          user_id: string
-          battery_level?: number
-          temperature?: number
-          location?: Json
-          api_key?: string  // Add this line for the API key
-        }
-        Update: {
-          id?: string
-          name?: string
-          type?: string
-          description?: string | null
-          status?: string
-          last_ping?: string
-          created_at?: string
-          updated_at?: string
-          user_id?: string
-          battery_level?: number
-          temperature?: number
-          location?: Json
-          api_key?: string  // Add this line for the API key
-        }
-      }
-      telemetry: {
-        Row: {
-          id: string
-          robot_id: string
-          battery_level: number | null
-          temperature: number | null
-          location: Json | null
-          motor_status: Json | null
-          error_codes: string[] | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          robot_id: string
-          battery_level?: number | null
-          temperature?: number | null
-          location?: Json | null
-          motor_status?: Json | null
-          error_codes?: string[] | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          robot_id?: string
-          battery_level?: number | null
-          temperature?: number | null
-          location?: Json | null
-          motor_status?: Json | null
-          error_codes?: string[] | null
-          created_at?: string
-        }
-      }
-    }
-  }
+export interface Organization {
+  id: string;
+  created_at?: string;
+  name?: string;
+  slug?: string;
+  logo_url?: string;
+  owner_id?: string;
+}
+
+export interface Robot {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  name?: string;
+  slug?: string;
+  description?: string;
+  image_url?: string;
+  owner_id?: string;
+  organization_id?: string;
+  type?: string;
+  status?: string;
+  location?: Json;
+  telemetry?: Json;
+  last_active?: string;
+  api_key?: string;
+}
+
+export interface Alert {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  robot_id?: string;
+  type?: string;
+  message?: string;
+  severity?: string;
+  status?: string;
+  resolved_at?: string;
+  telemetry?: Json;
+}
+
+export interface TelemetryHistory {
+  id?: string;
+  created_at?: string;
+  robot_id?: string;
+  telemetry?: Json;
+}
+
+export interface UserProfile {
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  api_key?: string;
+  custom_robot_types?: string[];
+  custom_telemetry_types?: string[];
+  custom_alerts?: Json[];
+  telemetry_retention_days?: number;
 }
