@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -146,7 +147,7 @@ export function TelemetryHistory({ robot, userProfile }: TelemetryHistoryProps) 
   
   // Configuration for data retention
   const config = {
-    retentionDays: userProfile?.telemetry_retention_days !== undefined ? userProfile.telemetry_retention_days : 7,
+    retentionDays: userProfile?.telemetry_retention_days ?? 7,
   };
 
   return (
