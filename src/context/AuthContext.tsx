@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,18 +69,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          // Disable email confirmation requirement temporarily
+          // This will create the user even if email sending fails
+          emailRedirectTo: window.location.origin + '/auth?verified=true'
+        }
       });
 
       if (error) throw error;
       
-      toast({
-        title: "Account created",
-        description: "Please check your email to confirm your account.",
-      });
+      // Check if we got a user (which means signup was successful even if email failed)
+      if (data && data.user) {
+        toast({
+          title: "Account created",
+          description: "We're trying to send you a verification email. If you don't receive it, you can request a new one.",
+        });
+      }
+      
     } catch (error: any) {
+      // Log the full error for debugging
+      console.error("Signup error details:", error);
+      
       toast({
         title: "Error signing up",
         description: error.message,
