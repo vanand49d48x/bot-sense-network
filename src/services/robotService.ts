@@ -20,6 +20,7 @@ const generateRandomData = (): Robot[] => {
       errorCount: 0,
       created_at: new Date().toISOString(),
       description: "Warehouse assistant robot",
+      apiKey: "robot-key-001", // Added required apiKey
     },
     {
       id: "r-002",
@@ -38,6 +39,7 @@ const generateRandomData = (): Robot[] => {
       errorCount: 0,
       created_at: new Date().toISOString(),
       description: "Aerial delivery drone",
+      apiKey: "robot-key-002", // Added required apiKey
     },
     {
       id: "r-003",
@@ -56,6 +58,7 @@ const generateRandomData = (): Robot[] => {
       errorCount: 2,
       created_at: new Date().toISOString(),
       description: "Automated cleaning robot",
+      apiKey: "robot-key-003", // Added required apiKey
     },
     {
       id: "r-004",
@@ -74,6 +77,7 @@ const generateRandomData = (): Robot[] => {
       errorCount: 5,
       created_at: new Date().toISOString(),
       description: "Security patrol robot",
+      apiKey: "robot-key-004", // Added required apiKey
     },
     {
       id: "r-005",
@@ -92,6 +96,7 @@ const generateRandomData = (): Robot[] => {
       },
       created_at: new Date().toISOString(),
       description: "Manufacturing assembly robot",
+      apiKey: "robot-key-005", // Added required apiKey
     },
   ];
   

@@ -26,3 +26,6 @@ export function mapSupabaseRobotToAppRobot(robot: SupabaseRobot): Robot {
     telemetryData: (robot as any).telemetry_data || {}, // Using type assertion to handle the mismatch
   };
 }
+
+// Export the SupabaseRobot type for reuse in other files
+export { SupabaseRobot } from "@/types/robot";
