@@ -1,5 +1,4 @@
-
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -17,11 +16,19 @@ import {
 import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2, CreditCard, Settings } from "lucide-react";
 import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function AppSidebar() {
   const { session } = useAuth();
+  const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  
+  // Keep settings menu open when on settings pages
+  useEffect(() => {
+    if (location.pathname.startsWith("/settings/")) {
+      setSettingsOpen(true);
+    }
+  }, [location.pathname]);
   
   const mainMenuItems = [
     {
@@ -77,6 +84,7 @@ export function AppSidebar() {
                 <SidebarMenuButton 
                   onClick={() => setSettingsOpen(!settingsOpen)} 
                   data-state={settingsOpen ? "open" : "closed"}
+                  isActive={location.pathname.startsWith("/settings/")}
                 >
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
@@ -84,7 +92,10 @@ export function AppSidebar() {
                 {settingsOpen && (
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild>
+                      <SidebarMenuSubButton 
+                        asChild 
+                        isActive={location.pathname === "/settings/profile"}
+                      >
                         <Link to="/settings/profile">
                           <UserCog className="h-4 w-4" />
                           <span>Profile</span>
@@ -92,7 +103,10 @@ export function AppSidebar() {
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild>
+                      <SidebarMenuSubButton 
+                        asChild
+                        isActive={location.pathname === "/settings/subscription"}
+                      >
                         <Link to="/settings/subscription">
                           <CreditCard className="h-4 w-4" />
                           <span>Subscription</span>
