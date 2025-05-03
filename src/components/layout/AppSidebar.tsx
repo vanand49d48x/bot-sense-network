@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -10,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar";
-import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2 } from "lucide-react";
+import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2, Tag } from "lucide-react";
 import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
 
@@ -37,6 +38,11 @@ export function AppSidebar() {
       title: "Alerts",
       icon: Bell,
       url: "/alerts",
+    },
+    {
+      title: "Pricing",
+      icon: Tag,
+      url: "/pricing",
     },
     {
       title: "Integration",
