@@ -6,32 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { Bot, RefreshCw } from "lucide-react";
+import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const Auth = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState("signin");
-  const [resendLoading, setResendLoading] = React.useState(false);
-  const [showResend, setShowResend] = React.useState(false);
-  const { signIn, signUp, signInWithGoogle, resendVerificationEmail, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    // Check if there's a tab parameter in the URL
-    const params = new URLSearchParams(location.search);
-    const tab = params.get("tab");
-    if (tab === "signup") {
-      setActiveTab("signup");
-    } else {
-      setActiveTab("signin"); // Explicitly set to signin if no tab or other value
-    }
-  }, [location]);
 
   useEffect(() => {
     if (user) {
@@ -45,12 +30,8 @@ const Auth = () => {
     try {
       await signIn(email, password);
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error signing in:", error);
-      // If error is about email not being confirmed, show resend option
-      if (error.message?.includes("Email not confirmed")) {
-        setShowResend(true);
-      }
     } finally {
       setLoading(false);
     }
@@ -61,7 +42,6 @@ const Auth = () => {
     setLoading(true);
     try {
       await signUp(email, password);
-      setShowResend(true);
       // User will be redirected by the useEffect when auth state changes
     } catch (error) {
       console.error("Error signing up:", error);
@@ -76,17 +56,6 @@ const Auth = () => {
       // Redirection will be handled by the auth state change
     } catch (error) {
       console.error("Error signing in with Google:", error);
-    }
-  };
-
-  const handleResendEmail = async () => {
-    setResendLoading(true);
-    try {
-      await resendVerificationEmail(email);
-    } catch (error) {
-      console.error("Error resending verification email:", error);
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -136,7 +105,7 @@ const Auth = () => {
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue="signin">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -167,31 +136,6 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  
-                  {showResend && (
-                    <div className="mt-2 text-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        type="button"
-                        onClick={handleResendEmail}
-                        disabled={resendLoading}
-                        className="text-primary text-sm flex items-center gap-1"
-                      >
-                        {resendLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4" />
-                            Didn't get email? Resend
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
                 </form>
               </TabsContent>
               <TabsContent value="signup">
@@ -220,31 +164,6 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
-                  
-                  {showResend && (
-                    <div className="mt-2 text-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        type="button"
-                        onClick={handleResendEmail}
-                        disabled={resendLoading}
-                        className="text-primary text-sm flex items-center gap-1"
-                      >
-                        {resendLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4" />
-                            Didn't get email? Resend
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
                 </form>
               </TabsContent>
             </Tabs>
