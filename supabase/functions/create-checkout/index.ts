@@ -26,7 +26,7 @@ serve(async (req) => {
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get user from authorization header
@@ -73,6 +73,36 @@ serve(async (req) => {
     // Get site URL from environment or request
     const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "http://localhost:5173";
 
+    // Get plan name based on priceId
+    let planName = "Custom";
+    if (priceId === "STRIPE_STARTER_PRICE_ID") {
+      planName = "Starter";
+    } else if (priceId === "STRIPE_GROWTH_PRICE_ID") {
+      planName = "Growth";
+    } else if (priceId === "STRIPE_PRO_PRICE_ID") {
+      planName = "Pro";
+    }
+
+    // Check if the user already has a subscription record, if not create one
+    const { data: existingSubscription } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!existingSubscription) {
+      // Create an initial subscription record (will be updated when payment completes)
+      await supabase.from("subscriptions").insert({
+        user_id: user.id,
+        stripe_customer_id: customerId,
+        status: 'incomplete',
+        plan_id: stripePriceId,
+        plan_name: planName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+
     // Create a checkout session with Stripe
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -89,6 +119,7 @@ serve(async (req) => {
       subscription_data: {
         metadata: {
           user_id: user.id,
+          plan_name: planName
         },
       },
     });

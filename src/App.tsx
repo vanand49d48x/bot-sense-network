@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { SubscriptionProvider } from "@/context/SubscriptionContext";
 import CookieConsent from "@/components/legal/CookieConsent";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -56,85 +57,87 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <CookieConsent />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/fleet-status" 
-                element={
-                  <ProtectedRoute>
-                    <FleetStatusPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/map" 
-                element={
-                  <ProtectedRoute>
-                    <MapViewPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/alerts" 
-                element={
-                  <ProtectedRoute>
-                    <Alerts />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/integration" 
-                element={
-                  <ProtectedRoute>
-                    <IntegrationGuide />
-                  </ProtectedRoute>
-                }
-              />
-              
-              {/* Legal Routes */}
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/risk-disclosure" element={<RiskPage />} />
-              <Route path="/cookies" element={<Cookies />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/disclaimer" element={<DisclaimerPage />} />
-              <Route path="/regulatory" element={<Regulatory />} />
-              <Route path="/contact" element={<Contact />} />
-              
-              {/* New Routes */}
-              <Route path="/about" element={<About />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/api-docs" element={<ApiDocs />} />
-              <Route path="/status" element={<Status />} />
-              <Route path="/blog" element={<Blog />} />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <BrowserRouter>
+          <SubscriptionProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <CookieConsent />
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/fleet-status" 
+                  element={
+                    <ProtectedRoute>
+                      <FleetStatusPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route 
+                  path="/map" 
+                  element={
+                    <ProtectedRoute>
+                      <MapViewPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route 
+                  path="/alerts" 
+                  element={
+                    <ProtectedRoute>
+                      <Alerts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route 
+                  path="/integration" 
+                  element={
+                    <ProtectedRoute>
+                      <IntegrationGuide />
+                    </ProtectedRoute>
+                  }
+                />
+                
+                {/* Legal Routes */}
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/risk-disclosure" element={<RiskPage />} />
+                <Route path="/cookies" element={<Cookies />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/disclaimer" element={<DisclaimerPage />} />
+                <Route path="/regulatory" element={<Regulatory />} />
+                <Route path="/contact" element={<Contact />} />
+                
+                {/* New Routes */}
+                <Route path="/about" element={<About />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/api-docs" element={<ApiDocs />} />
+                <Route path="/status" element={<Status />} />
+                <Route path="/blog" element={<Blog />} />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </SubscriptionProvider>
+        </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>

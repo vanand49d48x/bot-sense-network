@@ -1,285 +1,75 @@
 
-import { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
-import { MapView } from "./MapView";
-import { AddRobotModal } from "./AddRobotModal";
-import { useRobots } from "@/hooks/useRobots";
 import { useAuth } from "@/context/AuthContext";
-import { Robot, UserProfile } from "@/types/robot";
-import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
-import { AlertCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useLocation } from "react-router-dom";
+import { useSubscription } from "@/context/SubscriptionContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
-import { SupabaseRobot } from "@/utils/robotMapper";
-import { RobotFilter } from "./RobotFilter";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { CheckCircle, AlertTriangle } from "lucide-react";
+import { fetchRobots } from "@/services/robotService";
 
 export function Dashboard() {
-  const { robots: supabaseRobots, loading, fetchRobots } = useRobots();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const location = useLocation();
+  const { isSubscribed, plan, checkSubscription } = useSubscription();
   
-  // Map Supabase robots to application Robot type
-  const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
-  
-  // Local state to manage robots for real-time updates
-  const [localRobots, setLocalRobots] = useState<Robot[]>([]);
-  const [filteredRobots, setFilteredRobots] = useState<Robot[]>([]);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
-  // Load user profile data
-  const { data: userProfile } = useQuery({
-    queryKey: ['userProfile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('api_key, custom_robot_types, custom_telemetry_types')
-        .eq('id', user.id)
-        .single();
-        
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id,
+  // Fetch robots data
+  const { data: robots = [], isLoading, isError } = useQuery({
+    queryKey: ["robots", user?.id],
+    queryFn: fetchRobots,
+    enabled: !!user,
   });
   
-  // Initialize local robots when the data from useRobots changes
+  // Check for payment status in URL params on mount
   useEffect(() => {
-    if (supabaseRobots.length > 0) {
-      console.log("Updating local robots state with", supabaseRobots.length, "robots");
-      // Use a callback to avoid dependency on localRobots
-      const mapped = robots;
-      setLocalRobots(mapped);
-      setFilteredRobots(mapped);
-    }
-  }, [supabaseRobots]); // Only depend on supabaseRobots, not on the derived robots value
-  
-  // Handle refresh button click
-  const handleRefresh = () => {
-    toast('Refreshing robot data...', {
-      description: 'Fetching the latest robot status and telemetry',
-      duration: 2000,
-    });
-    fetchRobots();
-  };
-  
-  // Handle filter changes
-  const handleFilteredRobotsChange = (filtered: Robot[]) => {
-    setFilteredRobots(filtered);
-  };
-  
-  // Set up realtime subscription for robot and telemetry updates
-  useEffect(() => {
-    console.log("Setting up realtime subscriptions...");
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get('payment');
     
-    // Create a single channel for all robot-related updates
-    const channel = supabase
-      .channel('robot-updates')
-      // Subscribe to robot changes
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'robots' }, 
-        (payload) => {
-          console.log('Robot update received in Dashboard:', payload);
-          
-          // Handle different event types
-          if (payload.eventType === 'UPDATE') {
-            // Update the local robots state - ensure we have a valid SupabaseRobot
-            setLocalRobots(prevRobots => {
-              return prevRobots.map(robot => {
-                if (robot.id === payload.new.id) {
-                  console.log('Updating robot in local state:', payload.new);
-                  // Cast the payload to SupabaseRobot and use the mapper function
-                  const supabaseRobot = payload.new as SupabaseRobot;
-                  return mapSupabaseRobotToAppRobot(supabaseRobot);
-                }
-                return robot;
-              });
-            });
-          } else if (payload.eventType === 'INSERT') {
-            // Add the new robot to local state - ensure we have a valid SupabaseRobot
-            const supabaseRobot = payload.new as SupabaseRobot;
-            setLocalRobots(prevRobots => [
-              ...prevRobots, 
-              mapSupabaseRobotToAppRobot(supabaseRobot)
-            ]);
-          } else if (payload.eventType === 'DELETE') {
-            // Remove the deleted robot from local state
-            setLocalRobots(prevRobots => 
-              prevRobots.filter(robot => robot.id !== payload.old.id)
-            );
-          }
-        }
-      )
-      // Subscribe to telemetry changes - optimized to patch robot locally
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'telemetry' }, 
-        (payload) => {
-          console.log('New telemetry received:', payload);
-          const robotId = payload.new.robot_id;
-          
-          // Update the robot immediately with a proper pattern for state updates
-          setLocalRobots(prevRobots => {
-            // First find the robot to update in the current state
-            const robotToUpdate = prevRobots.find(r => r.id === robotId);
-            if (!robotToUpdate) return prevRobots; // No matching robot found
-            
-            // Only patch the specific properties that changed in the telemetry
-            const updatedFields: Partial<Robot> = {
-              lastHeartbeat: new Date().toISOString(),
-              status: 'online', // Set to online since we received telemetry
-            };
-            
-            // Add only the fields that are present in the telemetry payload
-            if (payload.new.battery_level !== null && payload.new.battery_level !== undefined) {
-              updatedFields.batteryLevel = payload.new.battery_level;
-            }
-            
-            if (payload.new.temperature !== null && payload.new.temperature !== undefined) {
-              updatedFields.temperature = payload.new.temperature;
-            }
-            
-            if (payload.new.location) {
-              updatedFields.location = {
-                latitude: payload.new.location.latitude || 0,
-                longitude: payload.new.location.longitude || 0
-              };
-            }
-            
-            // Handle custom telemetry data
-            if (robotToUpdate.telemetryData && payload.new.motor_status) {
-              try {
-                const customData = typeof payload.new.motor_status === 'string' 
-                  ? JSON.parse(payload.new.motor_status)
-                  : payload.new.motor_status;
-                
-                updatedFields.telemetryData = {
-                  ...robotToUpdate.telemetryData,
-                  ...customData
-                };
-              } catch (e) {
-                console.error("Error parsing custom telemetry:", e);
-              }
-            }
-            
-            // Create the updated robots list
-            const updatedRobots = prevRobots.map(robot => {
-              if (robot.id === robotId) {
-                console.log(`Patching robot ${robot.name} with new telemetry data:`, updatedFields);
-                return { ...robot, ...updatedFields };
-              }
-              return robot;
-            });
-            
-            return updatedRobots;
-          });
-        }
-      )
-      .subscribe((status) => {
-        console.log(`Realtime subscription status: ${status}`);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to realtime updates');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Error subscribing to realtime updates');
-        }
+    if (paymentStatus === 'success') {
+      toast({
+        title: "Payment successful!",
+        description: "Your subscription has been activated.",
       });
+      // Remove the query param from the URL without refreshing the page
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
       
-    return () => {
-      console.log("Cleaning up realtime subscriptions");
-      supabase.removeChannel(channel);
-    };
-  }, []); // Keep empty dependency array
-  
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-pulse-slow">Loading robots data...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Important: render using localRobots which contains the real-time updates
-  const displayRobots = filteredRobots.length > 0 ? filteredRobots : localRobots;
+      // Check subscription status after a successful payment
+      checkSubscription();
+    }
+  }, []);
 
   return (
-    <div>
-      <div className="flex justify-between items-center">
-        <DashboardHeader onRefresh={handleRefresh} />
-        <AddRobotModal />
-      </div>
+    <div className="space-y-6">
+      <DashboardHeader robots={robots} />
       
-      {localRobots.length > 0 ? (
-        <>
-          <StatCards robots={displayRobots} />
-          
-          <Alert className="my-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Telemetry Integration</AlertTitle>
-            <AlertDescription>
-              To send telemetry data to your robots, use each robot's API key. View API keys in the robot cards by clicking "API Integration".
-            </AlertDescription>
-          </Alert>
-          
-          {/* Filter section */}
-          <Collapsible
-            open={isFilterOpen}
-            onOpenChange={setIsFilterOpen}
-            className="mt-4 mb-6 border rounded-lg p-4"
-          >
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="flex justify-between w-full">
-                <span className="font-medium">Filter Robots</span>
-                {isFilterOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4">
-              <RobotFilter 
-                robots={localRobots}
-                userProfile={userProfile as UserProfile}
-                onFilteredRobotsChange={handleFilteredRobotsChange} 
-              />
-            </CollapsibleContent>
-          </Collapsible>
-          
-          {displayRobots.length !== localRobots.length && (
-            <div className="bg-muted p-2 rounded text-sm mb-4">
-              Showing {displayRobots.length} of {localRobots.length} robots
-              {displayRobots.length === 0 && (
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-sm ml-2"
-                  onClick={() => setFilteredRobots(localRobots)}
-                >
-                  Clear filters
-                </Button>
-              )}
-            </div>
-          )}
-          
-          <MapView robots={displayRobots} />
-          <RobotStatusGrid robots={displayRobots} />
-        </>
-      ) : (
-        <div className="mt-8 text-center p-12 border border-dashed rounded-lg">
-          <h3 className="text-lg font-medium mb-2">No robots registered yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Add your first robot to start monitoring its status and telemetry.
-          </p>
-          <AddRobotModal />
-        </div>
+      {location.search.includes('payment=success') && (
+        <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertTitle>Payment Successful!</AlertTitle>
+          <AlertDescription>
+            Your subscription has been activated. You now have access to {plan} plan features.
+          </AlertDescription>
+        </Alert>
       )}
+      
+      {location.search.includes('payment=canceled') && (
+        <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertTitle>Payment Canceled</AlertTitle>
+          <AlertDescription>
+            Your subscription payment was canceled. You can try again from the pricing page.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <StatCards robots={robots} />
+      <RobotStatusGrid robots={robots} />
     </div>
   );
 }
