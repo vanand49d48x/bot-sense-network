@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 
 export interface Robot {
@@ -5,7 +6,7 @@ export interface Robot {
   created_at: string;
   name: string;
   description: string;
-  status: 'online' | 'offline' | 'idle' | 'error';
+  status: 'online' | 'offline' | 'idle' | 'warning' | 'error';
   location: {
     latitude: number;
     longitude: number;
@@ -18,6 +19,9 @@ export interface Robot {
   lastHeartbeat: string;
   apiKey: string;
   robotType: string;
+  model?: string;
+  ipAddress?: string;
+  errorCount?: number;
 }
 
 export interface SupabaseRobot {
@@ -25,7 +29,7 @@ export interface SupabaseRobot {
   created_at: string;
   name: string;
   description: string;
-  status: 'online' | 'offline' | 'idle' | 'error';
+  status: 'online' | 'offline' | 'idle' | 'warning' | 'error';
   location: Json;
   battery_level: number;
   temperature: number;
