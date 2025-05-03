@@ -1,21 +1,30 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 const Auth = () => {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+  
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
+  const { signIn, signUp, signInWithGoogle, user, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,14 +33,26 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    // Update the tab state when URL parameters change
+    const tab = searchParams.get('tab');
+    if (tab === 'signup' || tab === 'signin') {
+      setActiveTab(tab);
+    }
+  }, [location.search, searchParams]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signIn(email, password);
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in:", error);
+      // Check if error is related to unconfirmed email
+      if (error.message?.includes("Email not confirmed")) {
+        setShowResendOption(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -41,12 +62,35 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signUp(email, password);
-      // User will be redirected by the useEffect when auth state changes
+      const result = await signUp(email, password);
+      // If signup was successful and confirmation is required
+      if (result.success && result.confirmationRequired) {
+        setShowResendOption(true);
+      }
+      // User will be redirected by the useEffect when auth state changes if auto-confirmation is enabled
     } catch (error) {
       console.error("Error signing up:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerificationEmail = async () => {
+    if (!email) {
+      return; // Ensure email is provided
+    }
+    
+    setResendingEmail(true);
+    try {
+      const result = await resendVerificationEmail(email);
+      if (result.success) {
+        setEmailSent(true);
+        setTimeout(() => setEmailSent(false), 5000); // Hide success message after 5 seconds
+      }
+    } catch (error) {
+      console.error("Error resending verification email:", error);
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -57,6 +101,13 @@ const Auth = () => {
     } catch (error) {
       console.error("Error signing in with Google:", error);
     }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Reset states when changing tabs
+    setShowResendOption(false);
+    setEmailSent(false);
   };
 
   return (
@@ -80,7 +131,7 @@ const Auth = () => {
                 variant="outline" 
                 className="w-full flex items-center justify-center gap-2" 
                 onClick={handleGoogleSignIn}
-                disabled={loading}
+                disabled={loading || resendingEmail}
               >
                 <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
                   <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
@@ -105,11 +156,12 @@ const Auth = () => {
               </div>
             </div>
 
-            <Tabs defaultValue="signin">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
+              
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4 mt-4">
                   <div className="space-y-2">
@@ -133,11 +185,34 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  
+                  {showResendOption && activeTab === 'signin' && (
+                    <Alert className="bg-muted/50 border-primary/20">
+                      <InfoIcon className="h-4 w-4 text-primary" />
+                      <AlertDescription className="text-sm">
+                        Please verify your email before signing in.
+                        {!emailSent ? (
+                          <Button 
+                            variant="link" 
+                            className="p-0 h-auto ml-1 text-primary"
+                            onClick={handleResendVerificationEmail}
+                            disabled={resendingEmail}
+                          >
+                            {resendingEmail ? "Sending..." : "Didn't receive the email? Resend"}
+                          </Button>
+                        ) : (
+                          <span className="ml-1 text-primary">Email sent successfully!</span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
+              
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4 mt-4">
                   <div className="space-y-2">
@@ -161,6 +236,28 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  
+                  {showResendOption && activeTab === 'signup' && (
+                    <Alert className="bg-muted/50 border-primary/20">
+                      <InfoIcon className="h-4 w-4 text-primary" />
+                      <AlertDescription className="text-sm">
+                        Please check your email to verify your account.
+                        {!emailSent ? (
+                          <Button 
+                            variant="link" 
+                            className="p-0 h-auto ml-1 text-primary"
+                            onClick={handleResendVerificationEmail}
+                            disabled={resendingEmail}
+                          >
+                            {resendingEmail ? "Sending..." : "Didn't receive the email? Resend"}
+                          </Button>
+                        ) : (
+                          <span className="ml-1 text-primary">Email sent successfully!</span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
