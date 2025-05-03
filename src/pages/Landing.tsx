@@ -1,12 +1,10 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Battery, AlertTriangle, MapPin, Shield, Activity, 
-         Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info, Check } from "lucide-react";
+         Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 
 const Landing = () => {
   return (
@@ -19,25 +17,6 @@ const Landing = () => {
             <span className="text-xl font-bold">RoboMetrics</span>
           </div>
           <div className="flex items-center gap-4">
-            <nav>
-              <ul className="flex items-center gap-6">
-                <li>
-                  <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-                    About
-                  </Link>
-                </li>
-              </ul>
-            </nav>
             <ThemeToggle />
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
@@ -180,98 +159,6 @@ const Landing = () => {
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">💲 Simple, Transparent Pricing</h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Choose the plan that fits your needs. Start with our free tier and upgrade as you grow.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
-            {/* Free Plan */}
-            <PricingCard
-              name="Free"
-              price="$0"
-              bestFor="Hobbyists, solo developers"
-              features={[
-                "1 robot",
-                "3 days telemetry history", 
-                "Live dashboard",
-                "Basic API access"
-              ]}
-              buttonText="Get Started"
-              buttonLink="/auth"
-            />
-            
-            {/* Starter Plan */}
-            <PricingCard
-              name="Starter"
-              price="$19"
-              bestFor="Startup teams, testers"
-              features={[
-                "Up to 5 robots",
-                "7 days history",
-                "Email alerts",
-                "ROS/Arduino SDK support"
-              ]}
-              buttonText="Subscribe"
-              buttonLink="/auth"
-            />
-            
-            {/* Growth Plan - Highlighted */}
-            <PricingCard
-              name="Growth"
-              price="$49"
-              bestFor="Growing teams, labs"
-              features={[
-                "25 robots",
-                "30-day telemetry retention",
-                "Custom metrics",
-                "Real-time alerts",
-                "Location map"
-              ]}
-              isPrimary={true}
-              buttonText="Subscribe"
-              buttonLink="/auth"
-            />
-            
-            {/* Pro Plan */}
-            <PricingCard
-              name="Pro"
-              price="$149"
-              bestFor="Industrial use, fleets"
-              features={[
-                "100+ robots",
-                "90-day history",
-                "SLA + Priority support",
-                "Custom alerting rules",
-                "Export + team access"
-              ]}
-              buttonText="Subscribe"
-              buttonLink="/auth"
-            />
-            
-            {/* Enterprise Plan */}
-            <PricingCard
-              name="Enterprise"
-              price="Custom"
-              bestFor="OEMs, manufacturers"
-              features={[
-                "Unlimited robots",
-                "Custom data retention",
-                "SSO / Audit logs",
-                "Dedicated onboarding",
-                "On-premise / MQTT support"
-              ]}
-              buttonText="Contact Sales"
-              buttonLink="/contact"
-              buttonVariant="outline"
-            />
           </div>
         </div>
       </section>
@@ -479,7 +366,6 @@ const Landing = () => {
   );
 };
 
-// Feature Card component
 const FeatureCard = ({ icon, title, subtitle }: { 
   icon: React.ReactNode;
   title: string;
@@ -500,67 +386,11 @@ const FeatureCard = ({ icon, title, subtitle }: {
   );
 };
 
-// Perfect For Card component
 const PerfectForCard = ({ title }: { title: string }) => {
   return (
     <div className="bg-card p-4 rounded-lg shadow-sm flex justify-center items-center text-center">
       <span className="font-medium">{title}</span>
     </div>
-  );
-};
-
-// Pricing Card component
-const PricingCard = ({ 
-  name, 
-  price, 
-  bestFor, 
-  features, 
-  buttonText, 
-  buttonLink,
-  isPrimary = false,
-  buttonVariant = "default"
-}: { 
-  name: string;
-  price: string;
-  bestFor: string;
-  features: string[];
-  buttonText: string;
-  buttonLink: string;
-  isPrimary?: boolean;
-  buttonVariant?: "default" | "outline";
-}) => {
-  return (
-    <Card className={`flex flex-col transition-all duration-200 ${isPrimary ? 'border-primary shadow-md scale-105 relative z-10' : 'hover:shadow-md hover:-translate-y-1'}`}>
-      <CardHeader className={`${isPrimary ? 'bg-primary/10' : ''}`}>
-        <h3 className={`text-xl font-bold ${isPrimary ? 'text-primary' : ''}`}>{name}</h3>
-        <div className="flex items-end gap-1 mt-2">
-          <span className="text-3xl font-bold">{price}</span>
-          {price !== "Custom" && <span className="text-sm text-muted-foreground">/month</span>}
-        </div>
-        <p className="text-sm text-muted-foreground mt-2">{bestFor}</p>
-      </CardHeader>
-      <CardContent className="flex-grow pt-6">
-        <ul className="space-y-3">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-start gap-2">
-              <Check size={18} className="text-primary shrink-0 mt-0.5" />
-              <span className="text-sm">{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-      <CardFooter className="pt-4 pb-6">
-        <Link to={buttonLink} className="w-full">
-          <Button 
-            variant={buttonVariant} 
-            className="w-full"
-            size="lg"
-          >
-            {buttonText}
-          </Button>
-        </Link>
-      </CardFooter>
-    </Card>
   );
 };
 
