@@ -28,5 +28,6 @@ export interface UserProfile {
   custom_robot_types?: string[] | null;
   custom_telemetry_types?: string[] | null;
   custom_alerts?: any[] | null;
-  telemetry_retention_days?: number;
+  telemetryRetentionDays?: number;
+  telemetry_retention_days?: number; // Adding snake_case variant for database compatibility
 }
