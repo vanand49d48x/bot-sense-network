@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -14,22 +15,8 @@ const Auth = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [resendLoading, setResendLoading] = React.useState(false);
-  const [showResendButton, setShowResendButton] = React.useState(false);
-  const { signIn, signUp, signInWithGoogle, user, resendVerificationEmail } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Parse the tab from URL search params
-  const searchParams = new URLSearchParams(location.search);
-  const tabFromUrl = searchParams.get("tab");
-  const [activeTab, setActiveTab] = React.useState(tabFromUrl === "signup" ? "signup" : "signin");
-
-  useEffect(() => {
-    // Update active tab when URL search params change
-    const tab = searchParams.get("tab");
-    setActiveTab(tab === "signup" ? "signup" : "signin");
-  }, [location.search]);
 
   useEffect(() => {
     if (user) {
@@ -43,13 +30,8 @@ const Auth = () => {
     try {
       await signIn(email, password);
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error signing in:", error);
-      
-      // Check if the error is related to email not being confirmed
-      if (error.message?.includes("Email not confirmed")) {
-        setShowResendButton(true);
-      }
     } finally {
       setLoading(false);
     }
@@ -61,7 +43,6 @@ const Auth = () => {
     try {
       await signUp(email, password);
       // User will be redirected by the useEffect when auth state changes
-      setShowResendButton(true);
     } catch (error) {
       console.error("Error signing up:", error);
     } finally {
@@ -76,36 +57,6 @@ const Auth = () => {
     } catch (error) {
       console.error("Error signing in with Google:", error);
     }
-  };
-
-  const handleResendVerification = async () => {
-    if (!email) return;
-    
-    setResendLoading(true);
-    try {
-      await resendVerificationEmail(email);
-    } catch (error) {
-      console.error("Error resending verification email:", error);
-    } finally {
-      setResendLoading(false);
-    }
-  };
-
-  // Update URL when changing tabs without navigating
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    const newSearchParams = new URLSearchParams(location.search);
-    if (value === "signup") {
-      newSearchParams.set("tab", "signup");
-    } else {
-      newSearchParams.delete("tab");
-    }
-    
-    const newSearch = newSearchParams.toString();
-    const newPath = `${location.pathname}${newSearch ? `?${newSearch}` : ''}`;
-    
-    // Use history.replaceState to update URL without navigating
-    window.history.replaceState(null, '', newPath);
   };
 
   return (
@@ -154,7 +105,7 @@ const Auth = () => {
               </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <Tabs defaultValue="signin">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -185,18 +136,6 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  
-                  {showResendButton && activeTab === "signin" && (
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="w-full mt-2" 
-                      onClick={handleResendVerification}
-                      disabled={resendLoading || !email}
-                    >
-                      {resendLoading ? "Sending..." : "Didn't get email? Resend verification"}
-                    </Button>
-                  )}
                 </form>
               </TabsContent>
               <TabsContent value="signup">
@@ -225,18 +164,6 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
-                  
-                  {showResendButton && activeTab === "signup" && (
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="w-full mt-2" 
-                      onClick={handleResendVerification}
-                      disabled={resendLoading || !email}
-                    >
-                      {resendLoading ? "Sending..." : "Didn't get email? Resend verification"}
-                    </Button>
-                  )}
                 </form>
               </TabsContent>
             </Tabs>

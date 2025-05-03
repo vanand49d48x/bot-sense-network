@@ -12,7 +12,6 @@ type AuthContextType = {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  resendVerificationEmail: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,30 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          // Disable email confirmation requirement temporarily
-          // This will create the user even if email sending fails
-          emailRedirectTo: window.location.origin + '/auth?verified=true'
-        }
       });
 
       if (error) throw error;
       
-      // Check if we got a user (which means signup was successful even if email failed)
-      if (data && data.user) {
-        toast({
-          title: "Account created",
-          description: "We're trying to send you a verification email. If you don't receive it, you can request a new one.",
-        });
-      }
-      
+      toast({
+        title: "Account created",
+        description: "Please check your email to confirm your account.",
+      });
     } catch (error: any) {
-      // Log the full error for debugging
-      console.error("Signup error details:", error);
-      
       toast({
         title: "Error signing up",
         description: error.message,
@@ -157,29 +144,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const resendVerificationEmail = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      });
-
-      if (error) throw error;
-      
-      toast({
-        title: "Verification email sent",
-        description: "Please check your inbox for the verification email.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error resending verification email",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -190,7 +154,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         signInWithGoogle,
-        resendVerificationEmail,
       }}
     >
       {children}
