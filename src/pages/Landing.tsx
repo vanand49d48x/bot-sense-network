@@ -5,7 +5,6 @@ import { Battery, AlertTriangle, MapPin, Shield, Activity,
          Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
-import NewsletterForm from "@/components/marketing/NewsletterForm";
 
 const Landing = () => {
   return (
@@ -19,9 +18,6 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
-            </Link>
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
             </Link>
@@ -48,9 +44,9 @@ const Landing = () => {
                 Start Free Trial
               </Button>
             </Link>
-            <Link to="/pricing">
+            <Link to="/integration">
               <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                View Pricing
+                Learn More
               </Button>
             </Link>
           </div>
@@ -224,9 +220,9 @@ const Landing = () => {
                 Start Free Trial
               </Button>
             </Link>
-            <Link to="/pricing">
+            <Link to="/integration">
               <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                View Pricing
+                Learn More
               </Button>
             </Link>
           </div>
@@ -265,7 +261,7 @@ const Landing = () => {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
                 <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-                <li><Link to="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
+                <li><span className="text-muted-foreground">Blog (Coming Soon)</span></li>
               </ul>
             </div>
             
@@ -294,7 +290,6 @@ const Landing = () => {
               </h3>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/features" className="hover:text-primary transition-colors">Features</Link></li>
-                <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
                 <li><Link to="/api-docs" className="hover:text-primary transition-colors">API Docs</Link></li>
                 <li><Link to="/integration" className="hover:text-primary transition-colors">Integration Guide</Link></li>
                 <li><Link to="/status" className="hover:text-primary transition-colors">
@@ -312,7 +307,14 @@ const Landing = () => {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm mb-2">Subscribe to our newsletter</p>
-                  <NewsletterForm />
+                  <div className="flex gap-2">
+                    <input 
+                      type="email" 
+                      placeholder="Your email"
+                      className="bg-background text-sm px-3 py-2 rounded border border-border flex-1"
+                    />
+                    <Button size="sm">Subscribe</Button>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm mb-2">Follow us</p>

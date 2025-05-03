@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { SupabaseRobot } from "@/types/robot";
+import { SupabaseRobot } from "@/utils/robotMapper";
 
 export function useRobots() {
   const [robots, setRobots] = useState<SupabaseRobot[]>([]);
@@ -28,23 +28,7 @@ export function useRobots() {
       if (error) throw error;
       
       console.log("Robots data fetched:", data?.length || 0, "robots");
-      // Convert the database fields to the expected SupabaseRobot format
-      const mappedRobots: SupabaseRobot[] = (data || []).map(robot => ({
-        id: robot.id,
-        created_at: robot.created_at,
-        name: robot.name,
-        description: robot.description || null,
-        status: robot.status as any,
-        location: robot.location,
-        battery_level: robot.battery_level || 0,
-        temperature: robot.temperature || 0,
-        telemetry_data: robot.telemetry_data || {},
-        last_heartbeat: robot.last_ping || new Date().toISOString(),
-        api_key: robot.api_key,
-        robot_type: robot.type
-      }));
-      
-      setRobots(mappedRobots);
+      setRobots(data || []);
       
       // Fetch API key from profiles
       const { data: profileData, error: profileError } = await supabase

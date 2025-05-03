@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, Circle, LayerGroup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -13,13 +14,12 @@ L.Icon.Default.mergeOptions({
 });
 
 // Custom marker icons for different robot statuses
-const createStatusIcon = (status: 'online' | 'offline' | 'warning' | 'idle' | 'error') => {
+const createStatusIcon = (status: 'online' | 'offline' | 'warning') => {
   return L.divIcon({
     className: 'custom-marker',
     html: `<div class="w-4 h-4 rounded-full ${
       status === 'online' ? 'bg-green-500' :
-      status === 'warning' ? 'bg-yellow-500' : 
-      status === 'idle' ? 'bg-blue-500' : 'bg-red-500'
+      status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
     } ${status === 'online' ? 'pulse-animation' : ''}" />`,
     iconSize: [16, 16],
     iconAnchor: [8, 8],
@@ -126,12 +126,6 @@ export function LeafletMap({
       }
       .tooltip-value-offline {
         color: #ef4444;
-      }
-      .tooltip-value-idle {
-        color: #4299e1;
-      }
-      .tooltip-value-error {
-        color: #dc2626;
       }
       .geofence-label {
         background: transparent;
@@ -343,10 +337,9 @@ export function LeafletMap({
               Temp: {robot.temperature}°C<br />
               Status: <span className={`
                 ${robot.status === 'online' ? 'text-green-500' :
-                  robot.status === 'warning' ? 'text-yellow-500' : 
-                  robot.status === 'idle' ? 'text-blue-500' : 'text-red-500'}
+                  robot.status === 'warning' ? 'text-yellow-500' : 'text-red-500'}
               `}>{robot.status}</span><br />
-              IP: {robot.ipAddress || "Unknown"}<br />
+              IP: {robot.ipAddress}<br />
               Last Seen: {new Date(robot.lastHeartbeat).toLocaleTimeString()}
             </div>
           </Popup>

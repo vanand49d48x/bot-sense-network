@@ -116,8 +116,8 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
           
           <TabsContent value="history">
             <TelemetryHistory 
-              robot={robot} 
-              userProfile={userProfile || undefined}
+              robotId={robot.id} 
+              retentionDays={retentionDays}
             />
           </TabsContent>
           
