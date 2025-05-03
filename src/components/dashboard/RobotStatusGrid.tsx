@@ -2,12 +2,11 @@
 import { useState, useEffect } from "react";
 import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusCard } from "./RobotStatusCard";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { RobotDetailView } from "./RobotDetailView";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { SupabaseRobot, mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
+import { RobotDetailView } from "./RobotDetailView";
 
 interface RobotStatusGridProps {
   robots: Robot[];

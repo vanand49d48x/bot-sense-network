@@ -73,11 +73,11 @@ export function RobotDetailView({ robot, userProfile, isOpen, onClose }: RobotDe
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
         ref={dialogRef}
-        className={`min-w-[85vw] sm:min-w-[600px] md:min-w-[700px] p-0 max-w-[90vw] transform-none ${isDragging ? 'cursor-grabbing' : ''}`}
+        className={`min-w-[85vw] sm:min-w-[600px] md:min-w-[700px] p-0 max-w-[90vw] ${isDragging ? 'cursor-grabbing' : ''}`}
         style={{
           position: 'fixed',
-          left: `${position.x}px`, 
-          top: `${position.y}px`,
+          left: position.x ? `${position.x}px` : undefined, 
+          top: position.y ? `${position.y}px` : undefined,
           transform: position.x || position.y ? 'none' : undefined,
         }}
         onMouseMove={handleMouseMove}
