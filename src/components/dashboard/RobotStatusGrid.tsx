@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusCard } from "./RobotStatusCard";
@@ -199,7 +198,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
       </div>
 
       <Dialog open={!!selectedRobot} onOpenChange={(open) => !open && setSelectedRobot(null)}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[800px] lg:max-w-[900px] w-[90vw]">
           {selectedRobot && userProfile && <RobotDetailView robot={selectedRobot} userProfile={userProfile} />}
         </DialogContent>
       </Dialog>
