@@ -97,8 +97,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              {/* Settings routes */}
               <Route 
-                path="/profile" 
+                path="/settings/profile" 
                 element={
                   <ProtectedRoute>
                     <ProfilePage />
@@ -106,7 +107,7 @@ const App = () => (
                 }
               />
               <Route 
-                path="/subscription" 
+                path="/settings/subscription" 
                 element={
                   <ProtectedRoute>
                     <SubscriptionPage />
@@ -139,6 +140,10 @@ const App = () => (
               <Route path="/status" element={<Status />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/pricing" element={<Pricing />} />
+              
+              {/* Redirect old routes to new locations */}
+              <Route path="/profile" element={<Navigate to="/settings/profile" replace />} />
+              <Route path="/subscription" element={<Navigate to="/settings/subscription" replace />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
