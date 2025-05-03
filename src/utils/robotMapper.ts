@@ -2,19 +2,8 @@
 import { Robot } from "@/types/robot";
 import { Database } from "@/types/supabase";
 
-// Export the SupabaseRobot type so it can be used in other files
-export interface SupabaseRobot {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  last_ping?: string;
-  battery_level?: number;
-  temperature?: number;
-  location?: any;
-  api_key?: string;
-  telemetry_data?: any;
-}
+// Type for robots coming from Supabase
+export type SupabaseRobot = Database['public']['Tables']['robots']['Row'];
 
 /**
  * Maps a Supabase robot to the application Robot type
@@ -35,6 +24,6 @@ export function mapSupabaseRobotToAppRobot(robot: SupabaseRobot): Robot {
     ipAddress: "Unknown", // Default value since Supabase doesn't have this
     errorCount: 0, // Default value since Supabase doesn't track this
     apiKey: robot.api_key, // Map the API key from Supabase
-    telemetryData: robot.telemetry_data || {}, // Using type assertion to handle the mismatch
+    telemetryData: (robot as any).telemetry_data || {}, // Using type assertion to handle the mismatch
   };
 }

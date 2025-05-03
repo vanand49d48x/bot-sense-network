@@ -30,16 +30,3 @@ export interface UserProfile {
   custom_alerts?: any[] | null;
   telemetry_retention_days?: number;
 }
-
-export interface SupabaseRobot {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  last_ping?: string;
-  battery_level?: number;
-  temperature?: number;
-  location?: any;
-  api_key?: string;
-  telemetry_data?: any;
-}

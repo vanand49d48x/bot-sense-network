@@ -16,8 +16,6 @@ import MapViewPage from "./pages/MapViewPage";
 import Alerts from "./pages/Alerts";
 import FleetStatusPage from "./pages/FleetStatusPage";
 import ProfilePage from "./pages/ProfilePage";
-import Pricing from "./pages/Pricing";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 
 // Legal pages
 import Privacy from "./pages/legal/Privacy";
@@ -65,20 +63,11 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/pricing" element={<Pricing />} />
               <Route 
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
                     <Index />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/subscription-success" 
-                element={
-                  <ProtectedRoute>
-                    <SubscriptionSuccess />
                   </ProtectedRoute>
                 } 
               />
