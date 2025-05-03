@@ -3,26 +3,111 @@ import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
-import { CreditCard, Zap, Check, ChevronRight, AlertCircle } from "lucide-react";
+import { CreditCard, Zap, Check, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [currentPlan, setCurrentPlan] = useState("Free");
   const [isLoading, setIsLoading] = useState(false);
+  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   
-  // In a real app, you'd fetch the current subscription from your backend
+  const success = searchParams.get("success");
+  
   useEffect(() => {
-    // Simulate loading the subscription
-    setIsLoading(true);
-    setTimeout(() => {
-      setCurrentPlan("Free");
-      setIsLoading(false);
-    }, 1000);
+    if (success) {
+      toast.success("Payment successful! Your subscription is now active.");
+    }
+  }, [success]);
+
+  // Fetch the user's subscription status
+  useEffect(() => {
+    if (!user) return;
+
+    const checkSubscription = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('check-subscription');
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data.subscribed) {
+          setCurrentPlan(data.subscription_tier);
+          setSubscriptionEnd(data.subscription_end);
+          setCustomerId(data.customer_id);
+        } else {
+          setCurrentPlan("Free");
+          setSubscriptionEnd(null);
+          setCustomerId(data.customer_id);
+        }
+      } catch (err) {
+        console.error("Error checking subscription:", err);
+        toast.error("Failed to check subscription status.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSubscription();
   }, [user]);
+
+  const handleManageSubscription = async () => {
+    if (!customerId) {
+      toast.error("No subscription found to manage");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Implement customer portal creation here
+      toast.info("Redirecting to billing management...");
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+    } catch (err) {
+      console.error("Error creating customer portal:", err);
+      toast.error("Failed to redirect to billing portal");
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckSubscription = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data.subscribed) {
+        setCurrentPlan(data.subscription_tier);
+        setSubscriptionEnd(data.subscription_end);
+        setCustomerId(data.customer_id);
+        toast.success(`Subscription updated: ${data.subscription_tier} plan`);
+      } else {
+        setCurrentPlan("Free");
+        setSubscriptionEnd(null);
+        setCustomerId(data.customer_id);
+        toast.info("No active subscription found");
+      }
+    } catch (err) {
+      console.error("Error checking subscription:", err);
+      toast.error("Failed to check subscription status");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const plans = [
     {
@@ -100,8 +185,8 @@ export default function SubscriptionPage() {
       return;
     }
     
-    toast.success(`Redirecting to ${plan} plan checkout...`);
-    // In a real app, redirect to your checkout page or process
+    // Redirect to pricing page
+    window.location.href = "/pricing";
   };
 
   const addOns = [
@@ -154,18 +239,26 @@ export default function SubscriptionPage() {
                     <p className="text-muted-foreground">
                       {
                         currentPlan === "Free" ? "Free access to basic features" :
-                        currentPlan === "Starter" ? "Billed $19/month" :
-                        currentPlan === "Growth" ? "Billed $49/month" :
-                        "Billed $149/month"
+                        subscriptionEnd ? `Active until ${new Date(subscriptionEnd).toLocaleDateString()}` : 
+                        "Subscription active"
                       }
                     </p>
                   </div>
                   <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2" 
+                      onClick={handleCheckSubscription}
+                      disabled={isLoading}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh Status
+                    </Button>
                     <Link to="/pricing">
                       <Button variant="outline">View All Plans</Button>
                     </Link>
-                    {currentPlan !== "Free" && (
-                      <Button variant="default" onClick={() => toast.info("Redirecting to billing management...")}>
+                    {currentPlan !== "Free" && customerId && (
+                      <Button variant="default" onClick={handleManageSubscription} disabled={isLoading}>
                         Manage Billing
                       </Button>
                     )}
@@ -245,9 +338,11 @@ export default function SubscriptionPage() {
                     <p className="text-muted-foreground">{addon.description}</p>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={() => toast.info(`Adding ${addon.name}...`)}>
-                      Add to Subscription
-                    </Button>
+                    <Link to="/pricing" className="w-full">
+                      <Button variant="outline" className="w-full">
+                        Add to Cart
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               ))}

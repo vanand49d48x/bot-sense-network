@@ -21,5 +21,9 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS telemetry_retention_days INTEGER D
 -- Update existing profiles to have the default retention period
 UPDATE profiles SET telemetry_retention_days = 7 WHERE telemetry_retention_days IS NULL;
 
+-- Add subscription columns to profiles table
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_plan TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMPTZ;
+
 -- Create index on telemetry table to improve query performance for history lookups
 CREATE INDEX IF NOT EXISTS idx_telemetry_robot_created_at ON telemetry(robot_id, created_at);

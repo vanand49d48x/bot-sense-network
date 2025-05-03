@@ -4,11 +4,15 @@ import { Check } from "lucide-react";
 import PlaceholderLayout from "@/components/layout/PlaceholderLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useCart } from "@/context/CartContext";
+import { toast } from "@/components/ui/sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const tiers = [
   {
+    id: "tier_free",
     name: "Free",
-    price: "$0",
+    price: 0,
     period: "month",
     description: "For hobbyists and solo developers",
     features: [
@@ -22,8 +26,9 @@ const tiers = [
     highlight: false,
   },
   {
+    id: "tier_starter",
     name: "Starter",
-    price: "$19",
+    price: 1900,
     period: "month",
     description: "For startup teams and testers",
     features: [
@@ -37,8 +42,9 @@ const tiers = [
     highlight: false,
   },
   {
+    id: "tier_growth",
     name: "Growth",
-    price: "$49",
+    price: 4900,
     period: "month",
     description: "For growing teams and labs",
     features: [
@@ -53,8 +59,9 @@ const tiers = [
     highlight: true,
   },
   {
+    id: "tier_pro",
     name: "Pro",
-    price: "$149",
+    price: 14900,
     period: "month",
     description: "For industrial use and fleets",
     features: [
@@ -69,8 +76,9 @@ const tiers = [
     highlight: false,
   },
   {
+    id: "tier_enterprise",
     name: "Enterprise",
-    price: "Custom",
+    price: 0, // Custom pricing
     period: "",
     description: "For OEMs and manufacturers",
     features: [
@@ -88,60 +96,141 @@ const tiers = [
 
 const addons = [
   {
+    id: "addon_storage",
     name: "Additional telemetry storage",
-    price: "$5/month",
-    description: "Per extra 30 days"
+    price: 500,
+    description: "Per extra 30 days",
+    type: 'addon'
   },
   {
+    id: "addon_robot",
     name: "Extra robot",
-    price: "$2–3/month",
-    description: "Per bot on Free/Starter plans"
+    price: 200,
+    description: "Per bot on Free/Starter plans",
+    type: 'addon'
   },
   {
+    id: "addon_seats",
     name: "Team seats",
-    price: "$10/month",
-    description: "Per extra admin"
+    price: 1000,
+    description: "Per extra admin",
+    type: 'addon'
   }
 ];
 
-const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => (
-  <div className={`flex flex-col p-6 rounded-xl border transition-all duration-300 
-    ${tier.highlight ? 'border-primary shadow-md relative' : 'border-border'} 
-    hover:border-primary hover:shadow-md`}>
-    {tier.highlight && (
-      <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
-        MOST POPULAR
-      </span>
-    )}
+const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
+  const { addToCart, isInCart } = useCart();
+  const { user } = useAuth();
+  
+  const handleAddToCart = () => {
+    if (tier.price === 0 && tier.name === "Enterprise") {
+      // For Enterprise, redirect to contact page
+      return;
+    }
     
-    <div className="mb-5">
-      <h3 className="text-xl font-semibold">{tier.name}</h3>
-      <div className="flex items-baseline mt-2">
-        <span className="text-3xl font-bold">{tier.price}</span>
-        {tier.period && <span className="text-muted-foreground ml-1">/{tier.period}</span>}
+    addToCart({
+      id: tier.id,
+      name: `${tier.name} Plan`,
+      price: tier.price,
+      type: 'subscription',
+      period: tier.period
+    });
+  };
+  
+  const inCart = isInCart(tier.id);
+
+  return (
+    <div className={`flex flex-col p-6 rounded-xl border transition-all duration-300 
+      ${tier.highlight ? 'border-primary shadow-md relative' : 'border-border'} 
+      hover:border-primary hover:shadow-md`}>
+      {tier.highlight && (
+        <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+          MOST POPULAR
+        </span>
+      )}
+      
+      <div className="mb-5">
+        <h3 className="text-xl font-semibold">{tier.name}</h3>
+        <div className="flex items-baseline mt-2">
+          <span className="text-3xl font-bold">${(tier.price/100).toFixed(2)}</span>
+          {tier.period && <span className="text-muted-foreground ml-1">/{tier.period}</span>}
+        </div>
+        <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
       </div>
-      <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
+      
+      <ul className="space-y-3 mb-8 flex-grow">
+        {tier.features.map((feature, index) => (
+          <li key={index} className="flex items-start">
+            <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
+            <span className="text-sm">{feature}</span>
+          </li>
+        ))}
+      </ul>
+      
+      {tier.name === "Enterprise" ? (
+        <Link to={tier.link} className="mt-auto">
+          <Button 
+            variant="outline" 
+            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+          >
+            {tier.cta}
+          </Button>
+        </Link>
+      ) : tier.name === "Free" ? (
+        <Link to={user ? "/dashboard" : "/auth"} className="mt-auto">
+          <Button 
+            variant="outline" 
+            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+          >
+            {user ? "Access Dashboard" : "Start for Free"}
+          </Button>
+        </Link>
+      ) : (
+        <Button 
+          variant={tier.highlight ? "default" : "outline"}
+          className="w-full hover:bg-primary hover:text-primary-foreground transition-colors mt-auto"
+          onClick={handleAddToCart}
+          disabled={inCart}
+        >
+          {inCart ? "Added to Cart" : tier.cta}
+        </Button>
+      )}
     </div>
-    
-    <ul className="space-y-3 mb-8 flex-grow">
-      {tier.features.map((feature, index) => (
-        <li key={index} className="flex items-start">
-          <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
-          <span className="text-sm">{feature}</span>
-        </li>
-      ))}
-    </ul>
-    
-    <Link to={tier.link} className="mt-auto">
+  );
+};
+
+const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
+  const { addToCart, isInCart } = useCart();
+  
+  const handleAddToCart = () => {
+    addToCart({
+      id: addon.id,
+      name: addon.name,
+      price: addon.price,
+      type: 'addon',
+      quantity: 1
+    });
+  };
+  
+  const inCart = isInCart(addon.id);
+
+  return (
+    <div className="bg-card p-6 rounded-lg border border-border hover:border-primary hover:shadow-md transition-all duration-300">
+      <h4 className="font-medium mb-2">{addon.name}</h4>
+      <p className="text-lg font-bold">${(addon.price/100).toFixed(2)}/month</p>
+      <p className="text-sm text-muted-foreground mb-4">{addon.description}</p>
       <Button 
-        variant={tier.highlight ? "default" : "outline"} 
-        className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+        variant="outline" 
+        size="sm" 
+        className="w-full"
+        onClick={handleAddToCart}
+        disabled={inCart}
       >
-        {tier.cta}
+        {inCart ? "Added to Cart" : "Add to Cart"}
       </Button>
-    </Link>
-  </div>
-);
+    </div>
+  );
+};
 
 const Pricing = () => {
   useEffect(() => {
@@ -170,11 +259,7 @@ const Pricing = () => {
           <h3 className="text-xl font-semibold mb-6 text-center">Add-ons (Optional per-tier or à la carte)</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {addons.map((addon, index) => (
-              <div key={index} className="bg-card p-6 rounded-lg border border-border hover:border-primary hover:shadow-md transition-all duration-300">
-                <h4 className="font-medium mb-2">{addon.name}</h4>
-                <p className="text-lg font-bold">{addon.price}</p>
-                <p className="text-sm text-muted-foreground">{addon.description}</p>
-              </div>
+              <AddonItem key={index} addon={addon} />
             ))}
           </div>
         </div>
@@ -194,4 +279,3 @@ const Pricing = () => {
 };
 
 export default Pricing;
-

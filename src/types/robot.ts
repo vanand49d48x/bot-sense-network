@@ -30,4 +30,5 @@ export interface UserProfile {
   custom_alerts?: any[] | null;
   telemetry_retention_days?: number;
   subscription_plan?: string | null;
+  subscription_end?: string | null;
 }
