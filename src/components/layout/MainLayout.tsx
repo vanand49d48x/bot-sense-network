@@ -8,14 +8,31 @@ import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { useEffect } from "react";
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { signOut } = useAuth();
+  const { signOut, user, session } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect to auth page if not authenticated when accessing protected routes
+  useEffect(() => {
+    // Check if we're on a page that should be protected (any page using MainLayout except PlaceholderLayout)
+    const isProtectedPath = window.location.pathname.includes('/dashboard') || 
+                           window.location.pathname.includes('/settings') ||
+                           window.location.pathname.includes('/fleet-status') ||
+                           window.location.pathname.includes('/map') ||
+                           window.location.pathname.includes('/alerts') ||
+                           window.location.pathname.includes('/integration');
+                           
+    if (isProtectedPath && (!user || !session)) {
+      console.log("No authenticated user found, redirecting to auth page");
+      navigate("/auth");
+    }
+  }, [user, session, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -32,10 +49,12 @@ export function MainLayout({ children }: MainLayoutProps) {
               <SidebarTrigger />
               <div className="flex items-center gap-2">
                 <ThemeToggle />
-                <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
-                  <LogOut size={16} />
-                  <span>Sign Out</span>
-                </Button>
+                {user && (
+                  <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
+                    <LogOut size={16} />
+                    <span>Sign Out</span>
+                  </Button>
+                )}
               </div>
             </header>
             <main className="flex-1 p-4 md:p-6 overflow-auto">

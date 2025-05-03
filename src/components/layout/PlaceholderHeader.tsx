@@ -1,12 +1,19 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
-import { CartDrawer } from "../cart/CartDrawer";
+import { useEffect, useState } from "react";
 
 export default function PlaceholderHeader() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Update authentication status whenever user or session changes
+    setIsAuthenticated(!!user && !!session);
+  }, [user, session]);
 
   return (
     <header className="supports-backdrop-blur:bg-background/60 sticky top-0 z-40 w-full backdrop-blur border-b bg-background/95">
@@ -35,9 +42,8 @@ export default function PlaceholderHeader() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <CartDrawer />
             <ThemeToggle />
-            {user ? (
+            {isAuthenticated ? (
               <Link to="/dashboard">
                 <Button size="sm">Dashboard</Button>
               </Link>
@@ -49,9 +55,8 @@ export default function PlaceholderHeader() {
           </div>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4 md:hidden">
-          <CartDrawer />
           <ThemeToggle />
-          {user ? (
+          {isAuthenticated ? (
             <Link to="/dashboard">
               <Button size="sm">Dashboard</Button>
             </Link>
