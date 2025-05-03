@@ -49,85 +49,95 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
             <TabsTrigger value="integration">API Integration</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="details">
-            <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2">
-                  <Info className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Model:</span>
-                  <span className="text-sm">{robot.model}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Last Ping:</span>
-                  <span className="text-sm">{formatDate(robot.lastHeartbeat)}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <div className="bg-muted p-3 rounded-md">
-                  <div className="flex items-center">
-                    <Battery className={`h-5 w-5 mr-2 ${robot.batteryLevel < 20 ? 'text-red-500' : 'text-green-500'}`} />
-                    <span className="font-medium">Battery</span>
+          <div className="h-[400px]">
+            <TabsContent value="details" className="mt-0 h-full">
+              <ScrollArea className="h-full pr-4">
+                <div className="grid gap-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Model:</span>
+                      <span className="text-sm">{robot.model}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Last Ping:</span>
+                      <span className="text-sm">{formatDate(robot.lastHeartbeat)}</span>
+                    </div>
                   </div>
-                  <p className="text-2xl mt-1">{robot.batteryLevel}%</p>
-                </div>
-                <div className="bg-muted p-3 rounded-md">
-                  <div className="flex items-center">
-                    <Thermometer className={`h-5 w-5 mr-2 ${robot.temperature > 35 ? 'text-red-500' : 'text-green-500'}`} />
-                    <span className="font-medium">Temperature</span>
-                  </div>
-                  <p className="text-2xl mt-1">{robot.temperature}°C</p>
-                </div>
-              </div>
 
-              {robot.location && (
-                <div className="bg-muted p-3 rounded-md mt-2">
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 mr-2 text-blue-500" />
-                    <span className="font-medium">Location</span>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div className="bg-muted p-3 rounded-md">
+                      <div className="flex items-center">
+                        <Battery className={`h-5 w-5 mr-2 ${robot.batteryLevel < 20 ? 'text-red-500' : 'text-green-500'}`} />
+                        <span className="font-medium">Battery</span>
+                      </div>
+                      <p className="text-2xl mt-1">{robot.batteryLevel}%</p>
+                    </div>
+                    <div className="bg-muted p-3 rounded-md">
+                      <div className="flex items-center">
+                        <Thermometer className={`h-5 w-5 mr-2 ${robot.temperature > 35 ? 'text-red-500' : 'text-green-500'}`} />
+                        <span className="font-medium">Temperature</span>
+                      </div>
+                      <p className="text-2xl mt-1">{robot.temperature}°C</p>
+                    </div>
                   </div>
-                  <p className="text-sm mt-1">
-                    Lat: {robot.location.latitude.toFixed(5)}, 
-                    Lng: {robot.location.longitude.toFixed(5)}
-                  </p>
-                </div>
-              )}
 
-              <div className="mt-2 text-sm text-muted-foreground">
-                <p>IP Address: {robot.ipAddress}</p>
-                <p>Error Count: {robot.errorCount}</p>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="charts">
-            <ScrollArea className="h-[650px] pr-4">
-              <div className="space-y-6">
-                <TelemetryChart robotId={robot.id} retentionDays={retentionDays} />
-                <RobotPathHistory robot={robot} retentionDays={retentionDays} />
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="telemetry">
-            <CustomTelemetryDisplay robot={robot} />
-          </TabsContent>
-          
-          <TabsContent value="history">
-            <TelemetryHistory 
-              robotId={robot.id} 
-              retentionDays={retentionDays}
-            />
-          </TabsContent>
-          
-          <TabsContent value="integration">
-            <CustomTelemetryGuide 
-              apiKey={robot.apiKey || userProfile?.api_key || null} 
-              robotId={robot.id} 
-              customTelemetryTypes={userProfile?.custom_telemetry_types} 
-            />
-          </TabsContent>
+                  {robot.location && (
+                    <div className="bg-muted p-3 rounded-md mt-2">
+                      <div className="flex items-center">
+                        <MapPin className="h-5 w-5 mr-2 text-blue-500" />
+                        <span className="font-medium">Location</span>
+                      </div>
+                      <p className="text-sm mt-1">
+                        Lat: {robot.location.latitude.toFixed(5)}, 
+                        Lng: {robot.location.longitude.toFixed(5)}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    <p>IP Address: {robot.ipAddress}</p>
+                    <p>Error Count: {robot.errorCount}</p>
+                  </div>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="charts" className="mt-0 h-full">
+              <ScrollArea className="h-full pr-4">
+                <div className="space-y-6">
+                  <TelemetryChart robotId={robot.id} retentionDays={retentionDays} />
+                  <RobotPathHistory robot={robot} retentionDays={retentionDays} />
+                </div>
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="telemetry" className="mt-0 h-full">
+              <ScrollArea className="h-full pr-4">
+                <CustomTelemetryDisplay robot={robot} />
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="history" className="mt-0 h-full">
+              <ScrollArea className="h-full pr-4">
+                <TelemetryHistory 
+                  robotId={robot.id} 
+                  retentionDays={retentionDays}
+                />
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="integration" className="mt-0 h-full">
+              <ScrollArea className="h-full pr-4">
+                <CustomTelemetryGuide 
+                  apiKey={robot.apiKey || userProfile?.api_key || null} 
+                  robotId={robot.id} 
+                  customTelemetryTypes={userProfile?.custom_telemetry_types} 
+                />
+              </ScrollArea>
+            </TabsContent>
+          </div>
         </Tabs>
       </CardContent>
     </Card>
