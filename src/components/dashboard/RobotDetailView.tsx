@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Battery, Thermometer, MapPin, Clock, Info, Code, History, ChartLine } from "lucide-react";
 import { CustomTelemetryDisplay } from "./CustomTelemetryDisplay";
-import { CustomTelemetryGuide } from "../integration/CustomTelemetryGuide";
 import { format } from "date-fns";
 import { TelemetryHistory } from "./TelemetryHistory";
 import { TelemetryChart } from "./TelemetryChart";
@@ -43,21 +42,11 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`grid ${isMobile ? 'grid-cols-2 gap-1' : 'grid-cols-5'} mb-4`}>
+          <TabsList className={`grid ${isMobile ? 'grid-cols-2 gap-1' : 'grid-cols-4'} mb-4`}>
             <TabsTrigger value="details" className="text-xs sm:text-sm">Details</TabsTrigger>
             <TabsTrigger value="charts" className="text-xs sm:text-sm">Charts</TabsTrigger>
-            {!isMobile && (
-              <TabsTrigger value="telemetry" className="text-xs sm:text-sm">Custom Telemetry</TabsTrigger>
-            )}
+            <TabsTrigger value="telemetry" className="text-xs sm:text-sm">Custom Telemetry</TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm">History</TabsTrigger>
-            {isMobile ? (
-              <TabsTrigger value="integration" className="text-xs sm:text-sm">API</TabsTrigger>
-            ) : (
-              <TabsTrigger value="integration" className="text-xs sm:text-sm">API Integration</TabsTrigger>
-            )}
-            {isMobile && (
-              <TabsTrigger value="telemetry" className="text-xs sm:text-sm col-span-2">Custom Telemetry</TabsTrigger>
-            )}
           </TabsList>
           
           <div className="h-[400px] md:h-[450px]">
@@ -135,16 +124,6 @@ export function RobotDetailView({ robot, userProfile }: RobotDetailViewProps) {
                 <TelemetryHistory 
                   robotId={robot.id} 
                   retentionDays={retentionDays}
-                />
-              </ScrollArea>
-            </TabsContent>
-            
-            <TabsContent value="integration" className="mt-0 h-full">
-              <ScrollArea className="h-full pr-4">
-                <CustomTelemetryGuide 
-                  apiKey={robot.apiKey || userProfile?.api_key || null} 
-                  robotId={robot.id} 
-                  customTelemetryTypes={userProfile?.custom_telemetry_types} 
                 />
               </ScrollArea>
             </TabsContent>
