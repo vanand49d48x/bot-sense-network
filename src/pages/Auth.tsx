@@ -28,6 +28,8 @@ const Auth = () => {
     const tab = params.get("tab");
     if (tab === "signup") {
       setActiveTab("signup");
+    } else {
+      setActiveTab("signin"); // Explicitly set to signin if no tab or other value
     }
   }, [location]);
 
