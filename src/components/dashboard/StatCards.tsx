@@ -25,6 +25,7 @@ export function StatCards({ robots }: StatCardsProps) {
       value: totalRobots,
       description: "Registered devices",
       icon: ArrowRight,
+      linkTo: "/dashboard",
     },
     {
       title: "Online",
@@ -32,6 +33,7 @@ export function StatCards({ robots }: StatCardsProps) {
       description: `${totalRobots ? Math.round((onlineRobots / totalRobots) * 100) : 0}% of fleet`,
       icon: Battery,
       className: "text-robot-online",
+      linkTo: "/fleet-status",
     },
     {
       title: "Warnings",
@@ -39,6 +41,7 @@ export function StatCards({ robots }: StatCardsProps) {
       description: "Require attention",
       icon: Bell,
       className: "text-robot-warning",
+      linkTo: "/alerts",
     },
     {
       title: "Offline",
@@ -55,31 +58,18 @@ export function StatCards({ robots }: StatCardsProps) {
       {stats.map((stat) => (
         <Card 
           key={stat.title} 
-          className={`animate-fade-in ${stat.linkTo ? 'cursor-pointer hover:shadow-md transition-all' : ''}`}
+          className="animate-fade-in cursor-pointer hover:shadow-md transition-all"
         >
-          {stat.linkTo ? (
-            <Link to={stat.linkTo}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className={`h-4 w-4 ${stat.className || ""}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
-              </CardContent>
-            </Link>
-          ) : (
-            <>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className={`h-4 w-4 ${stat.className || ""}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
-              </CardContent>
-            </>
-          )}
+          <Link to={stat.linkTo} className="block h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.className || ""}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
+            </CardContent>
+          </Link>
         </Card>
       ))}
     </div>
