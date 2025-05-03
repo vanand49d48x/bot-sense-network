@@ -16,6 +16,7 @@ import MapViewPage from "./pages/MapViewPage";
 import Alerts from "./pages/Alerts";
 import FleetStatusPage from "./pages/FleetStatusPage";
 import ProfilePage from "./pages/ProfilePage";
+import Pricing from "./pages/Pricing";
 
 // Legal pages
 import Privacy from "./pages/legal/Privacy";
@@ -63,6 +64,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route 
                 path="/dashboard" 
                 element={

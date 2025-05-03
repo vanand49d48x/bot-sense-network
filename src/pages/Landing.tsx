@@ -2,9 +2,10 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Battery, AlertTriangle, MapPin, Shield, Activity, 
-         Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info } from "lucide-react";
+         Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info, Check } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Landing = () => {
   return (
@@ -159,6 +160,105 @@ const Landing = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-16 bg-muted">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">💰 Pricing Plans</h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Choose the plan that fits your needs. Start with our free plan and scale as you grow.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {/* Free Plan */}
+            <PricingCard
+              title="Free"
+              price="$0"
+              period="month"
+              description="Hobbyists, solo developers"
+              features={[
+                "1 robot",
+                "3 days telemetry history",
+                "Live dashboard",
+                "Basic API access"
+              ]}
+              buttonText="Get Started"
+              buttonUrl="/auth"
+            />
+            
+            {/* Starter Plan */}
+            <PricingCard
+              title="Starter"
+              price="$19"
+              period="month"
+              description="Startup teams, testers"
+              features={[
+                "Up to 5 robots",
+                "7 days history",
+                "Email alerts",
+                "ROS/Arduino SDK support"
+              ]}
+              buttonText="Subscribe"
+              buttonUrl="/auth"
+              highlight={false}
+            />
+            
+            {/* Growth Plan */}
+            <PricingCard
+              title="Growth"
+              price="$49"
+              period="month"
+              description="Growing teams, labs"
+              features={[
+                "25 robots",
+                "30-day telemetry retention",
+                "Custom metrics",
+                "Real-time alerts",
+                "Location map"
+              ]}
+              buttonText="Subscribe"
+              buttonUrl="/auth"
+              highlight={true}
+            />
+            
+            {/* Pro Plan */}
+            <PricingCard
+              title="Pro"
+              price="$149"
+              period="month"
+              description="Industrial use, fleets"
+              features={[
+                "100+ robots",
+                "90-day history",
+                "SLA + Priority support",
+                "Custom alerting rules",
+                "Export + team access"
+              ]}
+              buttonText="Subscribe"
+              buttonUrl="/auth"
+              highlight={false}
+            />
+            
+            {/* Enterprise Plan */}
+            <PricingCard
+              title="Enterprise"
+              price="Custom"
+              period=""
+              description="OEMs, manufacturers"
+              features={[
+                "Unlimited robots",
+                "Custom data retention",
+                "SSO / Audit logs",
+                "Dedicated onboarding",
+                "On-premise / MQTT support"
+              ]}
+              buttonText="Contact Us"
+              buttonUrl="/contact"
+              highlight={false}
+            />
           </div>
         </div>
       </section>
@@ -363,6 +463,62 @@ const Landing = () => {
         </div>
       </footer>
     </div>
+  );
+};
+
+// Pricing Card Component
+const PricingCard = ({
+  title,
+  price,
+  period,
+  description,
+  features,
+  buttonText,
+  buttonUrl,
+  highlight = false
+}: {
+  title: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  buttonText: string;
+  buttonUrl: string;
+  highlight?: boolean;
+}) => {
+  return (
+    <Card className={`flex flex-col h-full transition-all duration-200 hover:shadow-lg ${
+      highlight ? 'border-primary shadow-md' : ''
+    }`}>
+      <CardHeader>
+        <CardTitle className="text-2xl">{title}</CardTitle>
+        <div className="flex items-baseline mt-2">
+          <span className="text-3xl font-bold">{price}</span>
+          {period && <span className="text-muted-foreground ml-1">/{period}</span>}
+        </div>
+        <CardDescription>Best for {description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <ul className="space-y-2">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-start">
+              <Check className="h-5 w-5 text-primary shrink-0 mr-2" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+      <CardFooter>
+        <Link to={buttonUrl} className="w-full">
+          <Button 
+            variant={highlight ? "default" : "outline"} 
+            className="w-full"
+          >
+            {buttonText}
+          </Button>
+        </Link>
+      </CardFooter>
+    </Card>
   );
 };
 
