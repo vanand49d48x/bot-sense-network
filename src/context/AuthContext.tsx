@@ -112,7 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Make sure we clear any potential stale session data
+      // First clear local state to improve perceived responsiveness
+      setUser(null);
+      setSession(null);
+      
+      // Then try to sign out
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -124,10 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         return;
       }
-      
-      // Clear local state immediately to improve perceived responsiveness
-      setUser(null);
-      setSession(null);
       
       toast({
         title: "Signed out",
