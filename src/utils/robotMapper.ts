@@ -1,7 +1,20 @@
 
 import { Robot } from "@/types/robot";
 import { Database } from "@/types/supabase";
-import { SupabaseRobot } from "@/types/robot";
+
+// Export the SupabaseRobot type so it can be used in other files
+export interface SupabaseRobot {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  last_ping?: string;
+  battery_level?: number;
+  temperature?: number;
+  location?: any;
+  api_key?: string;
+  telemetry_data?: any;
+}
 
 /**
  * Maps a Supabase robot to the application Robot type
