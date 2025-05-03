@@ -2,9 +2,17 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Battery, AlertTriangle, MapPin, Shield, Activity, 
-         Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info } from "lucide-react";
+         Bot, Rocket, Clock, Mail, Map, Bell, FileText, Book, Github, Twitter, Linkedin, Info, Check } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const Landing = () => {
   return (
@@ -17,6 +25,25 @@ const Landing = () => {
             <span className="text-xl font-bold">RoboMetrics</span>
           </div>
           <div className="flex items-center gap-4">
+            <nav>
+              <ul className="flex items-center gap-6">
+                <li>
+                  <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                    About
+                  </Link>
+                </li>
+              </ul>
+            </nav>
             <ThemeToggle />
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
@@ -54,7 +81,7 @@ const Landing = () => {
       </section>
 
       {/* Why Section */}
-      <section className="py-16 bg-muted">
+      <section className="py-16 bg-muted" id="features">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">⚡ Why RoboMetrics?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -159,6 +186,107 @@ const Landing = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">💰 Pricing Plans</h2>
+          <p className="text-lg text-muted-foreground mb-12 text-center max-w-2xl mx-auto">
+            Choose the plan that's right for you and your robots. All plans include our core monitoring platform.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {/* Free Plan */}
+            <PricingCard
+              title="Free"
+              price="$0"
+              period="/month"
+              description="For hobbyists and solo developers"
+              features={[
+                "1 robot",
+                "3 days telemetry history",
+                "Live dashboard",
+                "Basic API access"
+              ]}
+              ctaLink="/auth"
+              ctaText="Sign Up Free"
+              variant="outline"
+            />
+            
+            {/* Starter Plan */}
+            <PricingCard
+              title="Starter"
+              price="$19"
+              period="/month"
+              description="For startup teams and testers"
+              features={[
+                "Up to 5 robots",
+                "7 days history",
+                "Email alerts",
+                "ROS/Arduino SDK support"
+              ]}
+              ctaLink="/auth"
+              ctaText="Start Trial"
+              variant="default"
+            />
+            
+            {/* Growth Plan */}
+            <PricingCard
+              title="Growth"
+              price="$49"
+              period="/month"
+              description="For growing teams and labs"
+              features={[
+                "25 robots",
+                "30-day telemetry retention",
+                "Custom metrics",
+                "Real-time alerts",
+                "Location map"
+              ]}
+              ctaLink="/auth"
+              ctaText="Start Trial"
+              variant="default"
+              popular={true}
+            />
+            
+            {/* Pro Plan */}
+            <PricingCard
+              title="Pro"
+              price="$149"
+              period="/month"
+              description="For industrial use and fleets"
+              features={[
+                "100+ robots",
+                "90-day history",
+                "SLA + Priority support",
+                "Custom alerting rules",
+                "Export + team access"
+              ]}
+              ctaLink="/auth"
+              ctaText="Contact Sales"
+              variant="default"
+            />
+            
+            {/* Enterprise Plan */}
+            <PricingCard
+              title="Enterprise"
+              price="Custom"
+              period=""
+              description="For OEMs and manufacturers"
+              features={[
+                "Unlimited robots",
+                "Custom data retention",
+                "SSO / Audit logs",
+                "Dedicated onboarding",
+                "On-premise / MQTT support"
+              ]}
+              ctaLink="/contact"
+              ctaText="Contact Sales"
+              variant="outline"
+            />
           </div>
         </div>
       </section>
@@ -391,6 +519,65 @@ const PerfectForCard = ({ title }: { title: string }) => {
     <div className="bg-card p-4 rounded-lg shadow-sm flex justify-center items-center text-center">
       <span className="font-medium">{title}</span>
     </div>
+  );
+};
+
+type PricingCardProps = {
+  title: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  ctaLink: string;
+  ctaText: string;
+  variant: "default" | "outline";
+  popular?: boolean;
+};
+
+const PricingCard = ({ 
+  title, 
+  price, 
+  period, 
+  description, 
+  features, 
+  ctaLink, 
+  ctaText, 
+  variant,
+  popular = false
+}: PricingCardProps) => {
+  return (
+    <Card className={`flex flex-col h-full ${popular ? 'border-primary shadow-md relative' : ''}`}>
+      {popular && (
+        <div className="absolute -top-3 left-0 right-0 flex justify-center">
+          <span className="bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full font-medium">
+            Most Popular
+          </span>
+        </div>
+      )}
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription className="flex items-end gap-1 pt-2">
+          <span className="text-2xl font-bold">{price}</span>
+          <span className="text-muted-foreground">{period}</span>
+        </CardDescription>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <ul className="space-y-2">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-start gap-2">
+              <Check size={18} className="text-primary shrink-0 mt-0.5" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+      <CardFooter>
+        <Button variant={variant} className="w-full" asChild>
+          <Link to={ctaLink}>{ctaText}</Link>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 
