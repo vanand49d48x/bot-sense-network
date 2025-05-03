@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -48,6 +49,7 @@ export interface Database {
           updated_at: string
           custom_robot_types: string[] | null
           custom_alerts: Json[] | null
+          telemetry_retention_days: number | null
         }
         Insert: {
           id: string
@@ -58,6 +60,7 @@ export interface Database {
           updated_at?: string
           custom_robot_types?: string[] | null
           custom_alerts?: Json[] | null
+          telemetry_retention_days?: number | null
         }
         Update: {
           id?: string
@@ -68,6 +71,7 @@ export interface Database {
           updated_at?: string
           custom_robot_types?: string[] | null
           custom_alerts?: Json[] | null
+          telemetry_retention_days?: number | null
         }
       }
       robots: {
@@ -84,7 +88,7 @@ export interface Database {
           battery_level: number
           temperature: number
           location: Json
-          api_key: string  // Add this line for the API key
+          api_key: string
         }
         Insert: {
           id?: string
@@ -99,7 +103,7 @@ export interface Database {
           battery_level?: number
           temperature?: number
           location?: Json
-          api_key?: string  // Add this line for the API key
+          api_key?: string
         }
         Update: {
           id?: string
@@ -114,7 +118,7 @@ export interface Database {
           battery_level?: number
           temperature?: number
           location?: Json
-          api_key?: string  // Add this line for the API key
+          api_key?: string
         }
       }
       telemetry: {
