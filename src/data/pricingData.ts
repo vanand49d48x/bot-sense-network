@@ -29,8 +29,8 @@ export const tiers = [
       "Email alerts",
       "ROS/Arduino SDK support",
     ],
-    cta: "Get Started",
-    link: "/checkout",
+    cta: "Subscribe Now",
+    link: "/checkout?plan=starter",
     highlight: false,
   },
   {
@@ -46,8 +46,8 @@ export const tiers = [
       "Real-time alerts",
       "Location map",
     ],
-    cta: "Choose Growth",
-    link: "/checkout",
+    cta: "Subscribe Now",
+    link: "/checkout?plan=growth",
     highlight: true,
   },
   {
@@ -63,8 +63,8 @@ export const tiers = [
       "Custom alerting rules",
       "Export + team access",
     ],
-    cta: "Choose Pro",
-    link: "/checkout",
+    cta: "Subscribe Now",
+    link: "/checkout?plan=pro",
     highlight: false,
   },
   {

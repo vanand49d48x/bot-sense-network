@@ -4,16 +4,14 @@ import { Check } from "lucide-react";
 import PlaceholderLayout from "@/components/layout/PlaceholderLayout";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { tiers, addons } from "@/data/pricingData";
 
 const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
-  const { addToCart, isInCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  const handleAddToCart = () => {
+  const handleSubscribe = () => {
     if (tier.price === 0 && tier.name === "Enterprise") {
       // For Enterprise, redirect to contact page
       navigate("/contact");
@@ -26,19 +24,9 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
       return;
     }
     
-    addToCart({
-      id: tier.id,
-      name: `${tier.name} Plan`,
-      price: tier.price,
-      type: 'subscription',
-      period: tier.period
-    });
-    
-    // Navigate to checkout page
-    navigate("/checkout");
+    // For paid tiers, go directly to checkout with plan parameter
+    navigate(`/checkout?plan=${tier.id.replace('tier_', '')}`);
   };
-  
-  const inCart = isInCart(tier.id);
 
   return (
     <div className={`flex flex-col p-6 rounded-xl border transition-all duration-300 
@@ -68,54 +56,25 @@ const PricingTier = ({ tier }: { tier: typeof tiers[0] }) => {
         ))}
       </ul>
       
-      {tier.name === "Enterprise" ? (
-        <Link to={tier.link} className="mt-auto">
-          <Button 
-            variant="outline" 
-            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
-          >
-            {tier.cta}
-          </Button>
-        </Link>
-      ) : tier.name === "Free" ? (
-        <Button 
-          variant="outline"
-          className="w-full hover:bg-primary hover:text-primary-foreground transition-colors mt-auto"
-          onClick={handleAddToCart}
-        >
-          {user ? "Access Dashboard" : "Start for Free"}
-        </Button>
-      ) : (
-        <Button 
-          variant={tier.highlight ? "default" : "outline"}
-          className="w-full hover:bg-primary hover:text-primary-foreground transition-colors mt-auto"
-          onClick={handleAddToCart}
-        >
-          {inCart ? "Added to Cart" : tier.cta}
-        </Button>
-      )}
+      <Button 
+        variant={tier.highlight ? "default" : "outline"}
+        className="w-full hover:bg-primary hover:text-primary-foreground transition-colors mt-auto"
+        onClick={handleSubscribe}
+      >
+        {tier.name === "Enterprise" ? "Contact Sales" : 
+         tier.name === "Free" ? (user ? "Access Dashboard" : "Start for Free") : 
+         "Subscribe Now"}
+      </Button>
     </div>
   );
 };
 
 const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
-  const { addToCart, isInCart } = useCart();
   const navigate = useNavigate();
   
-  const handleAddToCart = () => {
-    addToCart({
-      id: addon.id,
-      name: addon.name,
-      price: addon.price,
-      type: 'addon',
-      quantity: 1
-    });
-    
-    // Navigate to checkout page
-    navigate("/checkout");
+  const handleAddAddon = () => {
+    navigate(`/checkout?addon=${addon.id.replace('addon_', '')}`);
   };
-  
-  const inCart = isInCart(addon.id);
 
   return (
     <div className="bg-card p-6 rounded-lg border border-border hover:border-primary hover:shadow-md transition-all duration-300">
@@ -126,9 +85,9 @@ const AddonItem = ({ addon }: { addon: typeof addons[0] }) => {
         variant="outline" 
         size="sm" 
         className="w-full"
-        onClick={handleAddToCart}
+        onClick={handleAddAddon}
       >
-        {inCart ? "Added to Cart" : "Add to Cart"}
+        Add to Package
       </Button>
     </div>
   );

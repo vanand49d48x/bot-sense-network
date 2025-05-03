@@ -63,7 +63,7 @@ serve(async (req) => {
     const { items, redirectUrl } = await req.json();
     
     if (!items || !Array.isArray(items) || items.length === 0) {
-      throw new Error("Invalid or empty cart");
+      throw new Error("Invalid or empty items");
     }
 
     // Check if user already has a Stripe customer record
