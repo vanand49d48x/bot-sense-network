@@ -18,6 +18,9 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
+            <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+              Pricing
+            </Link>
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
             </Link>
@@ -44,9 +47,9 @@ const Landing = () => {
                 Start Free Trial
               </Button>
             </Link>
-            <Link to="/integration">
+            <Link to="/pricing">
               <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                Learn More
+                View Pricing
               </Button>
             </Link>
           </div>
@@ -220,9 +223,9 @@ const Landing = () => {
                 Start Free Trial
               </Button>
             </Link>
-            <Link to="/integration">
+            <Link to="/pricing">
               <Button size="lg" variant="outline" className="px-8 py-6 text-lg">
-                Learn More
+                View Pricing
               </Button>
             </Link>
           </div>
