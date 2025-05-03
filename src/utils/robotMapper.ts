@@ -27,5 +27,4 @@ export function mapSupabaseRobotToAppRobot(robot: SupabaseRobot): Robot {
   };
 }
 
-// Export the SupabaseRobot type for reuse in other files
-export { SupabaseRobot } from "@/types/robot";
+// No need to re-export SupabaseRobot since we're importing it directly
