@@ -9,133 +9,112 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function for debugging
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
-  // Handle CORS
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get("Authorization")!;
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
+    logStep("Function started");
 
-    // Create Supabase client
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    logStep("Stripe key verified");
+
+    // Initialize Supabase client with the service role key
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user from authorization header
+    // Get the authorization header from the request
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+    logStep("Authorization header found");
+
+    // Parse request body to get the priceId
+    const requestData = await req.json();
+    const priceId = requestData.priceId;
+    if (!priceId) throw new Error("No price ID provided");
+    logStep("Price ID received", { priceId });
+
+    // Verify the user is authenticated
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      throw new Error("Error getting user: " + (userError?.message || "User not found"));
-    }
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user?.email) throw new Error("User not authenticated or email not available");
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse the request body
-    const { priceId } = await req.json();
-    if (!priceId) {
-      throw new Error("Price ID is required");
-    }
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Get the actual Stripe price ID from the environment variable
-    const stripePriceId = Deno.env.get(priceId);
-    if (!stripePriceId) {
-      throw new Error(`Price ID environment variable ${priceId} not found`);
-    }
-
-    // Create Stripe instance
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-      apiVersion: "2023-10-16",
-    });
-
-    // Check if customer exists in Stripe
+    // Check if customer already exists in Stripe
     let customerId;
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      logStep("Found existing Stripe customer", { customerId });
     } else {
       // Create a new customer in Stripe
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
-          user_id: user.id,
-        }
+          userId: user.id,
+        },
       });
       customerId = customer.id;
+      logStep("Created new Stripe customer", { customerId });
     }
 
-    // Get site URL from environment or request
-    const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "http://localhost:5173";
-
-    // Get plan name based on priceId
-    let planName = "Custom";
-    if (priceId === "STRIPE_STARTER_PRICE_ID") {
-      planName = "Starter";
-    } else if (priceId === "STRIPE_GROWTH_PRICE_ID") {
-      planName = "Growth";
-    } else if (priceId === "STRIPE_PRO_PRICE_ID") {
-      planName = "Pro";
-    }
-
-    // Check if the user already has a subscription record, if not create one
-    const { data: existingSubscription } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!existingSubscription) {
-      // Create an initial subscription record (will be updated when payment completes)
-      await supabase.from("subscriptions").insert({
-        user_id: user.id,
-        stripe_customer_id: customerId,
-        status: 'incomplete',
-        plan_id: stripePriceId,
-        plan_name: planName,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    // Create a checkout session with Stripe
+    // Get the origin for success/cancel URLs
+    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "http://localhost:5173";
+    
+    // Create the checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: "subscription",
-      payment_method_types: ["card"],
       line_items: [
         {
-          price: stripePriceId,
+          price: priceId,
           quantity: 1,
         },
       ],
-      success_url: `${siteUrl}/dashboard?payment=success`,
-      cancel_url: `${siteUrl}/pricing?payment=canceled`,
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          plan_name: planName
-        },
-      },
+      mode: "subscription",
+      success_url: `${origin}/dashboard?payment=success`,
+      cancel_url: `${origin}/dashboard?payment=canceled`,
     });
+    
+    logStep("Checkout session created", { 
+      sessionId: session.id, 
+      url: session.url,
+      customerId
+    });
+
+    // Update or insert the subscription record in our database
+    await supabaseClient.from("subscriptions").upsert({
+      user_id: user.id,
+      stripe_customer_id: customerId,
+      status: "pending_checkout", // Will be updated by webhook or check-subscription
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+    
+    logStep("Updated subscription record with pending_checkout status");
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error("Error:", error.message);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
-    );
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR", { message: errorMessage });
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 });
