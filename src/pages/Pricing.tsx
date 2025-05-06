@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Check, ChevronRight, Shield, Zap } from "lucide-react";
@@ -122,6 +122,49 @@ const plans: Plan[] = [
 const Pricing = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  
+  // Check for plans in URL params to handle post-login returns
+  const pendingPriceId = searchParams.get('priceId');
+  
+  // Effect to handle subscription after login
+  useEffect(() => {
+    const handlePostLoginSubscription = async () => {
+      if (user && pendingPriceId && !isRedirecting) {
+        setIsRedirecting(true);
+        
+        try {
+          toast({
+            title: "Redirecting to checkout",
+            description: "Please wait while we prepare your checkout session",
+          });
+          
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: { priceId: pendingPriceId }
+          });
+          
+          if (error) {
+            throw error;
+          }
+          
+          // Redirect to Stripe Checkout
+          window.location.href = data.url;
+        } catch (error: any) {
+          console.error("Error creating checkout session:", error);
+          toast({
+            title: "Error",
+            description: error.message || "Failed to create checkout session",
+            variant: "destructive",
+          });
+          setIsRedirecting(false);
+        }
+      }
+    };
+    
+    handlePostLoginSubscription();
+  }, [user, pendingPriceId, isRedirecting, toast]);
 
   const handleSubscription = async (plan: Plan) => {
     if (plan.id === "free") {
@@ -138,8 +181,8 @@ const Pricing = () => {
 
     try {
       if (!user) {
-        // Not logged in - redirect to auth page with return URL to pricing
-        window.location.href = "/auth?returnUrl=/pricing";
+        // Not logged in - redirect to auth page with return URL to pricing and the priceId
+        navigate(`/auth?returnUrl=/pricing&priceId=${plan.priceId}`);
         return;
       }
 

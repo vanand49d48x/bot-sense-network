@@ -19,22 +19,31 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get the default tab from URL query parameter if present
+  // Get the query parameters
   const searchParams = new URLSearchParams(location.search);
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+  const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+  
+  // Get pricing ID if present (for subscription flow)
+  const priceId = searchParams.get('priceId');
+  
+  // Add the priceId parameter to the return URL if it exists
+  const fullReturnUrl = priceId ? 
+    `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}priceId=${priceId}` : 
+    returnUrl;
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate(fullReturnUrl);
     }
-  }, [user, navigate]);
+  }, [user, navigate, fullReturnUrl]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate("/dashboard");
+      // User will be redirected by the useEffect when auth state changes
     } catch (error) {
       console.error("Error signing in:", error);
     } finally {
