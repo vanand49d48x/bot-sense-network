@@ -149,6 +149,9 @@ const Pricing = () => {
             throw error;
           }
           
+          // Clear the URL parameter to prevent continuous redirects
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
           // Redirect to Stripe Checkout
           window.location.href = data.url;
         } catch (error: any) {
@@ -159,6 +162,9 @@ const Pricing = () => {
             variant: "destructive",
           });
           setIsRedirecting(false);
+          
+          // Clear the URL parameter even on error to prevent continuous retries
+          window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
     };
