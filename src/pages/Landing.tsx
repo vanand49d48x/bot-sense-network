@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -99,7 +100,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Call to action section */}
+      {/* Call to action section with Pricing link */}
       <section className="bg-primary text-primary-foreground py-16">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to start monitoring your robots?</h2>
