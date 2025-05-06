@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
@@ -91,7 +90,7 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
-      expand: ["data.items.data.price.product"],
+      expand: ["data.items.data.price"],
     });
 
     if (subscriptions.data.length === 0) {
@@ -121,15 +120,20 @@ serve(async (req) => {
     // We have an active subscription
     const subscription = subscriptions.data[0];
     const price = subscription.items.data[0].price;
-    const product = price.product as Stripe.Product;
     
+    // Get the product details separately
+    const product = await stripe.products.retrieve(price.product as string);
     const planName = product.name;
     const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+    
+    // Check if subscription is canceled but still in current period
+    const isCanceled = subscription.cancel_at_period_end;
     
     logStep("Active subscription found", { 
       subscriptionId: subscription.id, 
       planName, 
-      endDate: subscriptionEnd 
+      endDate: subscriptionEnd,
+      isCanceled
     });
 
     // Update subscription in database
@@ -137,7 +141,7 @@ serve(async (req) => {
       user_id: user.id,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
-      status: "active",
+      status: isCanceled ? "canceled" : "active",
       plan_id: price.id,
       plan_name: planName,
       current_period_end: subscriptionEnd,
@@ -148,10 +152,16 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({
-        active: true,
+        active: !isCanceled,
         plan: planName,
         subscription_end: subscriptionEnd,
         subscription_id: subscription.id,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        price: {
+          id: price.id,
+          amount: price.unit_amount,
+          currency: price.currency,
+        }
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

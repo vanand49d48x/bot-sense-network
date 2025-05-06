@@ -1,61 +1,53 @@
-
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, ChevronRight } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const CheckoutSuccess = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    if (!user) {
-      // If no user is logged in, redirect to login
-      navigate("/auth");
-      return;
+    if (sessionId) {
+      // Show success message
+      toast({
+        title: "Subscription successful!",
+        description: "Thank you for subscribing to RoboMetrics.",
+      });
+
+      // Redirect to dashboard after a short delay
+      const timer = setTimeout(() => {
+        navigate('/dashboard');
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }
-
-    // Verify subscription status
-    const checkSubscription = async () => {
-      try {
-        await supabase.functions.invoke('check-subscription');
-      } catch (error) {
-        console.error("Error checking subscription:", error);
-      }
-    };
-
-    checkSubscription();
-  }, [user, navigate]);
+  }, [sessionId, navigate, toast]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <Card className="max-w-md w-full">
-        <CardHeader className="text-center">
-          <div className="mx-auto bg-green-100 text-green-600 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-            <Check className="h-8 w-8" />
+    <div className="min-h-screen flex items-center justify-center bg-muted/50">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex justify-center mb-4">
+            <CheckCircle className="h-16 w-16 text-green-500" />
           </div>
-          <CardTitle className="text-2xl">Payment Successful!</CardTitle>
-          <CardDescription>Thank you for subscribing to RoboMetrics</CardDescription>
+          <CardTitle className="text-2xl text-center">Thank You!</CardTitle>
+          <CardDescription className="text-center">
+            Your subscription has been successfully processed.
+          </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="mb-4">
-            Your subscription has been activated successfully. You now have access to all features included in your plan.
+          <p className="text-muted-foreground mb-4">
+            You will be redirected to your dashboard shortly.
           </p>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          <Button asChild className="w-full">
-            <Link to="/dashboard">
-              Go to Dashboard
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full">
-            <Link to="/profile">
-              Manage Subscription
-            </Link>
+        <CardFooter className="flex justify-center">
+          <Button onClick={() => navigate('/dashboard')}>
+            Go to Dashboard
           </Button>
         </CardFooter>
       </Card>

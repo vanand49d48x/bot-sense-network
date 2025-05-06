@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
+import { SubscriptionManager } from "@/components/SubscriptionManager";
 
 type AlertType = "battery" | "temperature" | "offline" | "error" | string;
 
@@ -618,385 +619,393 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-      <div className="container py-6">
-        <h1 className="text-3xl font-bold mb-6">Profile Settings</h1>
-        
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Custom Robot Types</CardTitle>
-              <CardDescription>
-                Define your own robot types to use when adding new robots
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="new-type">Add New Robot Type</Label>
-                    <Input 
-                      id="new-type"
-                      placeholder="Enter robot type name" 
-                      value={newType}
-                      onChange={(e) => setNewType(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <Button 
-                    onClick={addCustomRobotType}
-                    disabled={isLoading || !newType.trim()}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                    )}
-                    Add
-                  </Button>
-                </div>
-                
-                {isLoading && <div className="text-center py-4">Loading...</div>}
-                
-                {!isLoading && customRobotTypes.length === 0 && (
-                  <div className="text-center text-muted-foreground py-4">
-                    No custom robot types added yet
-                  </div>
-                )}
-                
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {customRobotTypes.map((type, index) => (
-                    <div 
-                      key={index} 
-                      className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full flex items-center gap-1"
-                    >
-                      <span>{type}</span>
-                      <button 
-                        onClick={() => deleteCustomRobotType(type)}
-                        className="hover:text-destructive transition-colors"
-                        disabled={isLoading}
-                        aria-label={`Delete ${type} robot type`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="text-sm text-muted-foreground">
-              Custom robot types will appear in the dropdown when adding a new robot
-            </CardFooter>
-          </Card>
+      <div className="container mx-auto py-6 space-y-8">
+        {/* Subscription Section */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4">Subscription Management</h2>
+          <SubscriptionManager />
+        </div>
 
-          {/* New Card for Custom Telemetry Types */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Custom Telemetry Types</CardTitle>
-              <CardDescription>
-                Define custom telemetry data types for your robots
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Label htmlFor="new-telemetry-type">Add New Telemetry Type</Label>
-                    <Input 
-                      id="new-telemetry-type"
-                      placeholder="Enter telemetry type name" 
-                      value={newTelemetryType}
-                      onChange={(e) => setNewTelemetryType(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <Button 
-                    onClick={addCustomTelemetryType}
-                    disabled={isLoading || !newTelemetryType.trim()}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                    )}
-                    Add
-                  </Button>
-                </div>
-                
-                {isLoading && <div className="text-center py-4">Loading...</div>}
-                
-                {!isLoading && customTelemetryTypes.length === 0 && (
-                  <div className="text-center text-muted-foreground py-4">
-                    No custom telemetry types added yet
-                  </div>
-                )}
-                
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {customTelemetryTypes.map((type, index) => (
-                    <div 
-                      key={index} 
-                      className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full flex items-center gap-1"
-                    >
-                      <span>{type}</span>
-                      <button 
-                        onClick={() => deleteCustomTelemetryType(type)}
-                        className="hover:text-destructive transition-colors"
-                        disabled={isLoading}
-                        aria-label={`Delete ${type} telemetry type`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="text-sm text-muted-foreground">
-              Custom telemetry types can be used for creating alerts and monitoring robot data
-            </CardFooter>
-          </Card>
-
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Custom Alert Settings</CardTitle>
-              <CardDescription>
-                Configure when you want to receive alerts for your robots
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="alert-type">Alert Type</Label>
-                      <Select 
-                        value={alertType} 
-                        onValueChange={(value) => setAlertType(value as AlertType)}
-                      >
-                        <SelectTrigger id="alert-type">
-                          <SelectValue placeholder="Select alert type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="battery">Low Battery</SelectItem>
-                          <SelectItem value="temperature">High Temperature</SelectItem>
-                          <SelectItem value="offline">Offline Status</SelectItem>
-                          <SelectItem value="error">Errors</SelectItem>
-                          {customTelemetryTypes.length > 0 && (
-                            <>
-                              <SelectItem value="separator" disabled>
-                                <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
-                              </SelectItem>
-                              {customTelemetryTypes.map((type, index) => (
-                                <SelectItem key={index} value={type}>{type}</SelectItem>
-                              ))}
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="alert-threshold">
-                        {(() => {
-                          const metadata = getAlertMetadata(alertType);
-                          return metadata.hasThreshold 
-                            ? `${metadata.thresholdLabel || 'Threshold'}${metadata.thresholdUnit ? ' (' + metadata.thresholdUnit + ')' : ''}` 
-                            : 'Threshold';
-                        })()}
-                      </Label>
+        {/* Profile Settings Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-semibold">Profile Settings</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Robot Types</CardTitle>
+                <CardDescription>
+                  Define your own robot types to use when adding new robots
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Label htmlFor="new-type">Add New Robot Type</Label>
                       <Input 
-                        id="alert-threshold"
-                        type="number" 
-                        value={alertThreshold}
-                        onChange={(e) => setAlertThreshold(Number(e.target.value))}
-                        disabled={!getAlertMetadata(alertType).hasThreshold}
-                        min={getAlertMetadata(alertType).thresholdMin || 0}
-                        max={getAlertMetadata(alertType).thresholdMax || 100}
+                        id="new-type"
+                        placeholder="Enter robot type name" 
+                        value={newType}
+                        onChange={(e) => setNewType(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
+                    <Button 
+                      onClick={addCustomRobotType}
+                      disabled={isLoading || !newType.trim()}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Add
+                    </Button>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="and-condition" 
-                      checked={useAndCondition}
-                      onCheckedChange={setUseAndCondition}
-                    />
-                    <Label htmlFor="and-condition">
-                      Combine with other conditions using AND logic (default is OR)
-                    </Label>
-                  </div>
-
-                  <Button 
-                    onClick={addCustomAlert}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                    )}
-                    Save Alert Setting
-                  </Button>
-                </div>
-
-                <Separator className="my-4" />
-
-                <h3 className="text-lg font-medium mb-2">Current Alert Settings</h3>
-                
-                {customAlerts.length === 0 ? (
-                  <div className="text-muted-foreground">No custom alerts configured</div>
-                ) : (
-                  <div className="space-y-3">
-                    {customAlerts.map((alert, index) => (
-                      <div key={index} className={`bg-muted p-3 rounded-md ${alert.customTelemetry ? 'border-l-4 border-purple-500' : ''}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            {getAlertIcon(alert.type)}
-                            <div>
-                              <p className="font-medium">{getAlertLabel(alert.type)}</p>
-                              <p className="text-sm text-muted-foreground">{getAlertDescription(alert)}</p>
-                              {alert.customTelemetry && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 mt-1">
-                                  Custom Telemetry
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => toggleAlertAndCondition(alert.type)}
-                              className={alert.enabled ? "" : "opacity-50"}
-                              disabled={!alert.enabled}
-                            >
-                              {alert.andCondition ? "AND" : "OR"}
-                            </Button>
-                            <Button 
-                              variant={alert.enabled ? "default" : "outline"} 
-                              size="sm"
-                              onClick={() => toggleAlertEnabled(alert.type)}
-                            >
-                              {alert.enabled ? "Enabled" : "Disabled"}
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Additional Conditions Panel */}
-                        <Collapsible 
-                          open={isOpenConditions[alert.type]} 
-                          onOpenChange={() => toggleConditionsPanel(alert.type)}
-                          className="mt-2"
+                  {isLoading && <div className="text-center py-4">Loading...</div>}
+                  
+                  {!isLoading && customRobotTypes.length === 0 && (
+                    <div className="text-center text-muted-foreground py-4">
+                      No custom robot types added yet
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {customRobotTypes.map((type, index) => (
+                      <div 
+                        key={index} 
+                        className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full flex items-center gap-1"
+                      >
+                        <span>{type}</span>
+                        <button 
+                          onClick={() => deleteCustomRobotType(type)}
+                          className="hover:text-destructive transition-colors"
+                          disabled={isLoading}
+                          aria-label={`Delete ${type} robot type`}
                         >
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="sm" className="w-full flex justify-between p-2 h-8">
-                              <span>Additional Conditions</span>
-                              <span>{isOpenConditions[alert.type] ? "Hide" : "Show"}</span>
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="space-y-2 pt-2">
-                            {/* List existing conditions */}
-                            {alert.additionalConditions && alert.additionalConditions.length > 0 ? (
-                              <div className="space-y-2">
-                                {alert.additionalConditions.map((condition, condIndex) => (
-                                  <div key={condIndex} className="flex items-center justify-between bg-background p-2 rounded border">
-                                    <span>{getConditionDescription(condition)}</span>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      onClick={() => removeConditionFromAlert(alert.type, condIndex)}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">No additional conditions</p>
-                            )}
-                            
-                            {/* Add new condition UI */}
-                            {selectedAlert?.type === alert.type && isAddingCondition ? (
-                              <div className="bg-background p-3 rounded border space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <Label htmlFor="condition-type">Condition Type</Label>
-                                    <Select 
-                                      value={additionalConditionType} 
-                                      onValueChange={(value) => setAdditionalConditionType(value as AlertType)}
-                                    >
-                                      <SelectTrigger id="condition-type">
-                                        <SelectValue placeholder="Select condition" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="battery">Low Battery</SelectItem>
-                                        <SelectItem value="temperature">High Temperature</SelectItem>
-                                        <SelectItem value="offline">Offline Status</SelectItem>
-                                        <SelectItem value="error">Errors</SelectItem>
-                                        {customTelemetryTypes.length > 0 && (
-                                          <>
-                                            {/* Fixed: Using a normal div instead of a SelectItem with empty/separator value */}
-                                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                                              Custom Telemetry Types
-                                            </div>
-                                            {customTelemetryTypes.map((type, index) => (
-                                              <SelectItem key={index} value={type}>{type}</SelectItem>
-                                            ))}
-                                          </>
-                                        )}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label htmlFor="condition-threshold">Threshold</Label>
-                                    <Input 
-                                      id="condition-threshold"
-                                      type="number" 
-                                      value={additionalThreshold}
-                                      onChange={(e) => setAdditionalThreshold(Number(e.target.value))}
-                                      disabled={!getAlertMetadata(additionalConditionType).hasThreshold}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => setIsAddingCondition(false)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => addConditionToAlert(alert.type)}
-                                  >
-                                    Add
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full mt-1"
-                                onClick={() => {
-                                  setSelectedAlert(alert);
-                                  setIsAddingCondition(true);
-                                }}
-                              >
-                                <PlusCircle className="h-4 w-4 mr-2" />
-                                Add Condition
-                              </Button>
-                            )}
-                          </CollapsibleContent>
-                        </Collapsible>
+                          <X className="h-3 w-3" />
+                        </button>
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+              <CardFooter className="text-sm text-muted-foreground">
+                Custom robot types will appear in the dropdown when adding a new robot
+              </CardFooter>
+            </Card>
+
+            {/* New Card for Custom Telemetry Types */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Telemetry Types</CardTitle>
+                <CardDescription>
+                  Define custom telemetry data types for your robots
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Label htmlFor="new-telemetry-type">Add New Telemetry Type</Label>
+                      <Input 
+                        id="new-telemetry-type"
+                        placeholder="Enter telemetry type name" 
+                        value={newTelemetryType}
+                        onChange={(e) => setNewTelemetryType(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <Button 
+                      onClick={addCustomTelemetryType}
+                      disabled={isLoading || !newTelemetryType.trim()}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Add
+                    </Button>
+                  </div>
+                  
+                  {isLoading && <div className="text-center py-4">Loading...</div>}
+                  
+                  {!isLoading && customTelemetryTypes.length === 0 && (
+                    <div className="text-center text-muted-foreground py-4">
+                      No custom telemetry types added yet
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {customTelemetryTypes.map((type, index) => (
+                      <div 
+                        key={index} 
+                        className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full flex items-center gap-1"
+                      >
+                        <span>{type}</span>
+                        <button 
+                          onClick={() => deleteCustomTelemetryType(type)}
+                          className="hover:text-destructive transition-colors"
+                          disabled={isLoading}
+                          aria-label={`Delete ${type} telemetry type`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="text-sm text-muted-foreground">
+                Custom telemetry types can be used for creating alerts and monitoring robot data
+              </CardFooter>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Custom Alert Settings</CardTitle>
+                <CardDescription>
+                  Configure when you want to receive alerts for your robots
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="alert-type">Alert Type</Label>
+                        <Select 
+                          value={alertType} 
+                          onValueChange={(value) => setAlertType(value as AlertType)}
+                        >
+                          <SelectTrigger id="alert-type">
+                            <SelectValue placeholder="Select alert type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="battery">Low Battery</SelectItem>
+                            <SelectItem value="temperature">High Temperature</SelectItem>
+                            <SelectItem value="offline">Offline Status</SelectItem>
+                            <SelectItem value="error">Errors</SelectItem>
+                            {customTelemetryTypes.length > 0 && (
+                              <>
+                                <SelectItem value="separator" disabled>
+                                  <span className="text-xs text-muted-foreground">Custom Telemetry Types</span>
+                                </SelectItem>
+                                {customTelemetryTypes.map((type, index) => (
+                                  <SelectItem key={index} value={type}>{type}</SelectItem>
+                                ))}
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="alert-threshold">
+                          {(() => {
+                            const metadata = getAlertMetadata(alertType);
+                            return metadata.hasThreshold 
+                              ? `${metadata.thresholdLabel || 'Threshold'}${metadata.thresholdUnit ? ' (' + metadata.thresholdUnit + ')' : ''}` 
+                              : 'Threshold';
+                          })()}
+                        </Label>
+                        <Input 
+                          id="alert-threshold"
+                          type="number" 
+                          value={alertThreshold}
+                          onChange={(e) => setAlertThreshold(Number(e.target.value))}
+                          disabled={!getAlertMetadata(alertType).hasThreshold}
+                          min={getAlertMetadata(alertType).thresholdMin || 0}
+                          max={getAlertMetadata(alertType).thresholdMax || 100}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        id="and-condition" 
+                        checked={useAndCondition}
+                        onCheckedChange={setUseAndCondition}
+                      />
+                      <Label htmlFor="and-condition">
+                        Combine with other conditions using AND logic (default is OR)
+                      </Label>
+                    </div>
+
+                    <Button 
+                      onClick={addCustomAlert}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Save Alert Setting
+                    </Button>
+                  </div>
+
+                  <Separator className="my-4" />
+
+                  <h3 className="text-lg font-medium mb-2">Current Alert Settings</h3>
+                  
+                  {customAlerts.length === 0 ? (
+                    <div className="text-muted-foreground">No custom alerts configured</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {customAlerts.map((alert, index) => (
+                        <div key={index} className={`bg-muted p-3 rounded-md ${alert.customTelemetry ? 'border-l-4 border-purple-500' : ''}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              {getAlertIcon(alert.type)}
+                              <div>
+                                <p className="font-medium">{getAlertLabel(alert.type)}</p>
+                                <p className="text-sm text-muted-foreground">{getAlertDescription(alert)}</p>
+                                {alert.customTelemetry && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 mt-1">
+                                    Custom Telemetry
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleAlertAndCondition(alert.type)}
+                                className={alert.enabled ? "" : "opacity-50"}
+                                disabled={!alert.enabled}
+                              >
+                                {alert.andCondition ? "AND" : "OR"}
+                              </Button>
+                              <Button 
+                                variant={alert.enabled ? "default" : "outline"} 
+                                size="sm"
+                                onClick={() => toggleAlertEnabled(alert.type)}
+                              >
+                                {alert.enabled ? "Enabled" : "Disabled"}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Additional Conditions Panel */}
+                          <Collapsible 
+                            open={isOpenConditions[alert.type]} 
+                            onOpenChange={() => toggleConditionsPanel(alert.type)}
+                            className="mt-2"
+                          >
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="w-full flex justify-between p-2 h-8">
+                                <span>Additional Conditions</span>
+                                <span>{isOpenConditions[alert.type] ? "Hide" : "Show"}</span>
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-2 pt-2">
+                              {/* List existing conditions */}
+                              {alert.additionalConditions && alert.additionalConditions.length > 0 ? (
+                                <div className="space-y-2">
+                                  {alert.additionalConditions.map((condition, condIndex) => (
+                                    <div key={condIndex} className="flex items-center justify-between bg-background p-2 rounded border">
+                                      <span>{getConditionDescription(condition)}</span>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => removeConditionFromAlert(alert.type, condIndex)}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No additional conditions</p>
+                              )}
+                              
+                              {/* Add new condition UI */}
+                              {selectedAlert?.type === alert.type && isAddingCondition ? (
+                                <div className="bg-background p-3 rounded border space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <Label htmlFor="condition-type">Condition Type</Label>
+                                      <Select 
+                                        value={additionalConditionType} 
+                                        onValueChange={(value) => setAdditionalConditionType(value as AlertType)}
+                                      >
+                                        <SelectTrigger id="condition-type">
+                                          <SelectValue placeholder="Select condition" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="battery">Low Battery</SelectItem>
+                                          <SelectItem value="temperature">High Temperature</SelectItem>
+                                          <SelectItem value="offline">Offline Status</SelectItem>
+                                          <SelectItem value="error">Errors</SelectItem>
+                                          {customTelemetryTypes.length > 0 && (
+                                            <>
+                                              {/* Fixed: Using a normal div instead of a SelectItem with empty/separator value */}
+                                              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                                Custom Telemetry Types
+                                              </div>
+                                              {customTelemetryTypes.map((type, index) => (
+                                                <SelectItem key={index} value={type}>{type}</SelectItem>
+                                              ))}
+                                            </>
+                                          )}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="condition-threshold">Threshold</Label>
+                                      <Input 
+                                        id="condition-threshold"
+                                        type="number" 
+                                        value={additionalThreshold}
+                                        onChange={(e) => setAdditionalThreshold(Number(e.target.value))}
+                                        disabled={!getAlertMetadata(additionalConditionType).hasThreshold}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-end gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => setIsAddingCondition(false)}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => addConditionToAlert(alert.type)}
+                                    >
+                                      Add
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="w-full mt-1"
+                                  onClick={() => {
+                                    setSelectedAlert(alert);
+                                    setIsAddingCondition(true);
+                                  }}
+                                >
+                                  <PlusCircle className="h-4 w-4 mr-2" />
+                                  Add Condition
+                                </Button>
+                              )}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </MainLayout>

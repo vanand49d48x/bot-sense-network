@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
@@ -93,8 +92,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/checkout-success`,
-      cancel_url: `${req.headers.get("origin")}/checkout-cancel`,
+      success_url: `${req.headers.get("origin")}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get("origin")}/pricing`,
       subscription_data: {
         metadata: {
           supabase_uid: user.id,
