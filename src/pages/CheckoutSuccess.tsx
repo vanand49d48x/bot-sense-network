@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, ChevronRight, Loader2 } from "lucide-react";
@@ -12,8 +12,11 @@ const CheckoutSuccess = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('session_id');
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionDetails, setSubscriptionDetails] = useState<any>(null);
+  const [checkCount, setCheckCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -44,14 +47,22 @@ const CheckoutSuccess = () => {
             variant: "default",
           });
         } else {
-          toast({
-            title: "Subscription Pending",
-            description: "Your subscription is being processed. This may take a moment.",
-            variant: "default",
-          });
-          
-          // Try again in 5 seconds
-          setTimeout(checkSubscription, 5000);
+          // If we've checked less than 3 times and there's a session ID, try again
+          if (checkCount < 3 && sessionId) {
+            setCheckCount(prev => prev + 1);
+            setTimeout(checkSubscription, 3000);
+            toast({
+              title: "Subscription Pending",
+              description: "Your subscription is being processed. This may take a moment.",
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "Subscription Not Found",
+              description: "We couldn't verify your subscription. Please check your account details.",
+              variant: "destructive",
+            });
+          }
         }
       } catch (error) {
         console.error("Error checking subscription:", error);
@@ -66,7 +77,7 @@ const CheckoutSuccess = () => {
     };
 
     checkSubscription();
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, sessionId, checkCount]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">

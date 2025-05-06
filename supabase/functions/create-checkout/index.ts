@@ -110,7 +110,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/checkout-success`,
+      success_url: `${origin}/checkout-success?session_id=${session?.id}`,
       cancel_url: `${origin}/checkout-cancel`,
       allow_promotion_codes: true,
     });
