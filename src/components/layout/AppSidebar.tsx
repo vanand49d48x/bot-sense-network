@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -11,14 +10,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar";
-import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2, CreditCard } from "lucide-react";
+import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2 } from "lucide-react";
 import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
-import { useSubscription } from "@/context/SubscriptionContext";
 
 export function AppSidebar() {
   const { session } = useAuth();
-  const { subscriptionTier, isSubscriptionActive } = useSubscription();
   
   const mainMenuItems = [
     {
@@ -50,27 +47,13 @@ export function AppSidebar() {
       title: "Profile",
       icon: UserCog,
       url: "/profile",
-    },
-    {
-      title: "Subscription",
-      icon: CreditCard,
-      url: "/subscription-manage",
     }
   ];
 
   return (
     <Sidebar>
       <SidebarHeader className="py-6 px-4 border-b border-sidebar-border">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold">RoboMetrics</h1>
-          {isSubscriptionActive && (
-            <div className="mt-1 text-xs text-muted-foreground flex items-center">
-              <span className="bg-primary/20 text-primary rounded-full px-2 py-0.5">
-                {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)} Plan
-              </span>
-            </div>
-          )}
-        </div>
+        <h1 className="text-xl font-bold">RoboMetrics</h1>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
