@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusCard } from "./RobotStatusCard";
@@ -185,14 +186,19 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
   // Use localRobots for rendering to ensure real-time updates are displayed
   const displayRobots = localRobots.length > 0 ? localRobots : robots;
 
+  // Handle robot click
+  const handleRobotClick = (robot: Robot) => {
+    setSelectedRobot(robot);
+  };
+
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Robot Status</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayRobots.map((robot) => (
-          <div key={robot.id} onClick={() => setSelectedRobot(robot)} className="cursor-pointer">
-            <RobotStatusCard robot={robot} />
+          <div key={robot.id} onClick={() => handleRobotClick(robot)} className="cursor-pointer">
+            <RobotStatusCard robot={robot} onRobotClick={handleRobotClick} />
           </div>
         ))}
       </div>

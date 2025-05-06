@@ -13,9 +13,10 @@ import { toast } from "@/components/ui/sonner";
 
 interface RobotStatusCardProps {
   robot: Robot;
+  onRobotClick: (robot: Robot) => void;
 }
 
-export function RobotStatusCard({ robot }: RobotStatusCardProps) {
+export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
   const { deleteRobot } = useRobots();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showApiInfo, setShowApiInfo] = useState(false);
@@ -69,7 +70,10 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
     }
   };
   
-  const copyRobotId = () => {
+  const copyRobotId = (e: React.MouseEvent) => {
+    // Stop event propagation to prevent opening the details view
+    e.stopPropagation();
+    
     navigator.clipboard.writeText(robot.id);
     toast("Robot ID copied", {
       description: "The Robot ID has been copied to your clipboard."
@@ -97,7 +101,12 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={(e) => e.stopPropagation()} // Stop propagation to prevent detail view
+                >
                   <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                   <span className="sr-only">Delete robot</span>
                 </Button>
@@ -150,21 +159,32 @@ export function RobotStatusCard({ robot }: RobotStatusCardProps) {
               variant="outline" 
               size="sm" 
               className="w-full flex justify-between items-center text-xs" 
-              onClick={() => setShowApiInfo(!showApiInfo)}
+              onClick={(e) => {
+                e.stopPropagation(); // Stop propagation to prevent detail view
+                setShowApiInfo(!showApiInfo);
+              }}
             >
               API Integration
               {showApiInfo ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </Button>
             
             {showApiInfo && (
-              <div className="mt-2 space-y-3">
+              <div 
+                className="mt-2 space-y-3"
+                onClick={(e) => e.stopPropagation()} // Stop propagation for the entire API section
+              >
                 <div className="p-3 bg-muted/50 rounded-md">
                   <div className="text-xs text-muted-foreground mb-1">Robot ID</div>
                   <div className="flex items-center gap-2">
                     <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
                       {robot.id}
                     </code>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={copyRobotId}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 w-7 p-0" 
+                      onClick={copyRobotId}
+                    >
                       <ClipboardCopy size={14} />
                       <span className="sr-only">Copy Robot ID</span>
                     </Button>
