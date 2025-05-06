@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.get-telemetry]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

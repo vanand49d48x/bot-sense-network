@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 const Landing = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header/Navigation */}
+      {/* Header/Navigation - Only modifying this section */}
       <header className="border-b border-border/40 p-4">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -18,6 +18,9 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
+            <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+              Pricing
+            </Link>
             <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
             </Link>
