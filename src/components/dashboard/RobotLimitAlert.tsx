@@ -19,7 +19,7 @@ export function RobotLimitAlert({ currentRobotCount }: RobotLimitAlertProps) {
   if (!isAtLimit && !isNearLimit) return null;
   
   return (
-    <Alert variant={isAtLimit ? "destructive" : "warning"} className="mb-4">
+    <Alert variant="destructive" className={`mb-4 ${isAtLimit ? "bg-destructive/20" : "bg-amber-500/20"}`}>
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>
         {isAtLimit ? "Robot Limit Reached" : "Approaching Robot Limit"}

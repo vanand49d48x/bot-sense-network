@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define subscription tier limits
+// Define subscription tier limits as an interface
 export interface PlanLimits {
   robotLimit: number;
   telemetryDays: number;
@@ -13,8 +13,8 @@ export interface PlanLimits {
   advancedAnalytics: boolean;
 }
 
-// Mapping of subscription plans to their limits
-export const PLAN_LIMITS: Record<string, PlanLimits> = {
+// Default limits for each plan - used as fallback if database fetch fails
+export const DEFAULT_PLAN_LIMITS: Record<string, PlanLimits> = {
   "Free Tier": {
     robotLimit: 2,
     telemetryDays: 7,
@@ -63,7 +63,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
 };
 
 // Default limits for users with no subscription data
-export const DEFAULT_LIMITS: PlanLimits = PLAN_LIMITS["Free Tier"];
+export const DEFAULT_LIMITS: PlanLimits = DEFAULT_PLAN_LIMITS["Free Tier"];
 
 // Hook to get the current user's subscription plan and limits
 export function useSubscriptionLimits() {
@@ -71,6 +71,7 @@ export function useSubscriptionLimits() {
     queryKey: ['subscription-check'],
     queryFn: async () => {
       try {
+        // Call the check-subscription edge function to get subscription data
         const { data, error } = await supabase.functions.invoke('check-subscription');
         
         if (error) throw error;
@@ -83,9 +84,52 @@ export function useSubscriptionLimits() {
     refetchInterval: 60000 * 5, // Refresh every 5 minutes
   });
 
-  // Get the limits for the current plan
+  // Get plan limits from database or fall back to defaults
+  const { data: planLimitsData, isLoading: planLimitsLoading } = useQuery({
+    queryKey: ['plan-limits'],
+    queryFn: async () => {
+      try {
+        // Fetch plan limits from the database
+        const { data, error } = await supabase
+          .from('plan_limits')
+          .select('*');
+          
+        if (error) throw error;
+        
+        // Convert database results to our format
+        const limitsMap: Record<string, PlanLimits> = {};
+        
+        if (data && data.length > 0) {
+          // Transform database records into our PlanLimits format
+          data.forEach(item => {
+            limitsMap[item.plan_name] = {
+              robotLimit: item.robot_limit || DEFAULT_PLAN_LIMITS[item.plan_name]?.robotLimit,
+              telemetryDays: item.telemetry_days || DEFAULT_PLAN_LIMITS[item.plan_name]?.telemetryDays,
+              customTelemetryTypes: item.custom_telemetry_types || DEFAULT_PLAN_LIMITS[item.plan_name]?.customTelemetryTypes,
+              alertsPerDay: item.alerts_per_day || DEFAULT_PLAN_LIMITS[item.plan_name]?.alertsPerDay,
+              supportLevel: item.support_level || DEFAULT_PLAN_LIMITS[item.plan_name]?.supportLevel,
+              apiAccess: item.api_access === undefined ? DEFAULT_PLAN_LIMITS[item.plan_name]?.apiAccess : item.api_access,
+              advancedAnalytics: item.advanced_analytics === undefined ? DEFAULT_PLAN_LIMITS[item.plan_name]?.advancedAnalytics : item.advanced_analytics,
+            };
+          });
+          return limitsMap;
+        }
+        
+        // If no data, use defaults
+        return DEFAULT_PLAN_LIMITS;
+      } catch (err) {
+        console.error("Error fetching plan limits:", err);
+        return DEFAULT_PLAN_LIMITS;
+      }
+    }
+  });
+
+  // Get the current plan name from subscription check
   const planName = data?.plan || "Free Tier";
-  const limits = PLAN_LIMITS[planName] || DEFAULT_LIMITS;
+  
+  // Use database limits if available, otherwise use defaults
+  const planLimits = planLimitsData || DEFAULT_PLAN_LIMITS;
+  const limits = planLimits[planName] || DEFAULT_LIMITS;
   
   // Add additional derived data
   const remainingDays = data?.days_remaining || 0;
@@ -97,7 +141,7 @@ export function useSubscriptionLimits() {
     planName,
     limits,
     isActive,
-    isLoading,
+    isLoading: isLoading || planLimitsLoading,
     isTrialActive,
     isTrialExpired,
     remainingDays,
