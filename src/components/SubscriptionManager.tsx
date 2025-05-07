@@ -24,6 +24,10 @@ interface Subscription {
   cancel_at_period_end?: boolean;
   trial_status?: string;
   days_remaining?: number;
+  price?: {
+    amount: number;
+    currency: string;
+  };
 }
 
 interface Plan {
@@ -317,6 +321,32 @@ export function SubscriptionManager() {
                   : ''}
             </span>
           </div>
+
+          {isSubscribed && subscription?.plan && (
+            <div className="bg-muted/50 p-4 rounded-md space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Current Plan</span>
+                <span className="text-sm font-semibold">{subscription.plan}</span>
+              </div>
+              {subscription.price && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Monthly Price</span>
+                  <span className="text-sm font-semibold">
+                    ${(subscription.price.amount / 100).toFixed(2)} {subscription.price.currency.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Billing Cycle</span>
+                <span className="text-sm">Monthly</span>
+              </div>
+              {subscription.cancel_at_period_end && (
+                <div className="mt-2 p-2 bg-amber-100 dark:bg-amber-900/20 rounded text-amber-800 dark:text-amber-200 text-sm">
+                  Your subscription will end on {formatDate(subscription.subscription_end)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter>
