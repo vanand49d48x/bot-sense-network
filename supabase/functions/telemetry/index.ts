@@ -8,48 +8,82 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("🔔 Telemetry function invoked");
+  console.log(`Request method: ${req.method}`);
+  console.log(`Request URL: ${req.url}`);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request (CORS preflight)");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("Creating Supabase client");
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+    console.log("Supabase client created successfully");
 
     if (req.method !== "POST") {
+      console.log(`Invalid method: ${req.method}, expected POST`);
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 405 }
       );
     }
 
-    // Check API key in header - check both 'api-key' and 'apikey' headers for flexibility
-    const apiKey = req.headers.get("api-key") || req.headers.get("apikey") || req.headers.get("authorization");
+    // Enhanced logging for headers
     console.log("Request headers:", Object.fromEntries(req.headers.entries()));
-    console.log("Received API key:", apiKey ? "Present (redacted)" : "Missing");
+    
+    // Check API key in header with more flexible options
+    const apiKey = req.headers.get("api-key") || 
+                  req.headers.get("apikey") || 
+                  req.headers.get("authorization") ||
+                  req.headers.get("Authorization");
+                  
+    console.log("API Key detected:", apiKey ? "✅ Present" : "❌ Missing");
     
     if (!apiKey) {
+      console.log("Authentication failed: No API key provided in headers");
       return new Response(
         JSON.stringify({ 
           error: "API Key is required", 
-          details: "Please add the 'api-key' header to your request" 
+          details: "Please add one of these headers to your request: 'api-key', 'apikey', or 'authorization'",
+          received_headers: Object.keys(Object.fromEntries(req.headers.entries()))
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    // Log request details for debugging
-    console.log("Processing telemetry request");
+    // Log request body details
+    let telemetryData;
+    try {
+      telemetryData = await req.json();
+      console.log("Request body successfully parsed:", JSON.stringify(telemetryData));
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
     
-    const telemetryData = await req.json();
     const { robotId, batteryLevel, temperature, status, location, timestamp, customTelemetry } = telemetryData;
     
-    console.log("Received telemetry data for robot:", robotId);
+    console.log("Received telemetry for robot:", robotId);
+    console.log("Telemetry details:", {
+      batteryLevel,
+      temperature,
+      status,
+      location,
+      timestamp,
+      hasCustomTelemetry: !!customTelemetry
+    });
 
     if (!robotId) {
+      console.log("Missing required field: robotId");
       return new Response(
         JSON.stringify({ error: "Robot ID is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -57,6 +91,7 @@ serve(async (req) => {
     }
 
     // Find the user who owns the API key
+    console.log("Looking up user profile for API key");
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id, custom_telemetry_types")
@@ -64,11 +99,33 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      console.error("Invalid API key:", profileError);
+      console.error("API key validation failed:", profileError || "No matching profile found");
+      console.log("API Key used:", apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length - 5));
+      
+      // Try to find any profile with an API key for debugging
+      console.log("Attempting to debug API key issue...");
+      const { data: allProfiles } = await supabaseClient
+        .from("profiles")
+        .select("id, api_key")
+        .not("api_key", "is", null)
+        .limit(5);
+        
+      console.log(`Found ${allProfiles?.length || 0} profiles with API keys`);
+      if (allProfiles?.length > 0) {
+        const maskedKeys = allProfiles.map(p => ({
+          id: p.id,
+          key_preview: p.api_key ? 
+            `${p.api_key.substring(0, 5)}...${p.api_key.substring(p.api_key.length - 5)}` : 
+            'No key'
+        }));
+        console.log("Sample API keys in database:", maskedKeys);
+      }
+      
       return new Response(
         JSON.stringify({ 
           error: "Invalid API key", 
-          details: "The provided API key was not found in our system"
+          details: "The provided API key was not found in our system",
+          debug_info: !profileData ? "No profile found" : "Profile lookup error"
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
@@ -77,6 +134,7 @@ serve(async (req) => {
     console.log("Found profile for API key, user ID:", profileData.id);
 
     // Verify the robot exists and belongs to the user
+    console.log(`Verifying robot ${robotId} belongs to user ${profileData.id}`);
     let { data: robot, error: robotError } = await supabaseClient
       .from("robots")
       .select("id, user_id")
@@ -86,29 +144,45 @@ serve(async (req) => {
 
     if (!robot) {
       // Try to find any robot with this ID
+      console.log(`Robot ${robotId} not found for user ${profileData.id}, checking all robots...`);
       const { data: allRobots, error: listError } = await supabaseClient
         .from("robots")
         .select("id, user_id");
         
       if (!listError && allRobots?.length > 0) {
+        console.log(`Found ${allRobots.length} robots in database`);
         // Try to find a robot that matches
         robot = allRobots.find(r => r.id === robotId);
         
-        if (!robot || robot.user_id !== profileData.id) {
-          console.error(`Robot ID ${robotId} doesn't belong to user ${profileData.id}`);
+        if (!robot) {
+          console.error(`Robot ID ${robotId} not found in any user's robots`);
           return new Response(
             JSON.stringify({ 
-              error: "Invalid robot ID or you don't have access to this robot", 
-              details: "Please use one of your robot IDs"
+              error: "Robot not found", 
+              details: "The specified robot ID was not found in the system"
             }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+          );
+        }
+        
+        if (robot.user_id !== profileData.id) {
+          console.error(`Robot ${robotId} belongs to user ${robot.user_id}, not ${profileData.id}`);
+          return new Response(
+            JSON.stringify({ 
+              error: "Access denied", 
+              details: "You don't have access to this robot"
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
           );
         }
       } else {
-        console.error("No robots found in system");
+        console.error("No robots found in system or database error:", listError);
         return new Response(
-          JSON.stringify({ error: "No robots found in system" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+          JSON.stringify({ 
+            error: "Database error", 
+            details: "Could not retrieve robot information"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
         );
       }
     }
@@ -146,77 +220,9 @@ serve(async (req) => {
         telemetryDataJson[key] = value;
       }
     }
-
-    // Check for custom telemetry types and validate against user's allowed types
-    if (customTelemetry && typeof customTelemetry === 'object') {
-      const userCustomTypes = profileData.custom_telemetry_types || [];
-      const incomingTypes = Object.keys(customTelemetry);
-      
-      // Log the custom telemetry data for debugging
-      console.log("Received custom telemetry:", JSON.stringify(customTelemetry));
-      console.log("User custom telemetry types:", JSON.stringify(userCustomTypes));
-      
-      // Create alerts for any custom telemetry that exceeds thresholds
-      // We'll need to fetch the custom alerts from the user's profile
-      const { data: alertsData } = await supabaseClient
-        .from("profiles")
-        .select("custom_alerts")
-        .eq("id", profileData.id)
-        .single();
-        
-      if (alertsData?.custom_alerts && Array.isArray(alertsData.custom_alerts)) {
-        console.log("Custom alert settings:", JSON.stringify(alertsData.custom_alerts));
-        
-        for (const alert of alertsData.custom_alerts) {
-          if (alert.enabled && incomingTypes.includes(alert.type)) {
-            const telemetryValue = customTelemetry[alert.type];
-            console.log(`Checking alert for ${alert.type}: value=${telemetryValue}, threshold=${alert.threshold}`);
-            
-            // If this is a numeric value and exceeds threshold, create an alert
-            if (typeof telemetryValue === 'number' && telemetryValue >= alert.threshold) {
-              console.log(`Creating alert for ${alert.type} with value ${telemetryValue}`);
-              
-              const { data: alertInsert, error: alertError } = await supabaseClient
-                .from("alerts")
-                .insert({
-                  robot_id: robotId,
-                  type: alert.type,
-                  message: `${alert.type} value of ${telemetryValue} exceeds threshold of ${alert.threshold}`,
-                  resolved: false
-                });
-                
-              if (alertError) {
-                console.error("Error creating alert:", alertError);
-              }
-            }
-          }
-        }
-      }
-      
-      // Also check for standard thresholds for ABCD if not in custom alerts
-      if (customTelemetry.ABCD !== undefined && typeof customTelemetry.ABCD === 'number') {
-        const abcdValue = customTelemetry.ABCD;
-        // Default threshold for ABCD if not set in custom alerts
-        if (abcdValue > 40) {
-          const hasCustomAlert = alertsData?.custom_alerts?.some(alert => 
-            alert.type === 'ABCD' && alert.enabled
-          );
-          
-          // Only create a default alert if there's no custom alert for this type
-          if (!hasCustomAlert) {
-            console.log(`Creating default alert for ABCD with value ${abcdValue}`);
-            await supabaseClient.from("alerts").insert({
-              robot_id: robotId,
-              type: 'ABCD',
-              message: `ABCD value of ${abcdValue} exceeds default threshold of 40`,
-              resolved: false
-            });
-          }
-        }
-      }
-    }
-
+    
     // Insert telemetry data
+    console.log("Inserting telemetry data into database");
     const { data, error } = await supabaseClient
       .from("telemetry")
       .insert([telemetry]);
@@ -230,6 +236,7 @@ serve(async (req) => {
     }
 
     // Update robot status (last_ping, battery_level, etc.)
+    console.log(`Updating robot ${robotId} status information`);
     const robotUpdate = {
       status: status === "ERROR" ? "offline" : status === "WARNING" ? "warning" : "online",
       battery_level: batteryLevel,
@@ -239,10 +246,15 @@ serve(async (req) => {
       telemetry_data: telemetryDataJson // Store the complete telemetry payload
     };
     
-    await supabaseClient
+    const { error: updateError } = await supabaseClient
       .from("robots")
       .update(robotUpdate)
       .eq("id", robotId);
+      
+    if (updateError) {
+      console.error("Robot status update error:", updateError);
+      // Don't fail the whole request because of this - just log it
+    }
 
     console.log(`Successfully processed telemetry for robot ${robotId}`);
 
@@ -251,9 +263,13 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error processing telemetry:", error);
+    console.error("Fatal error processing telemetry:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: "Server error", 
+        message: error.message,
+        stack: error.stack
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
