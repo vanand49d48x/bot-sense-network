@@ -47,7 +47,7 @@ export function Dashboard() {
         return null;
       }
       
-      return data;
+      return { ...data, id: data.id };
     },
     enabled: !!user?.id,
   });
@@ -71,11 +71,12 @@ export function Dashboard() {
     setFilter('custom', filtered);
   };
   
-  // Set up realtime subscription for robot and telemetry updates
+  // Set up realtime subscription for robot updates only, not for telemetry
+  // Telemetry will be handled via the robotStore directly
   useEffect(() => {
-    console.log("Setting up realtime subscriptions...");
+    console.log("Setting up realtime subscriptions for robot changes only...");
     
-    // Create a single channel for all robot-related updates
+    // Create a single channel for robot table changes only
     const channel = supabase
       .channel('robot-updates')
       // Subscribe to robot changes
@@ -83,42 +84,8 @@ export function Dashboard() {
         { event: '*', schema: 'public', table: 'robots' }, 
         (payload) => {
           console.log('Robot update received in Dashboard:', payload);
-          
-          // The robots state is now handled by the robotStore
           // We'll refresh the data to ensure everything is in sync
           fetchRobots();
-        }
-      )
-      // Subscribe to telemetry changes
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'telemetry' }, 
-        (payload) => {
-          console.log('New telemetry received:', payload);
-          const robotId = payload.new.robot_id;
-          
-          // Create telemetry data object
-          const telemetryData: Record<string, any> = {
-            batteryLevel: payload.new.battery_level,
-            temperature: payload.new.temperature,
-            location: payload.new.location,
-            customTelemetry: {} // Initialize the customTelemetry property
-          };
-          
-          // Handle custom telemetry data
-          if (payload.new.motor_status) {
-            try {
-              const customData = typeof payload.new.motor_status === 'string' 
-                ? JSON.parse(payload.new.motor_status)
-                : payload.new.motor_status;
-              
-              telemetryData.customTelemetry = customData;
-            } catch (e) {
-              console.error("Error parsing custom telemetry:", e);
-            }
-          }
-          
-          // Update robot state with new telemetry
-          updateRobotFromTelemetry(robotId, telemetryData);
         }
       )
       .subscribe((status) => {
@@ -134,7 +101,7 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, []); // Empty dependency array to run once
+  }, []); 
   
   if (isLoading) {
     return (
@@ -184,7 +151,7 @@ export function Dashboard() {
             <CollapsibleContent className="mt-4">
               <RobotFilter 
                 robots={robots}
-                userProfile={userProfile as any} // Type assertion to avoid the error
+                userProfile={userProfile} 
                 onFilteredRobotsChange={handleFilteredRobotsChange} 
               />
             </CollapsibleContent>
