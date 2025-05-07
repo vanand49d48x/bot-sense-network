@@ -7,7 +7,7 @@ import { Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Create a RadioOff component since it doesn't exist in lucide-react
-const RadioOff = () => (
+const RadioOff = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -18,7 +18,7 @@ const RadioOff = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="lucide lucide-circle"
+    className={className || "lucide lucide-circle"}
   >
     <circle cx="12" cy="12" r="10" />
   </svg>
