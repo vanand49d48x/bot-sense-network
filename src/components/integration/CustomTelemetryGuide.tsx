@@ -213,8 +213,16 @@ ws.onclose = () => {
         <p className="text-sm text-muted-foreground mb-2">
           <strong>Note:</strong> Your API key is shown above. Keep it secret!
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-2">
           You can define custom telemetry types in your profile settings.
+        </p>
+        <p className="text-sm text-muted-foreground mb-2">
+          <strong>Multiple Clients:</strong> Our server is designed to handle multiple simultaneous connections from different robots and clients.
+          Each robot is identified by its unique ID and API key, allowing for parallel data processing without interference.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          <strong>Connection Limits:</strong> There are no practical limits on the number of robots that can connect simultaneously.
+          The system scales automatically to accommodate your fleet's needs.
         </p>
       </CardFooter>
     </Card>
