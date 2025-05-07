@@ -28,15 +28,25 @@ serve(async (req) => {
 
     // Check API key in header
     const apiKey = req.headers.get("api-key");
+    console.log("Received API key:", apiKey ? "Present (redacted)" : "Missing");
+    
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "API Key is required" }),
+        JSON.stringify({ 
+          error: "API Key is required", 
+          details: "Please add the 'api-key' header to your request" 
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
+    // Log request details for debugging
+    console.log("Processing telemetry request");
+    
     const telemetryData = await req.json();
     const { robotId, batteryLevel, temperature, status, location, timestamp, customTelemetry } = telemetryData;
+    
+    console.log("Received telemetry data for robot:", robotId);
 
     if (!robotId) {
       return new Response(
@@ -53,11 +63,17 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
+      console.error("Invalid API key:", profileError);
       return new Response(
-        JSON.stringify({ error: "Invalid API key" }),
+        JSON.stringify({ 
+          error: "Invalid API key", 
+          details: "The provided API key was not found in our system"
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
+
+    console.log("Found profile for API key, user ID:", profileData.id);
 
     // Verify the robot exists and belongs to the user
     let { data: robot, error: robotError } = await supabaseClient
@@ -78,6 +94,7 @@ serve(async (req) => {
         robot = allRobots.find(r => r.id === robotId);
         
         if (!robot || robot.user_id !== profileData.id) {
+          console.error(`Robot ID ${robotId} doesn't belong to user ${profileData.id}`);
           return new Response(
             JSON.stringify({ 
               error: "Invalid robot ID or you don't have access to this robot", 
@@ -87,12 +104,15 @@ serve(async (req) => {
           );
         }
       } else {
+        console.error("No robots found in system");
         return new Response(
           JSON.stringify({ error: "No robots found in system" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
         );
       }
     }
+
+    console.log(`Verified robot ${robotId} belongs to user ${profileData.id}`);
 
     // Process and validate telemetry data
     // Convert location from client format (lat/lng) to database format (latitude/longitude) if needed
@@ -222,6 +242,8 @@ serve(async (req) => {
       .from("robots")
       .update(robotUpdate)
       .eq("id", robotId);
+
+    console.log(`Successfully processed telemetry for robot ${robotId}`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Telemetry data received", alertsProcessed: true }),
