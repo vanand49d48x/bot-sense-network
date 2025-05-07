@@ -50,6 +50,48 @@ export type Database = {
           },
         ]
       }
+      plan_limits: {
+        Row: {
+          advanced_analytics: boolean | null
+          alerts_per_day: number | null
+          api_access: boolean | null
+          created_at: string
+          custom_telemetry_types: number | null
+          id: string
+          plan_name: string
+          robot_limit: number | null
+          support_level: string | null
+          telemetry_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          advanced_analytics?: boolean | null
+          alerts_per_day?: number | null
+          api_access?: boolean | null
+          created_at?: string
+          custom_telemetry_types?: number | null
+          id?: string
+          plan_name: string
+          robot_limit?: number | null
+          support_level?: string | null
+          telemetry_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          advanced_analytics?: boolean | null
+          alerts_per_day?: number | null
+          api_access?: boolean | null
+          created_at?: string
+          custom_telemetry_types?: number | null
+          id?: string
+          plan_name?: string
+          robot_limit?: number | null
+          support_level?: string | null
+          telemetry_days?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           api_key: string | null

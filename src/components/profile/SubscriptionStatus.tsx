@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle, Clock, Shield } from "lucide-react";
-import { PLAN_LIMITS } from "@/utils/planRestrictions";
+import { useSubscriptionLimits } from "@/utils/planRestrictions";
 
 interface SubscriptionInfo {
   active: boolean;
@@ -91,9 +92,8 @@ const SubscriptionStatus = () => {
   const isTrialExpired = isFreeTier && subscription?.trial_status === 'expired';
   const isSubscribed = subscription?.active && !isFreeTier;
 
-  // Get plan limits for the current plan
-  const currentPlan = subscription?.plan || "Free Tier";
-  const planLimits = PLAN_LIMITS[currentPlan] || PLAN_LIMITS["Free Tier"];
+  // Get plan limits for the current plan using the useSubscriptionLimits hook
+  const { limits, planName } = useSubscriptionLimits();
 
   return (
     <Card>
@@ -156,27 +156,27 @@ const SubscriptionStatus = () => {
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li className="flex justify-between">
                 <span>Robots:</span>
-                <span className="font-medium">{planLimits.robotLimit === Infinity ? "Unlimited" : planLimits.robotLimit}</span>
+                <span className="font-medium">{limits.robotLimit === Infinity ? "Unlimited" : limits.robotLimit}</span>
               </li>
               <li className="flex justify-between">
                 <span>Telemetry history:</span>
-                <span className="font-medium">{planLimits.telemetryDays === Infinity ? "Unlimited" : `${planLimits.telemetryDays} days`}</span>
+                <span className="font-medium">{limits.telemetryDays === Infinity ? "Unlimited" : `${limits.telemetryDays} days`}</span>
               </li>
               <li className="flex justify-between">
                 <span>Custom telemetry types:</span>
-                <span className="font-medium">{planLimits.customTelemetryTypes === Infinity ? "Unlimited" : planLimits.customTelemetryTypes}</span>
+                <span className="font-medium">{limits.customTelemetryTypes === Infinity ? "Unlimited" : limits.customTelemetryTypes}</span>
               </li>
               <li className="flex justify-between">
                 <span>Alerts per day:</span>
-                <span className="font-medium">{planLimits.alertsPerDay === Infinity ? "Unlimited" : planLimits.alertsPerDay}</span>
+                <span className="font-medium">{limits.alertsPerDay === Infinity ? "Unlimited" : limits.alertsPerDay}</span>
               </li>
               <li className="flex justify-between">
                 <span>API access:</span>
-                <span className="font-medium">{planLimits.apiAccess ? "Yes" : "No"}</span>
+                <span className="font-medium">{limits.apiAccess ? "Yes" : "No"}</span>
               </li>
               <li className="flex justify-between">
                 <span>Support level:</span>
-                <span className="font-medium capitalize">{planLimits.supportLevel}</span>
+                <span className="font-medium capitalize">{limits.supportLevel}</span>
               </li>
             </ul>
           </div>
