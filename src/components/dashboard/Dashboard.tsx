@@ -38,7 +38,7 @@ export function Dashboard() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('api_key, custom_robot_types, custom_telemetry_types')
+        .select('id, api_key, custom_robot_types, custom_telemetry_types')
         .eq('id', user.id)
         .single();
         
@@ -97,10 +97,11 @@ export function Dashboard() {
           const robotId = payload.new.robot_id;
           
           // Create telemetry data object
-          const telemetryData = {
+          const telemetryData: Record<string, any> = {
             batteryLevel: payload.new.battery_level,
             temperature: payload.new.temperature,
             location: payload.new.location,
+            customTelemetry: {} // Initialize the customTelemetry property
           };
           
           // Handle custom telemetry data
@@ -183,7 +184,7 @@ export function Dashboard() {
             <CollapsibleContent className="mt-4">
               <RobotFilter 
                 robots={robots}
-                userProfile={userProfile}
+                userProfile={userProfile as any} // Type assertion to avoid the error
                 onFilteredRobotsChange={handleFilteredRobotsChange} 
               />
             </CollapsibleContent>
