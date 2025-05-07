@@ -1,8 +1,6 @@
 
-import { UserProfile } from "@/types/robot";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code } from "@/components/ui/code";
 import { useState } from "react";
 
 interface CustomTelemetryGuideProps {

@@ -416,7 +416,7 @@ export default function IntegrationGuide() {
                   <ul className="mb-4 list-disc pl-5">
                     <li>Real-time dashboards and monitoring</li>
                     <li>Continuous telemetry from critical systems</li>
-                    <li>High-frequency data updates (>1/second)</li>
+                    <li>High-frequency data updates {'>'}1/second</li>
                     <li>Bidirectional communications</li>
                   </ul>
                   
