@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSubscriptionLimits } from "@/utils/planRestrictions";
+import { useToast } from "@/hooks/use-toast";
 
 interface RobotLimitAlertProps {
   currentRobotCount: number;
@@ -12,9 +13,15 @@ interface RobotLimitAlertProps {
 
 export function RobotLimitAlert({ currentRobotCount }: RobotLimitAlertProps) {
   const { limits, planName } = useSubscriptionLimits();
+  const { toast } = useToast();
   
   const isAtLimit = currentRobotCount >= limits.robotLimit;
   const isNearLimit = currentRobotCount >= limits.robotLimit - 1;
+  
+  // Log the current limits to help debug
+  useEffect(() => {
+    console.log(`RobotLimitAlert - Plan: ${planName}, Robot Limit: ${limits.robotLimit}, Current Count: ${currentRobotCount}`);
+  }, [limits, planName, currentRobotCount]);
   
   if (!isAtLimit && !isNearLimit) return null;
   

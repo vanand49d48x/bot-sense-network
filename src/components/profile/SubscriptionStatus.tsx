@@ -117,7 +117,6 @@ const SubscriptionStatus = () => {
           )}
         </CardTitle>
         <CardDescription>
-          DEBUG-VISHAL: {isSubscribed ? "PAID" : isTrialActive ? "FREE-TIER-ACTIVE" : isTrialExpired ? "FREE-TIER-EXPIRED" : "NONE"} | {subscription?.plan}
           {isSubscribed
             ? `You are currently on the ${subscription?.plan} plan`
             : isTrialActive

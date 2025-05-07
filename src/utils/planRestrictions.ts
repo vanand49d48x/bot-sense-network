@@ -75,6 +75,7 @@ export function useSubscriptionLimits() {
         const { data, error } = await supabase.functions.invoke('check-subscription');
         
         if (error) throw error;
+        console.log("Subscription data from edge function:", data);
         return data;
       } catch (err) {
         console.error("Error checking subscription:", err);
@@ -96,20 +97,28 @@ export function useSubscriptionLimits() {
           
         if (error) throw error;
         
+        console.log("Plan limits from database:", data);
+        
         // Convert database results to our format
         const limitsMap: Record<string, PlanLimits> = {};
         
         if (data && data.length > 0) {
           // Transform database records into our PlanLimits format
           data.forEach(item => {
+            // For Enterprise plan, null values mean unlimited
+            const robotLimit = item.robot_limit === null ? Infinity : item.robot_limit;
+            const telemetryDays = item.telemetry_days === null ? Infinity : item.telemetry_days;
+            const customTelemetryTypes = item.custom_telemetry_types === null ? Infinity : item.custom_telemetry_types;
+            const alertsPerDay = item.alerts_per_day === null ? Infinity : item.alerts_per_day;
+            
             limitsMap[item.plan_name] = {
-              robotLimit: item.robot_limit || DEFAULT_PLAN_LIMITS[item.plan_name]?.robotLimit,
-              telemetryDays: item.telemetry_days || DEFAULT_PLAN_LIMITS[item.plan_name]?.telemetryDays,
-              customTelemetryTypes: item.custom_telemetry_types || DEFAULT_PLAN_LIMITS[item.plan_name]?.customTelemetryTypes,
-              alertsPerDay: item.alerts_per_day || DEFAULT_PLAN_LIMITS[item.plan_name]?.alertsPerDay,
-              supportLevel: item.support_level || DEFAULT_PLAN_LIMITS[item.plan_name]?.supportLevel,
-              apiAccess: item.api_access === undefined ? DEFAULT_PLAN_LIMITS[item.plan_name]?.apiAccess : item.api_access,
-              advancedAnalytics: item.advanced_analytics === undefined ? DEFAULT_PLAN_LIMITS[item.plan_name]?.advancedAnalytics : item.advanced_analytics,
+              robotLimit,
+              telemetryDays,
+              customTelemetryTypes,
+              alertsPerDay,
+              supportLevel: item.support_level || DEFAULT_PLAN_LIMITS["Free Tier"]?.supportLevel,
+              apiAccess: item.api_access === undefined ? DEFAULT_PLAN_LIMITS["Free Tier"]?.apiAccess : item.api_access,
+              advancedAnalytics: item.advanced_analytics === undefined ? DEFAULT_PLAN_LIMITS["Free Tier"]?.advancedAnalytics : item.advanced_analytics,
             };
           });
           return limitsMap;
@@ -121,15 +130,42 @@ export function useSubscriptionLimits() {
         console.error("Error fetching plan limits:", err);
         return DEFAULT_PLAN_LIMITS;
       }
-    }
+    },
+    staleTime: 300000, // Consider data fresh for 5 minutes
   });
 
-  // Get the current plan name from subscription check
-  const planName = data?.plan || "Free Tier";
+  // Get the current plan name from subscription check (normalize case to match database)
+  let planName = (data?.plan || "Free Tier");
+  
+  // Normalize the plan name case (e.g., "STARTER" to "Starter")
+  if (planName && typeof planName === 'string') {
+    // Handle special case for exact match "STARTER"
+    if (planName === "STARTER") {
+      planName = "Starter";
+    }
+    // For other cases, try to normalize
+    else if (!planLimitsData?.[planName]) {
+      // Try to find a case-insensitive match
+      const planKeys = Object.keys(planLimitsData || {});
+      const matchedPlan = planKeys.find(key => key.toLowerCase() === planName.toLowerCase());
+      if (matchedPlan) {
+        planName = matchedPlan;
+      }
+    }
+  }
+  
+  // Log the plan name for debugging purposes
+  console.log("Current plan name:", planName, "Original from API:", data?.plan);
+  console.log("Available plans in DB:", Object.keys(planLimitsData || {}));
   
   // Use database limits if available, otherwise use defaults
   const planLimits = planLimitsData || DEFAULT_PLAN_LIMITS;
+  
+  // Get limits for the current plan, or fallback to default limits
   const limits = planLimits[planName] || DEFAULT_LIMITS;
+  
+  // Log the limits for debugging
+  console.log("Applied limits for plan:", planName, limits);
   
   // Add additional derived data
   const remainingDays = data?.days_remaining || 0;
