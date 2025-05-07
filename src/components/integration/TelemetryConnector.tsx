@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRobotStore } from "@/store/robotStore";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +7,7 @@ import { Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Create a RadioOff component since it doesn't exist in lucide-react
-const RadioOff = ({ className }: { className?: string }) => (
+const RadioOff = ({ className = "" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -36,9 +36,18 @@ export function TelemetryConnector({ robotId, apiKey }: TelemetryConnectorProps)
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const { updateRobotFromTelemetry } = useRobotStore();
   const { toast } = useToast();
+  const reconnectTimerRef = useRef<number | null>(null);
   
   useEffect(() => {
-    let reconnectTimer: number;
+    // Clean up function to be called on unmount
+    const cleanup = () => {
+      if (socket) {
+        socket.close();
+      }
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+    };
     
     const connect = () => {
       if (connecting) return;
@@ -83,7 +92,7 @@ export function TelemetryConnector({ robotId, apiKey }: TelemetryConnectorProps)
               duration: 3000
             });
           } else if (data.type === "telemetry_received") {
-            // Telemetry acknowledgement
+            // Telemetry acknowledgement - no need to update UI here
           }
         } catch (e) {
           console.error("Error parsing WebSocket message:", e);
@@ -107,7 +116,7 @@ export function TelemetryConnector({ robotId, apiKey }: TelemetryConnectorProps)
           const delay = Math.min(1000 * (2 ** reconnectAttempts), 30000);
           console.log(`Reconnecting in ${delay}ms, attempt ${reconnectAttempts + 1}/${maxReconnectAttempts}`);
           
-          reconnectTimer = window.setTimeout(() => {
+          reconnectTimerRef.current = window.setTimeout(() => {
             setReconnectAttempts(prev => prev + 1);
             connect();
           }, delay);
@@ -121,15 +130,9 @@ export function TelemetryConnector({ robotId, apiKey }: TelemetryConnectorProps)
       connect();
     }
     
-    return () => {
-      if (socket) {
-        socket.close();
-      }
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-      }
-    };
-  }, [robotId, apiKey, reconnectAttempts]);
+    // Return cleanup function
+    return cleanup;
+  }, [robotId, apiKey, reconnectAttempts, toast, connecting, updateRobotFromTelemetry]);
   
   const sendTestTelemetry = () => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -161,6 +164,7 @@ export function TelemetryConnector({ robotId, apiKey }: TelemetryConnectorProps)
     }));
     
     // Also update local state immediately for responsiveness
+    // This ensures the UI updates even before the server confirms
     updateRobotFromTelemetry(robotId, testData);
     
     toast({

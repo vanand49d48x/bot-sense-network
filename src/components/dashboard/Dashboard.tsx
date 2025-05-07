@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
@@ -24,13 +24,12 @@ export function Dashboard() {
     filteredRobots, 
     isLoading, 
     fetchRobots, 
-    updateRobotFromTelemetry,
     setFilter 
   } = useRobotStore();
   
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
-  // Load user profile data
+  // Load user profile data - memoizing the result to prevent re-renders
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile', user?.id],
     queryFn: async () => {
@@ -50,6 +49,7 @@ export function Dashboard() {
       return { ...data, id: data.id };
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes to reduce refetches
   });
   
   // Fetch robots data initially
@@ -57,19 +57,19 @@ export function Dashboard() {
     fetchRobots();
   }, [fetchRobots]);
   
-  // Handle refresh button click
-  const handleRefresh = () => {
+  // Memoized refresh handler to prevent re-creation on render
+  const handleRefresh = useCallback(() => {
     toast('Refreshing robot data...', {
       description: 'Fetching the latest robot status and telemetry',
       duration: 2000,
     });
     fetchRobots();
-  };
+  }, [fetchRobots]);
   
-  // Handle filter changes
-  const handleFilteredRobotsChange = (filtered) => {
+  // Memoized filter handler to prevent re-creation on render
+  const handleFilteredRobotsChange = useCallback((filtered) => {
     setFilter('custom', filtered);
-  };
+  }, [setFilter]);
   
   // Set up realtime subscription for robot updates only, not for telemetry
   // Telemetry will be handled via the robotStore directly
@@ -101,7 +101,7 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, []); 
+  }, [fetchRobots]); 
   
   if (isLoading) {
     return (
