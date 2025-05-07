@@ -1,21 +1,23 @@
 
-import React from "react";
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface CodeBlockProps {
-  code: string;
-  language?: string;
-  className?: string;
-}
+interface CodeProps extends React.HTMLAttributes<HTMLPreElement> {}
 
-export function CodeBlock({ code, language = "javascript", className = "" }: CodeBlockProps) {
-  return (
-    <div className={`overflow-x-auto ${className}`}>
-      <pre className="p-4 bg-background border rounded-md text-sm">
-        <code className="language-javascript">{code}</code>
-      </pre>
-    </div>
-  );
-}
+const Code = React.forwardRef<HTMLPreElement, CodeProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <pre
+        ref={ref}
+        className={cn(
+          "rounded-md bg-muted p-4 overflow-x-auto text-sm",
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+)
+Code.displayName = "Code"
 
-// Add Code component as an alias for CodeBlock for backward compatibility
-export const Code = CodeBlock;
+export { Code }

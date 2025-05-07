@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodeBlock } from "@/components/ui/code";
+import { Code } from "@/components/ui/code";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -258,13 +257,13 @@ sendTelemetry();`;
                   <TabsTrigger value="javascript">JavaScript</TabsTrigger>
                 </TabsList>
                 <TabsContent value="curl">
-                  <CodeBlock code={curlExample} />
+                  <Code>{curlExample}</Code>
                 </TabsContent>
                 <TabsContent value="python">
-                  <CodeBlock code={pythonExample} />
+                  <Code>{pythonExample}</Code>
                 </TabsContent>
                 <TabsContent value="javascript">
-                  <CodeBlock code={javascriptExample} />
+                  <Code>{javascriptExample}</Code>
                 </TabsContent>
               </Tabs>
               <div className="mt-4 text-sm text-muted-foreground">
