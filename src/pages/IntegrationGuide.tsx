@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { TelemetryExample } from "@/components/integration/TelemetryExample";
+import { WebSocketExample } from "@/components/integration/WebSocketExample";
 import { ArduinoExample } from "@/components/integration/ArduinoExample";
 import { ROSExample } from "@/components/integration/ROSExample";
 import { MQTTExample } from "@/components/integration/MQTTExample";
@@ -10,7 +11,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity, Mail } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity, Mail, Zap } from "lucide-react";
 
 export default function IntegrationGuide() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -44,6 +45,7 @@ export default function IntegrationGuide() {
             <TabsTrigger value="ros">ROS</TabsTrigger>
             <TabsTrigger value="mqtt">MQTT</TabsTrigger>
             <TabsTrigger value="http">HTTP API</TabsTrigger>
+            <TabsTrigger value="websocket">WebSocket</TabsTrigger>
             <TabsTrigger value="custom">Custom Telemetry</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
@@ -74,7 +76,7 @@ export default function IntegrationGuide() {
 
               <section>
                 <h2 className="text-2xl font-semibold mb-4">Integration Methods</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 text-left"
@@ -144,6 +146,40 @@ export default function IntegrationGuide() {
                       <h3 className="font-medium">HTTP API</h3>
                       <p className="text-sm text-muted-foreground">
                         Direct HTTP API integration
+                      </p>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left bg-primary/5"
+                    onClick={() => setActiveTab("websocket")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <Zap className="h-5 w-5 text-primary" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">WebSocket</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Real-time bidirectional communication
+                      </p>
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left"
+                    onClick={() => setActiveTab("custom")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <Activity className="h-5 w-5" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">Custom Telemetry</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Send custom data fields
                       </p>
                     </div>
                   </Button>
@@ -253,6 +289,43 @@ export default function IntegrationGuide() {
                       </div>
                     )}
                   </div>
+                  
+                  <div
+                    className="border rounded-lg p-4 cursor-pointer bg-primary/5"
+                    onClick={() => toggleSection("realtime")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">Real-time Communication</h3>
+                      </div>
+                      {expandedSection === "realtime" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    </div>
+                    
+                    {expandedSection === "realtime" && (
+                      <div className="mt-4 pl-7">
+                        <p className="text-muted-foreground mb-2">
+                          Choose the communication method that best fits your use case:
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li><strong>HTTP API</strong>: Simple request/response for occasional updates</li>
+                          <li><strong>WebSockets</strong>: Bidirectional real-time communication for continuous data</li>
+                          <li><strong>MQTT</strong>: Lightweight publish/subscribe for IoT devices</li>
+                        </ul>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="mt-2 px-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTab("websocket");
+                          }}
+                        >
+                          View WebSocket integration
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </section>
             </div>
@@ -303,6 +376,58 @@ export default function IntegrationGuide() {
                   </li>
                   <li><code className="bg-background px-1.5 py-0.5 rounded">timestamp</code>: ISO timestamp (defaults to current time if omitted)</li>
                 </ul>
+              </div>
+            </section>
+          </TabsContent>
+          
+          <TabsContent value="websocket">
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">WebSocket API</h2>
+              <p className="text-muted-foreground mb-6 max-w-3xl">
+                For real-time communication and continuous data streams, our WebSocket API provides a bidirectional connection with lower latency and reduced overhead compared to HTTP polling.
+              </p>
+            </section>
+            
+            <WebSocketExample />
+            
+            <section className="mt-8">
+              <h2 className="text-2xl font-semibold mb-4">WebSocket vs. HTTP</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-muted p-6 rounded-lg">
+                  <h3 className="text-lg font-medium mb-3 flex items-center">
+                    <Zap className="mr-2 h-5 w-5 text-primary" />
+                    WebSocket Benefits
+                  </h3>
+                  <ul className="space-y-2 list-disc pl-5">
+                    <li>Persistent connection for real-time, bidirectional communication</li>
+                    <li>Lower latency for time-sensitive applications</li>
+                    <li>Reduced overhead for frequent data transmission</li>
+                    <li>Better for continuous data streams or high frequency updates</li>
+                    <li>More efficient state management for large-scale deployments</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-muted p-6 rounded-lg">
+                  <h3 className="text-lg font-medium mb-3 flex items-center">
+                    <Code className="mr-2 h-5 w-5 text-primary" />
+                    When to Use Each
+                  </h3>
+                  <p className="mb-2">Choose WebSockets for:</p>
+                  <ul className="mb-4 list-disc pl-5">
+                    <li>Real-time dashboards and monitoring</li>
+                    <li>Continuous telemetry from critical systems</li>
+                    <li>High-frequency data updates (>1/second)</li>
+                    <li>Bidirectional communications</li>
+                  </ul>
+                  
+                  <p className="mb-2">Choose HTTP API for:</p>
+                  <ul className="list-disc pl-5">
+                    <li>Simpler implementation needs</li>
+                    <li>Infrequent, periodic updates</li>
+                    <li>Systems with limited connectivity</li>
+                    <li>One-time data submissions</li>
+                  </ul>
+                </div>
               </div>
             </section>
           </TabsContent>

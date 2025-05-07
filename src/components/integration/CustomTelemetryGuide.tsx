@@ -3,6 +3,7 @@ import { UserProfile } from "@/types/robot";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Code } from "@/components/ui/code";
+import { useState } from "react";
 
 interface CustomTelemetryGuideProps {
   apiKey: string | null;
@@ -11,6 +12,8 @@ interface CustomTelemetryGuideProps {
 }
 
 export function CustomTelemetryGuide({ apiKey, robotId, customTelemetryTypes }: CustomTelemetryGuideProps) {
+  const [activeTab, setActiveTab] = useState("http");
+
   const sampleCustomData = () => {
     const customData: Record<string, any> = {};
     
@@ -122,6 +125,45 @@ const sendTelemetry = async () => {
 
 sendTelemetry();`;
 
+  const websocketCode = `// WebSocket example
+const apiKey = '${apiKey || 'YOUR_API_KEY'}';
+const robotId = '${robotId}';
+
+// Connect to the WebSocket server
+const ws = new WebSocket(\`wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId=\${robotId}&api-key=\${apiKey}\`);
+
+ws.onopen = () => {
+  console.log('WebSocket connection established');
+  
+  // Send telemetry data
+  const telemetryData = {
+    batteryLevel: 85,
+    temperature: 27.5,
+    status: 'OK',
+    location: {
+      latitude: 37.7749,
+      longitude: -122.4194
+    },
+    timestamp: new Date().toISOString(),
+    customTelemetry: ${JSON.stringify(sampleCustomData(), null, 4)}
+  };
+  
+  ws.send(JSON.stringify(telemetryData));
+};
+
+ws.onmessage = (event) => {
+  const response = JSON.parse(event.data);
+  console.log('Received response:', response);
+};
+
+ws.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
+
+ws.onclose = () => {
+  console.log('WebSocket connection closed');
+};`;
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -131,25 +173,40 @@ sendTelemetry();`;
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="curl">
+        <Tabs defaultValue="http" value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="curl">cURL</TabsTrigger>
-            <TabsTrigger value="python">Python</TabsTrigger>
-            <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+            <TabsTrigger value="http">HTTP</TabsTrigger>
+            <TabsTrigger value="websocket">WebSocket</TabsTrigger>
           </TabsList>
-          <TabsContent value="curl">
-            <div className="bg-muted p-4 rounded-md overflow-x-auto">
-              <pre className="text-xs">{curlCommand}</pre>
-            </div>
+          
+          <TabsContent value="http">
+            <Tabs defaultValue="curl">
+              <TabsList>
+                <TabsTrigger value="curl">cURL</TabsTrigger>
+                <TabsTrigger value="python">Python</TabsTrigger>
+                <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+              </TabsList>
+              <TabsContent value="curl">
+                <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                  <pre className="text-xs">{curlCommand}</pre>
+                </div>
+              </TabsContent>
+              <TabsContent value="python">
+                <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                  <pre className="text-xs">{pythonCode}</pre>
+                </div>
+              </TabsContent>
+              <TabsContent value="javascript">
+                <div className="bg-muted p-4 rounded-md overflow-x-auto">
+                  <pre className="text-xs">{javascriptCode}</pre>
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
-          <TabsContent value="python">
+          
+          <TabsContent value="websocket">
             <div className="bg-muted p-4 rounded-md overflow-x-auto">
-              <pre className="text-xs">{pythonCode}</pre>
-            </div>
-          </TabsContent>
-          <TabsContent value="javascript">
-            <div className="bg-muted p-4 rounded-md overflow-x-auto">
-              <pre className="text-xs">{javascriptCode}</pre>
+              <pre className="text-xs">{websocketCode}</pre>
             </div>
           </TabsContent>
         </Tabs>
