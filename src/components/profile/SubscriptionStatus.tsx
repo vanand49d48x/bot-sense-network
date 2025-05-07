@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,8 @@ interface SubscriptionInfo {
   active: boolean;
   plan: string | null;
   subscription_end: string | null;
+  trial_status: string | null;
+  days_remaining: number | null;
 }
 
 const SubscriptionStatus = () => {
@@ -83,47 +84,67 @@ const SubscriptionStatus = () => {
     );
   }
 
+  // Free Tier and paid plan logic
+  const isFreeTier = subscription?.plan === "Free Tier";
+  const isTrialActive = isFreeTier && subscription?.trial_status === 'active';
+  const isTrialExpired = isFreeTier && subscription?.trial_status === 'expired';
+  const isSubscribed = subscription?.active && !isFreeTier;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {subscription?.active ? (
+          {isSubscribed ? (
             <>
               <CheckCircle className="h-5 w-5 text-green-500" />
               <span>Active Subscription</span>
             </>
+          ) : isTrialActive ? (
+            <>
+              <CheckCircle className="h-5 w-5 text-blue-500" />
+              <span>Free Tier Active</span>
+            </>
           ) : (
             <>
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <span>No Active Subscription</span>
+              <span>{isTrialExpired ? "Free Tier Expired" : "No Active Subscription"}</span>
             </>
           )}
         </CardTitle>
         <CardDescription>
-          {subscription?.active 
-            ? `You are currently on the ${subscription.plan} plan`
-            : "You are currently on the Free plan"}
+          DEBUG-VISHAL: {isSubscribed ? "PAID" : isTrialActive ? "FREE-TIER-ACTIVE" : isTrialExpired ? "FREE-TIER-EXPIRED" : "NONE"} | {subscription?.plan}
+          {isSubscribed
+            ? `You are currently on the ${subscription?.plan} plan`
+            : isTrialActive
+              ? `Your Free Tier expires in ${subscription?.days_remaining} days`
+              : isTrialExpired
+                ? "Your Free Tier has expired. Upgrade to continue using premium features."
+                : "Start your free trial to access premium features"}
         </CardDescription>
       </CardHeader>
       
       <CardContent>
-        {subscription?.active && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
-                Next billing date: {formatDate(subscription.subscription_end)}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">
-                Manage your subscription details securely via Stripe
-              </span>
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">
+              {isFreeTier
+                ? (subscription?.trial_status === "active"
+                    ? `Expires on ${formatDate(subscription?.subscription_end ?? null)}`
+                    : `Expired on ${formatDate(subscription?.subscription_end ?? null)}`)
+                : subscription?.subscription_end
+                  ? `Renews on ${formatDate(subscription.subscription_end)}`
+                  : ''}
+            </span>
           </div>
-        )}
+          
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">
+              Manage your subscription details securely via Stripe
+            </span>
+          </div>
+        </div>
 
         {!subscription?.active && (
           <div className="p-4 bg-muted/50 rounded-md">
@@ -149,21 +170,23 @@ const SubscriptionStatus = () => {
       </CardContent>
       
       <CardFooter className="flex flex-col gap-2">
-        {subscription?.active ? (
+        {isSubscribed ? (
           <Button 
             variant="outline" 
             className="w-full" 
             onClick={openCustomerPortal}
             disabled={portalLoading}
           >
-            {portalLoading ? "Opening..." : "Manage Subscription"}
+            {portalLoading ? "Opening Portal..." : "Manage Subscription"}
           </Button>
         ) : (
           <Button 
             className="w-full" 
             asChild
-          >
-            <Link to="/pricing">Upgrade</Link>
+            variant={isTrialActive ? "outline" : "default"}>
+            <Link to="/pricing">
+              {isTrialActive ? "Upgrade Now" : isTrialExpired ? "Upgrade to Continue" : "Start Free Tier"}
+            </Link>
           </Button>
         )}
         
