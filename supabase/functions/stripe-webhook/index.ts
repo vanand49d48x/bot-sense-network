@@ -11,6 +11,7 @@ const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
 // Brevo integration
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY")!;
 const BREVO_TEMPLATE_ID = Number(Deno.env.get("BREVO_TEMPLATE_ID")!);
+const BREVO_REACTIVATION_TEMPLATE_ID = 3;
 
 async function sendSubscriptionEmail({
   to,
@@ -19,15 +20,19 @@ async function sendSubscriptionEmail({
   price,
   renewalDate,
   subscriptionId,
-  supportEmail
+  supportEmail,
+  endDate,
+  templateId
 }: {
   to: string,
   userName: string,
   planName: string,
-  price: string,
-  renewalDate: string,
-  subscriptionId: string,
-  supportEmail: string
+  price?: string,
+  renewalDate?: string,
+  subscriptionId?: string,
+  supportEmail: string,
+  endDate?: string,
+  templateId?: number
 }) {
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -38,14 +43,15 @@ async function sendSubscriptionEmail({
     },
     body: JSON.stringify({
       to: [{ email: to }],
-      templateId: BREVO_TEMPLATE_ID,
+      templateId: templateId || BREVO_TEMPLATE_ID,
       params: {
         USER_NAME: userName,
         PLAN_NAME: planName,
         PRICE: price,
         RENEWAL_DATE: renewalDate,
         SUBSCRIPTION_ID: subscriptionId,
-        SUPPORT_EMAIL: supportEmail
+        SUPPORT_EMAIL: supportEmail,
+        END_DATE: endDate
       }
     })
   });
@@ -121,6 +127,46 @@ serve(async (req) => {
         const userName = customer.name || customer.email;
         const subscriptionId = subscription.id;
 
+        // Check if cancel_at_period_end changed from false to true
+        const wasNotCancelAtPeriodEnd = event.data.previous_attributes?.cancel_at_period_end === false;
+        if (subscription.cancel_at_period_end && wasNotCancelAtPeriodEnd) {
+          // Send Brevo email for cancel at period end
+          try {
+            await sendSubscriptionEmail({
+              to: userEmail,
+              userName,
+              planName,
+              supportEmail: "support@robometrics.io",
+              endDate: renewalDateString,
+              templateId: 2 // Cancellation template
+            });
+            console.log('Cancel-at-period-end email sent via Brevo');
+          } catch (err) {
+            console.error('Error sending Brevo cancel-at-period-end email:', err);
+          }
+        }
+
+        // Check if cancel_at_period_end changed from true to false (reactivation)
+        const wasCancelAtPeriodEnd = event.data.previous_attributes?.cancel_at_period_end === true;
+        if (!subscription.cancel_at_period_end && wasCancelAtPeriodEnd) {
+          // Send Brevo reactivation email
+          try {
+            await sendSubscriptionEmail({
+              to: userEmail,
+              userName,
+              planName,
+              price: priceString,
+              renewalDate: renewalDateString,
+              subscriptionId,
+              supportEmail: "support@robometrics.io",
+              templateId: BREVO_REACTIVATION_TEMPLATE_ID
+            });
+            console.log('Reactivation email sent via Brevo');
+          } catch (err) {
+            console.error('Error sending Brevo reactivation email:', err);
+          }
+        }
+
         // Update the subscriptions table
         const { error } = await supabaseClient.from("subscriptions").upsert({
           user_id: supabaseUserId,
@@ -139,7 +185,7 @@ serve(async (req) => {
           console.log('Subscription updated in database:', subscription.id);
         }
 
-        // Send Brevo email
+        // Send Brevo email for other updates (not cancel at period end)
         try {
           await sendSubscriptionEmail({
             to: userEmail,
