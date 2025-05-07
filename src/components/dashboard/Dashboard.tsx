@@ -219,18 +219,19 @@ export function Dashboard() {
   const displayRobots = filteredRobots.length > 0 ? filteredRobots : localRobots;
   
   // Check if user has exceeded robot limit
-  const isOverRobotLimit = displayRobots.length > limits.robotLimit;
+  const isOverRobotLimit = localRobots.length >= limits.robotLimit;
+  const isAtRobotLimit = localRobots.length >= limits.robotLimit;
   
   // If over limit, only display the allowed number of robots
   const allowedRobots = isOverRobotLimit 
-    ? displayRobots.slice(0, limits.robotLimit)
-    : displayRobots;
+    ? localRobots.slice(0, limits.robotLimit)
+    : localRobots;
 
   return (
     <div>
       <div className="flex justify-between items-center">
         <DashboardHeader onRefresh={handleRefresh} />
-        <AddRobotModal />
+        <AddRobotModal disabled={isAtRobotLimit} />
       </div>
       
       {/* Plan limit warnings */}
@@ -262,7 +263,7 @@ export function Dashboard() {
           {isOverRobotLimit && (
             <PlanFeatureAlert
               title="Robot Limit Reached"
-              description={`Your ${planName} plan allows monitoring up to ${limits.robotLimit} robots. ${displayRobots.length - limits.robotLimit} robots are hidden. Upgrade to monitor more robots.`}
+              description={`Your ${planName} plan allows monitoring up to ${limits.robotLimit} robots. ${localRobots.length - limits.robotLimit} robots are hidden. Upgrade to monitor more robots or remove existing ones.`}
               icon={AlertCircle}
             />
           )}

@@ -25,8 +25,9 @@ import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useSubscriptionLimits } from "@/utils/planRestrictions";
 
-export function AddRobotModal() {
+export function AddRobotModal({ disabled = false }: { disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("");
@@ -120,7 +121,7 @@ export function AddRobotModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="z-10">
+        <Button className="z-10" disabled={disabled}>
           <Plus className="mr-2 h-4 w-4" />
           Add Robot
         </Button>

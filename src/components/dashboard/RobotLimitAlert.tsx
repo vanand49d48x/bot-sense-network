@@ -37,6 +37,11 @@ export function RobotLimitAlert({ currentRobotCount }: RobotLimitAlertProps) {
             ? `You've reached the maximum of ${limits.robotLimit} robots allowed on your ${planName} plan.`
             : `You're approaching the limit of ${limits.robotLimit} robots on your ${planName} plan.`}
         </p>
+        {isAtLimit && (
+          <p className="text-sm">
+            Either upgrade your plan or remove existing robots to add new ones.
+          </p>
+        )}
         <Button asChild variant="outline" className="mt-2 w-full sm:w-auto">
           <Link to="/pricing">Upgrade Plan</Link>
         </Button>
