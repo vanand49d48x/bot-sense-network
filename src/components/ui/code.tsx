@@ -16,3 +16,6 @@ export function CodeBlock({ code, language = "javascript", className = "" }: Cod
     </div>
   );
 }
+
+// Add Code component as an alias for CodeBlock for backward compatibility
+export const Code = CodeBlock;

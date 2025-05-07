@@ -2,7 +2,7 @@
 import { UserProfile } from "@/types/robot";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code } from "@/components/ui/code";
+import { CodeBlock } from "@/components/ui/code";
 
 interface CustomTelemetryGuideProps {
   apiKey: string | null;

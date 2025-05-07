@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import PlaceholderLayout from "@/components/layout/PlaceholderLayout";
-import { Code } from "@/components/ui/code";
+import { CodeBlock } from "@/components/ui/code";
 
 const ApiDocs = () => {
   useEffect(() => {
@@ -17,8 +17,8 @@ const ApiDocs = () => {
       
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Quick Start Example</h2>
-        <Code>
-          {`
+        <CodeBlock
+          code={`
 // Example API call
 const response = await fetch('https://api.robometrics.io/v1/robots', {
   headers: {
@@ -28,7 +28,7 @@ const response = await fetch('https://api.robometrics.io/v1/robots', {
 
 const robots = await response.json();
           `}
-        </Code>
+        />
       </div>
       
       <p className="text-center text-muted-foreground">
