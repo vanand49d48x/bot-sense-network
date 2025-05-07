@@ -12,18 +12,28 @@ interface RobotLimitAlertProps {
 }
 
 export function RobotLimitAlert({ currentRobotCount }: RobotLimitAlertProps) {
-  const { limits, planName } = useSubscriptionLimits();
+  const { limits, planName, isLoading } = useSubscriptionLimits();
   const { toast } = useToast();
   
-  const isAtLimit = currentRobotCount >= limits.robotLimit;
-  const isNearLimit = currentRobotCount >= limits.robotLimit - 1;
+  // Only calculate these values when not loading to prevent flashing
+  const isAtLimit = !isLoading && currentRobotCount >= limits.robotLimit;
+  const isNearLimit = !isLoading && !isAtLimit && currentRobotCount >= limits.robotLimit - 1;
   
   // Log the current limits to help debug
   useEffect(() => {
-    console.log(`RobotLimitAlert - Plan: ${planName}, Robot Limit: ${limits.robotLimit}, Current Count: ${currentRobotCount}`);
-  }, [limits, planName, currentRobotCount]);
+    console.log(`RobotLimitAlert - Plan: ${planName}, Robot Limit: ${limits.robotLimit}, Current Count: ${currentRobotCount}, Loading: ${isLoading}`);
+  }, [limits, planName, currentRobotCount, isLoading]);
   
-  if (!isAtLimit && !isNearLimit) return null;
+  // Don't show any alert if we're still loading the subscription data
+  // This prevents the alert from showing incorrect information during loading
+  if (isLoading) {
+    return null;
+  }
+  
+  // Only show the alert if we're at or near the limit
+  if (!isAtLimit && !isNearLimit) {
+    return null;
+  }
   
   return (
     <Alert variant="destructive" className={`mb-4 ${isAtLimit ? "bg-destructive/20" : "bg-amber-500/20"}`}>
