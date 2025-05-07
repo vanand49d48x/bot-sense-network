@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertTriangle, Clock, Shield } from "lucide-react";
+import { PLAN_LIMITS } from "@/utils/planRestrictions";
 
 interface SubscriptionInfo {
   active: boolean;
@@ -90,6 +91,10 @@ const SubscriptionStatus = () => {
   const isTrialExpired = isFreeTier && subscription?.trial_status === 'expired';
   const isSubscribed = subscription?.active && !isFreeTier;
 
+  // Get plan limits for the current plan
+  const currentPlan = subscription?.plan || "Free Tier";
+  const planLimits = PLAN_LIMITS[currentPlan] || PLAN_LIMITS["Free Tier"];
+
   return (
     <Card>
       <CardHeader>
@@ -144,10 +149,41 @@ const SubscriptionStatus = () => {
               Manage your subscription details securely via Stripe
             </span>
           </div>
+          
+          {/* Add plan limits info */}
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Plan Limits:</h4>
+            <ul className="space-y-1 text-sm text-muted-foreground">
+              <li className="flex justify-between">
+                <span>Robots:</span>
+                <span className="font-medium">{planLimits.robotLimit === Infinity ? "Unlimited" : planLimits.robotLimit}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Telemetry history:</span>
+                <span className="font-medium">{planLimits.telemetryDays === Infinity ? "Unlimited" : `${planLimits.telemetryDays} days`}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Custom telemetry types:</span>
+                <span className="font-medium">{planLimits.customTelemetryTypes === Infinity ? "Unlimited" : planLimits.customTelemetryTypes}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Alerts per day:</span>
+                <span className="font-medium">{planLimits.alertsPerDay === Infinity ? "Unlimited" : planLimits.alertsPerDay}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>API access:</span>
+                <span className="font-medium">{planLimits.apiAccess ? "Yes" : "No"}</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Support level:</span>
+                <span className="font-medium capitalize">{planLimits.supportLevel}</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {!subscription?.active && (
-          <div className="p-4 bg-muted/50 rounded-md">
+          <div className="p-4 bg-muted/50 rounded-md mt-4">
             <p className="text-sm">
               Upgrade to a paid plan to access premium features like:
             </p>

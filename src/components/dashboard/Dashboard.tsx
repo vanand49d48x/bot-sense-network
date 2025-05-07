@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
@@ -19,6 +18,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { RobotLimitAlert } from "./RobotLimitAlert";
+import { useSubscriptionLimits } from "@/utils/planRestrictions";
+import { PlanFeatureAlert } from "./PlanFeatureAlert";
 
 export function Dashboard() {
   const { robots: supabaseRobots, loading, fetchRobots } = useRobots();
@@ -53,6 +55,9 @@ export function Dashboard() {
     },
     enabled: !!user?.id,
   });
+  
+  // Get subscription limits
+  const { limits, planName, isActive, isTrialExpired } = useSubscriptionLimits();
   
   // Initialize local robots when the data from useRobots changes
   useEffect(() => {
@@ -212,6 +217,14 @@ export function Dashboard() {
 
   // Important: render using localRobots which contains the real-time updates
   const displayRobots = filteredRobots.length > 0 ? filteredRobots : localRobots;
+  
+  // Check if user has exceeded robot limit
+  const isOverRobotLimit = displayRobots.length > limits.robotLimit;
+  
+  // If over limit, only display the allowed number of robots
+  const allowedRobots = isOverRobotLimit 
+    ? displayRobots.slice(0, limits.robotLimit)
+    : displayRobots;
 
   return (
     <div>
@@ -220,9 +233,22 @@ export function Dashboard() {
         <AddRobotModal />
       </div>
       
+      {/* Plan limit warnings */}
+      {localRobots.length > 0 && (
+        <RobotLimitAlert currentRobotCount={localRobots.length} />
+      )}
+      
+      {isTrialExpired && (
+        <PlanFeatureAlert
+          title="Free Tier Expired"
+          description="Your trial period has expired. Upgrade to continue accessing all features."
+          icon={AlertCircle}
+        />
+      )}
+      
       {localRobots.length > 0 ? (
         <>
-          <StatCards robots={displayRobots} />
+          <StatCards robots={allowedRobots} />
           
           <Alert className="my-4">
             <AlertCircle className="h-4 w-4" />
@@ -231,6 +257,15 @@ export function Dashboard() {
               To send telemetry data to your robots, use each robot's API key. View API keys in the robot cards by clicking "API Integration".
             </AlertDescription>
           </Alert>
+          
+          {/* Show warning if some robots are hidden due to plan limitations */}
+          {isOverRobotLimit && (
+            <PlanFeatureAlert
+              title="Robot Limit Reached"
+              description={`Your ${planName} plan allows monitoring up to ${limits.robotLimit} robots. ${displayRobots.length - limits.robotLimit} robots are hidden. Upgrade to monitor more robots.`}
+              icon={AlertCircle}
+            />
+          )}
           
           {/* Filter section */}
           <Collapsible
@@ -253,7 +288,7 @@ export function Dashboard() {
             </CollapsibleContent>
           </Collapsible>
           
-          {displayRobots.length !== localRobots.length && (
+          {displayRobots.length !== localRobots.length && !isOverRobotLimit && (
             <div className="bg-muted p-2 rounded text-sm mb-4">
               Showing {displayRobots.length} of {localRobots.length} robots
               {displayRobots.length === 0 && (
@@ -268,8 +303,13 @@ export function Dashboard() {
             </div>
           )}
           
-          <MapView robots={displayRobots} />
-          <RobotStatusGrid robots={displayRobots} />
+          <MapView robots={allowedRobots} />
+          <RobotStatusGrid robots={allowedRobots} />
+          
+          {/* Display telemetry history retention information */}
+          <div className="mt-6 text-sm text-muted-foreground">
+            <p>Your {planName} plan retains telemetry history for {limits.telemetryDays} days.</p>
+          </div>
         </>
       ) : (
         <div className="mt-8 text-center p-12 border border-dashed rounded-lg">
