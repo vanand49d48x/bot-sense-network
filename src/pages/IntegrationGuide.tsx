@@ -6,11 +6,12 @@ import { ROSExample } from "@/components/integration/ROSExample";
 import { MQTTExample } from "@/components/integration/MQTTExample";
 import { EmailNotifications } from "@/components/integration/EmailNotifications";
 import { CustomTelemetryExample } from "@/components/integration/CustomTelemetryExample";
+import { WebSocketExample } from "@/components/integration/WebSocketExample";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity, Mail } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSquare, Activity, Mail, Radio } from "lucide-react";
 
 export default function IntegrationGuide() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -44,6 +45,7 @@ export default function IntegrationGuide() {
             <TabsTrigger value="ros">ROS</TabsTrigger>
             <TabsTrigger value="mqtt">MQTT</TabsTrigger>
             <TabsTrigger value="http">HTTP API</TabsTrigger>
+            <TabsTrigger value="websocket">WebSockets</TabsTrigger>
             <TabsTrigger value="custom">Custom Telemetry</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
@@ -74,7 +76,7 @@ export default function IntegrationGuide() {
 
               <section>
                 <h2 className="text-2xl font-semibold mb-4">Integration Methods</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 text-left"
@@ -147,6 +149,23 @@ export default function IntegrationGuide() {
                       </p>
                     </div>
                   </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 text-left highlight-new"
+                    onClick={() => setActiveTab("websocket")}
+                  >
+                    <div className="flex w-full items-center justify-between mb-2">
+                      <Radio className="h-5 w-5 text-primary" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-medium">WebSockets</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Real-time bidirectional communication
+                      </p>
+                    </div>
+                  </Button>
                 </div>
               </section>
 
@@ -212,6 +231,44 @@ export default function IntegrationGuide() {
                           }}
                         >
                           View notification details
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className="border rounded-lg p-4 cursor-pointer"
+                    onClick={() => toggleSection("realtime")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Radio className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-medium">Real-time Updates</h3>
+                      </div>
+                      {expandedSection === "realtime" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    </div>
+                    
+                    {expandedSection === "realtime" && (
+                      <div className="mt-4 pl-7">
+                        <p className="text-muted-foreground mb-2">
+                          Our platform now supports real-time telemetry updates via WebSockets:
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Persistent connections for continuous data streaming</li>
+                          <li>Reduced latency compared to HTTP requests</li>
+                          <li>Lower bandwidth consumption</li>
+                          <li>Bidirectional communication</li>
+                        </ul>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="mt-2 px-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTab("websocket");
+                          }}
+                        >
+                          View WebSocket integration details
                         </Button>
                       </div>
                     )}
@@ -305,6 +362,10 @@ export default function IntegrationGuide() {
                 </ul>
               </div>
             </section>
+          </TabsContent>
+          
+          <TabsContent value="websocket">
+            <WebSocketExample />
           </TabsContent>
           
           <TabsContent value="custom">

@@ -5,31 +5,29 @@ import { StatCards } from "./StatCards";
 import { RobotStatusGrid } from "./RobotStatusGrid";
 import { MapView } from "./MapView";
 import { AddRobotModal } from "./AddRobotModal";
-import { useRobots } from "@/hooks/useRobots";
 import { useAuth } from "@/context/AuthContext";
-import { Robot, UserProfile } from "@/types/robot";
-import { mapSupabaseRobotToAppRobot } from "@/utils/robotMapper";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
-import { SupabaseRobot } from "@/utils/robotMapper";
-import { RobotFilter } from "./RobotFilter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useRobotStore } from "@/store/robotStore";
+import { RobotFilter } from "./RobotFilter";
 
 export function Dashboard() {
-  const { robots: supabaseRobots, loading, fetchRobots } = useRobots();
   const { user } = useAuth();
+  const { 
+    robots, 
+    filteredRobots, 
+    isLoading, 
+    fetchRobots, 
+    updateRobotFromTelemetry,
+    setFilter 
+  } = useRobotStore();
   
-  // Map Supabase robots to application Robot type
-  const robots: Robot[] = supabaseRobots.map(mapSupabaseRobotToAppRobot);
-  
-  // Local state to manage robots for real-time updates
-  const [localRobots, setLocalRobots] = useState<Robot[]>([]);
-  const [filteredRobots, setFilteredRobots] = useState<Robot[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   // Load user profile data
@@ -54,16 +52,10 @@ export function Dashboard() {
     enabled: !!user?.id,
   });
   
-  // Initialize local robots when the data from useRobots changes
+  // Fetch robots data initially
   useEffect(() => {
-    if (supabaseRobots.length > 0) {
-      console.log("Updating local robots state with", supabaseRobots.length, "robots");
-      // Use a callback to avoid dependency on localRobots
-      const mapped = robots;
-      setLocalRobots(mapped);
-      setFilteredRobots(mapped);
-    }
-  }, [supabaseRobots]); // Only depend on supabaseRobots, not on the derived robots value
+    fetchRobots();
+  }, [fetchRobots]);
   
   // Handle refresh button click
   const handleRefresh = () => {
@@ -75,8 +67,8 @@ export function Dashboard() {
   };
   
   // Handle filter changes
-  const handleFilteredRobotsChange = (filtered: Robot[]) => {
-    setFilteredRobots(filtered);
+  const handleFilteredRobotsChange = (filtered) => {
+    setFilter('custom', filtered);
   };
   
   // Set up realtime subscription for robot and telemetry updates
@@ -92,97 +84,40 @@ export function Dashboard() {
         (payload) => {
           console.log('Robot update received in Dashboard:', payload);
           
-          // Handle different event types
-          if (payload.eventType === 'UPDATE') {
-            // Update the local robots state - ensure we have a valid SupabaseRobot
-            setLocalRobots(prevRobots => {
-              return prevRobots.map(robot => {
-                if (robot.id === payload.new.id) {
-                  console.log('Updating robot in local state:', payload.new);
-                  // Cast the payload to SupabaseRobot and use the mapper function
-                  const supabaseRobot = payload.new as SupabaseRobot;
-                  return mapSupabaseRobotToAppRobot(supabaseRobot);
-                }
-                return robot;
-              });
-            });
-          } else if (payload.eventType === 'INSERT') {
-            // Add the new robot to local state - ensure we have a valid SupabaseRobot
-            const supabaseRobot = payload.new as SupabaseRobot;
-            setLocalRobots(prevRobots => [
-              ...prevRobots, 
-              mapSupabaseRobotToAppRobot(supabaseRobot)
-            ]);
-          } else if (payload.eventType === 'DELETE') {
-            // Remove the deleted robot from local state
-            setLocalRobots(prevRobots => 
-              prevRobots.filter(robot => robot.id !== payload.old.id)
-            );
-          }
+          // The robots state is now handled by the robotStore
+          // We'll refresh the data to ensure everything is in sync
+          fetchRobots();
         }
       )
-      // Subscribe to telemetry changes - optimized to patch robot locally
+      // Subscribe to telemetry changes
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'telemetry' }, 
         (payload) => {
           console.log('New telemetry received:', payload);
           const robotId = payload.new.robot_id;
           
-          // Update the robot immediately with a proper pattern for state updates
-          setLocalRobots(prevRobots => {
-            // First find the robot to update in the current state
-            const robotToUpdate = prevRobots.find(r => r.id === robotId);
-            if (!robotToUpdate) return prevRobots; // No matching robot found
-            
-            // Only patch the specific properties that changed in the telemetry
-            const updatedFields: Partial<Robot> = {
-              lastHeartbeat: new Date().toISOString(),
-              status: 'online', // Set to online since we received telemetry
-            };
-            
-            // Add only the fields that are present in the telemetry payload
-            if (payload.new.battery_level !== null && payload.new.battery_level !== undefined) {
-              updatedFields.batteryLevel = payload.new.battery_level;
+          // Create telemetry data object
+          const telemetryData = {
+            batteryLevel: payload.new.battery_level,
+            temperature: payload.new.temperature,
+            location: payload.new.location,
+          };
+          
+          // Handle custom telemetry data
+          if (payload.new.motor_status) {
+            try {
+              const customData = typeof payload.new.motor_status === 'string' 
+                ? JSON.parse(payload.new.motor_status)
+                : payload.new.motor_status;
+              
+              telemetryData.customTelemetry = customData;
+            } catch (e) {
+              console.error("Error parsing custom telemetry:", e);
             }
-            
-            if (payload.new.temperature !== null && payload.new.temperature !== undefined) {
-              updatedFields.temperature = payload.new.temperature;
-            }
-            
-            if (payload.new.location) {
-              updatedFields.location = {
-                latitude: payload.new.location.latitude || 0,
-                longitude: payload.new.location.longitude || 0
-              };
-            }
-            
-            // Handle custom telemetry data
-            if (robotToUpdate.telemetryData && payload.new.motor_status) {
-              try {
-                const customData = typeof payload.new.motor_status === 'string' 
-                  ? JSON.parse(payload.new.motor_status)
-                  : payload.new.motor_status;
-                
-                updatedFields.telemetryData = {
-                  ...robotToUpdate.telemetryData,
-                  ...customData
-                };
-              } catch (e) {
-                console.error("Error parsing custom telemetry:", e);
-              }
-            }
-            
-            // Create the updated robots list
-            const updatedRobots = prevRobots.map(robot => {
-              if (robot.id === robotId) {
-                console.log(`Patching robot ${robot.name} with new telemetry data:`, updatedFields);
-                return { ...robot, ...updatedFields };
-              }
-              return robot;
-            });
-            
-            return updatedRobots;
-          });
+          }
+          
+          // Update robot state with new telemetry
+          updateRobotFromTelemetry(robotId, telemetryData);
         }
       )
       .subscribe((status) => {
@@ -198,9 +133,9 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, []); // Keep empty dependency array
+  }, []); // Empty dependency array to run once
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -210,8 +145,8 @@ export function Dashboard() {
     );
   }
 
-  // Important: render using localRobots which contains the real-time updates
-  const displayRobots = filteredRobots.length > 0 ? filteredRobots : localRobots;
+  // Use filteredRobots from our store
+  const displayRobots = filteredRobots;
 
   return (
     <div>
@@ -220,7 +155,7 @@ export function Dashboard() {
         <AddRobotModal />
       </div>
       
-      {localRobots.length > 0 ? (
+      {robots.length > 0 ? (
         <>
           <StatCards robots={displayRobots} />
           
@@ -229,6 +164,7 @@ export function Dashboard() {
             <AlertTitle>Telemetry Integration</AlertTitle>
             <AlertDescription>
               To send telemetry data to your robots, use each robot's API key. View API keys in the robot cards by clicking "API Integration".
+              You can now use WebSockets for real-time bidirectional communication!
             </AlertDescription>
           </Alert>
           
@@ -246,21 +182,21 @@ export function Dashboard() {
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
               <RobotFilter 
-                robots={localRobots}
-                userProfile={userProfile as UserProfile}
+                robots={robots}
+                userProfile={userProfile}
                 onFilteredRobotsChange={handleFilteredRobotsChange} 
               />
             </CollapsibleContent>
           </Collapsible>
           
-          {displayRobots.length !== localRobots.length && (
+          {displayRobots.length !== robots.length && (
             <div className="bg-muted p-2 rounded text-sm mb-4">
-              Showing {displayRobots.length} of {localRobots.length} robots
+              Showing {displayRobots.length} of {robots.length} robots
               {displayRobots.length === 0 && (
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-sm ml-2"
-                  onClick={() => setFilteredRobots(localRobots)}
+                  onClick={() => useRobotStore.getState().clearFilters()}
                 >
                   Clear filters
                 </Button>
