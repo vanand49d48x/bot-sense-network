@@ -3,3 +3,6 @@ project_id = "uwmbdporlrduzthgdmcg"
 
 [functions.websocket-telemetry]
 verify_jwt = false
+
+[functions.telemetry]
+verify_jwt = false

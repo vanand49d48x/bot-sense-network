@@ -26,8 +26,9 @@ serve(async (req) => {
       );
     }
 
-    // Check API key in header
-    const apiKey = req.headers.get("api-key");
+    // Check API key in header - check both 'api-key' and 'apikey' headers for flexibility
+    const apiKey = req.headers.get("api-key") || req.headers.get("apikey") || req.headers.get("authorization");
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
     console.log("Received API key:", apiKey ? "Present (redacted)" : "Missing");
     
     if (!apiKey) {
