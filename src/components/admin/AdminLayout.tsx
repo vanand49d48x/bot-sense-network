@@ -4,17 +4,19 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { AdminSidebar } from "./AdminSidebar";
+import { useEffect, useState } from "react";
 
 export function AdminLayout() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
+  const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
-  // Show loading state
-  if (loading) {
+  // Don't render anything until auth is done loading
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Verifying admin access...</span>
+        <span className="ml-2">Loading authentication...</span>
       </div>
     );
   }

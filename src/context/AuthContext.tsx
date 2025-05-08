@@ -23,13 +23,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
   const { toast } = useToast();
 
   // Check if the current user is an admin
   const checkAdminStatus = async (): Promise<boolean> => {
-    if (!user) return false;
+    if (!user || isCheckingAdmin) return false;
     
     try {
+      setIsCheckingAdmin(true);
       const { data, error } = await supabase.rpc('is_admin', {
         user_id: user.id
       });
@@ -44,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error("Exception checking admin status:", error);
       return false;
+    } finally {
+      setIsCheckingAdmin(false);
     }
   };
 
@@ -55,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check admin status when auth state changes
+        // Check admin status when auth state changes, but with setTimeout to prevent infinite loop
         if (session?.user) {
           setTimeout(() => {
             checkAdminStatus();
@@ -73,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check admin status on initial load
+        // Check admin status on initial load, but only if we have a user
         if (session?.user) {
           await checkAdminStatus();
         }
