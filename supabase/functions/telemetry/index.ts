@@ -12,14 +12,21 @@ serve(async (req) => {
   console.log(`Request method: ${req.method}`);
   console.log(`Request URL: ${req.url}`);
   
+  // Extract client info for logging
+  const clientInfo = req.headers.get("x-client-info") || "unknown";
+  const userAgent = req.headers.get("user-agent") || "unknown";
+  // Create a client identifier for logging
+  const clientId = `${clientInfo} | ${userAgent.substring(0, 50)}`;
+  console.log(`Request from client: ${clientId}`);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    console.log("Handling OPTIONS request (CORS preflight)");
+    console.log(`Handling OPTIONS request (CORS preflight) for client: ${clientId}`);
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("Creating Supabase client");
+    console.log(`Creating Supabase client for client: ${clientId}`);
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -27,7 +34,7 @@ serve(async (req) => {
     console.log("Supabase client created successfully");
 
     if (req.method !== "POST") {
-      console.log(`Invalid method: ${req.method}, expected POST`);
+      console.log(`Invalid method: ${req.method}, expected POST | Client: ${clientId}`);
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 405 }
@@ -35,7 +42,7 @@ serve(async (req) => {
     }
 
     // Enhanced logging for headers
-    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+    console.log(`Request headers for client ${clientId}:`, Object.fromEntries(req.headers.entries()));
     
     // Check API key in header with more flexible options
     const apiKey = req.headers.get("api-key") || 
@@ -43,10 +50,10 @@ serve(async (req) => {
                   req.headers.get("authorization") ||
                   req.headers.get("Authorization");
                   
-    console.log("API Key detected:", apiKey ? "✅ Present" : "❌ Missing");
+    console.log(`API Key detected for client ${clientId}:`, apiKey ? "✅ Present" : "❌ Missing");
     
     if (!apiKey) {
-      console.log("Authentication failed: No API key provided in headers");
+      console.log(`Authentication failed for client ${clientId}: No API key provided in headers`);
       return new Response(
         JSON.stringify({ 
           error: "API Key is required", 
@@ -61,9 +68,9 @@ serve(async (req) => {
     let telemetryData;
     try {
       telemetryData = await req.json();
-      console.log("Request body successfully parsed:", JSON.stringify(telemetryData));
+      console.log(`Request body successfully parsed from client ${clientId}:`, JSON.stringify(telemetryData));
     } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
+      console.error(`Failed to parse request body from client ${clientId}:`, parseError);
       return new Response(
         JSON.stringify({ error: "Invalid JSON in request body" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -72,8 +79,8 @@ serve(async (req) => {
     
     const { robotId, batteryLevel, temperature, status, location, timestamp, customTelemetry } = telemetryData;
     
-    console.log("Received telemetry for robot:", robotId);
-    console.log("Telemetry details:", {
+    console.log(`Received telemetry for robot ${robotId} from client ${clientId}`);
+    console.log(`Telemetry details from client ${clientId}:`, {
       batteryLevel,
       temperature,
       status,
@@ -83,7 +90,7 @@ serve(async (req) => {
     });
 
     if (!robotId) {
-      console.log("Missing required field: robotId");
+      console.log(`Missing required field: robotId | Client: ${clientId}`);
       return new Response(
         JSON.stringify({ error: "Robot ID is required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -91,7 +98,7 @@ serve(async (req) => {
     }
 
     // Find the user who owns the API key
-    console.log("Looking up user profile for API key");
+    console.log(`Looking up user profile for API key | Client: ${clientId}`);
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id, custom_telemetry_types")
@@ -99,11 +106,11 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      console.error("API key validation failed:", profileError || "No matching profile found");
-      console.log("API Key used:", apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length - 5));
+      console.error(`API key validation failed for client ${clientId}:`, profileError || "No matching profile found");
+      console.log(`API Key used by client ${clientId}:`, apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length - 5));
       
       // Try to find any profile with an API key for debugging
-      console.log("Attempting to debug API key issue...");
+      console.log(`Attempting to debug API key issue for client ${clientId}...`);
       const { data: allProfiles } = await supabaseClient
         .from("profiles")
         .select("id, api_key")
@@ -118,7 +125,7 @@ serve(async (req) => {
             `${p.api_key.substring(0, 5)}...${p.api_key.substring(p.api_key.length - 5)}` : 
             'No key'
         }));
-        console.log("Sample API keys in database:", maskedKeys);
+        console.log(`Sample API keys in database for client ${clientId}:`, maskedKeys);
       }
       
       return new Response(
@@ -131,10 +138,10 @@ serve(async (req) => {
       );
     }
 
-    console.log("Found profile for API key, user ID:", profileData.id);
+    console.log(`Found profile for API key, user ID: ${profileData.id} | Client: ${clientId}`);
 
     // Verify the robot exists and belongs to the user
-    console.log(`Verifying robot ${robotId} belongs to user ${profileData.id}`);
+    console.log(`Verifying robot ${robotId} belongs to user ${profileData.id} | Client: ${clientId}`);
     let { data: robot, error: robotError } = await supabaseClient
       .from("robots")
       .select("id, user_id")
@@ -144,18 +151,18 @@ serve(async (req) => {
 
     if (!robot) {
       // Try to find any robot with this ID
-      console.log(`Robot ${robotId} not found for user ${profileData.id}, checking all robots...`);
+      console.log(`Robot ${robotId} not found for user ${profileData.id}, checking all robots... | Client: ${clientId}`);
       const { data: allRobots, error: listError } = await supabaseClient
         .from("robots")
         .select("id, user_id");
         
       if (!listError && allRobots?.length > 0) {
-        console.log(`Found ${allRobots.length} robots in database`);
+        console.log(`Found ${allRobots.length} robots in database | Client: ${clientId}`);
         // Try to find a robot that matches
         robot = allRobots.find(r => r.id === robotId);
         
         if (!robot) {
-          console.error(`Robot ID ${robotId} not found in any user's robots`);
+          console.error(`Robot ID ${robotId} not found in any user's robots | Client: ${clientId}`);
           return new Response(
             JSON.stringify({ 
               error: "Robot not found", 
@@ -166,7 +173,7 @@ serve(async (req) => {
         }
         
         if (robot.user_id !== profileData.id) {
-          console.error(`Robot ${robotId} belongs to user ${robot.user_id}, not ${profileData.id}`);
+          console.error(`Robot ${robotId} belongs to user ${robot.user_id}, not ${profileData.id} | Client: ${clientId}`);
           return new Response(
             JSON.stringify({ 
               error: "Access denied", 
@@ -176,7 +183,7 @@ serve(async (req) => {
           );
         }
       } else {
-        console.error("No robots found in system or database error:", listError);
+        console.error(`No robots found in system or database error for client ${clientId}:`, listError);
         return new Response(
           JSON.stringify({ 
             error: "Database error", 
@@ -187,7 +194,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Verified robot ${robotId} belongs to user ${profileData.id}`);
+    console.log(`Verified robot ${robotId} belongs to user ${profileData.id} | Client: ${clientId}`);
 
     // Process and validate telemetry data
     // Convert location from client format (lat/lng) to database format (latitude/longitude) if needed
@@ -222,13 +229,13 @@ serve(async (req) => {
     }
     
     // Insert telemetry data
-    console.log("Inserting telemetry data into database");
+    console.log(`Inserting telemetry data into database for client ${clientId}`);
     const { data, error } = await supabaseClient
       .from("telemetry")
       .insert([telemetry]);
 
     if (error) {
-      console.error("Telemetry insert error:", error);
+      console.error(`Telemetry insert error for client ${clientId}:`, error);
       return new Response(
         JSON.stringify({ error: "Failed to insert telemetry", details: error }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -236,7 +243,7 @@ serve(async (req) => {
     }
 
     // Update robot status (last_ping, battery_level, etc.)
-    console.log(`Updating robot ${robotId} status information`);
+    console.log(`Updating robot ${robotId} status information for client ${clientId}`);
     const robotUpdate = {
       status: status === "ERROR" ? "offline" : status === "WARNING" ? "warning" : "online",
       battery_level: batteryLevel,
@@ -252,18 +259,21 @@ serve(async (req) => {
       .eq("id", robotId);
       
     if (updateError) {
-      console.error("Robot status update error:", updateError);
+      console.error(`Robot status update error for client ${clientId}:`, updateError);
       // Don't fail the whole request because of this - just log it
     }
 
-    console.log(`Successfully processed telemetry for robot ${robotId}`);
+    console.log(`Successfully processed telemetry for robot ${robotId} from client ${clientId}`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Telemetry data received", alertsProcessed: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Fatal error processing telemetry:", error);
+    const clientInfo = req.headers.get("x-client-info") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    const clientId = `${clientInfo} | ${userAgent.substring(0, 50)}`;
+    console.error(`Fatal error processing telemetry from client ${clientId}:`, error);
     return new Response(
       JSON.stringify({ 
         error: "Server error", 

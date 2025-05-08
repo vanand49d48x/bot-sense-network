@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,11 +16,15 @@ export function WebSocketExample() {
   const javascriptExample = `// Browser WebSocket Example
 const apiKey = 'YOUR_API_KEY';
 const robotId = 'YOUR_ROBOT_ID';
+const clientId = 'my-client-app-v1.0'; // Add a client identifier
 
 // Connect to the WebSocket server
 const wsUrl = 'wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId=' + robotId + '&api-key=' + apiKey;
 const ws = new WebSocket(wsUrl);
 
+// Define headers for the WebSocket connection
+// Note: Custom headers in WebSockets are limited by browser support
+// So we include client info as an HTTP header during the initial request
 ws.onopen = () => {
   console.log('WebSocket connection established');
   
@@ -38,7 +43,8 @@ ws.onopen = () => {
         errorCount: 0,
         armPosition: "extended"
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      clientId: clientId // Include client ID in the data payload
     };
     
     ws.send(JSON.stringify(telemetryData));
@@ -80,13 +86,20 @@ from datetime import datetime
 
 API_KEY = "YOUR_API_KEY"
 ROBOT_ID = "YOUR_ROBOT_ID"
+CLIENT_ID = "python-client-v2.1"  # Add a client identifier
 
 async def send_telemetry():
     # Connect to WebSocket server
     ws_url = f"wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId={ROBOT_ID}&api-key={API_KEY}"
     
+    # Custom headers to help with client identification
+    extra_headers = {
+        "User-Agent": f"PythonRobotClient/{CLIENT_ID}",
+        "X-Client-Info": CLIENT_ID
+    }
+    
     try:
-        async with websockets.connect(ws_url) as websocket:
+        async with websockets.connect(ws_url, extra_headers=extra_headers) as websocket:
             print("WebSocket connection established")
             
             # Send telemetry data every 5 seconds
@@ -104,7 +117,8 @@ async def send_telemetry():
                         "errorCount": 0,
                         "armPosition": "extended"
                     },
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "clientId": CLIENT_ID  # Include client ID in the data payload
                 }
                 
                 await websocket.send(json.dumps(telemetry_data))
@@ -133,10 +147,16 @@ const WebSocket = require('ws');
 
 const API_KEY = 'YOUR_API_KEY';
 const ROBOT_ID = 'YOUR_ROBOT_ID';
+const CLIENT_ID = 'nodejs-client-v1.5';  // Add a client identifier
 
-// Connect to the WebSocket server
+// Connect to the WebSocket server with client identification headers
 const wsUrl = \`wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId=\${ROBOT_ID}&api-key=\${API_KEY}\`;
-const ws = new WebSocket(wsUrl);
+const ws = new WebSocket(wsUrl, {
+  headers: {
+    'User-Agent': \`NodeRobotClient/\${CLIENT_ID}\`,
+    'X-Client-Info': CLIENT_ID
+  }
+});
 
 ws.on('open', () => {
   console.log('WebSocket connection established');
@@ -156,7 +176,8 @@ ws.on('open', () => {
         errorCount: 0,
         armPosition: "extended"
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      clientId: CLIENT_ID  // Include client ID in the data payload
     };
     
     ws.send(JSON.stringify(telemetryData));
@@ -290,6 +311,18 @@ ws.on('close', (code, reason) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <h3 className="text-blue-800 font-medium mb-2">Client Identification</h3>
+          <p className="text-blue-700 text-sm">
+            For better debugging and tracking, always include a client identifier in your requests. This helps us
+            diagnose issues specific to your implementation. You can do this in two ways:
+          </p>
+          <ul className="list-disc pl-5 mt-2 text-sm text-blue-700 space-y-1">
+            <li>Set a <code className="bg-blue-100 px-1 rounded">X-Client-Info</code> header during connection</li>
+            <li>Include a <code className="bg-blue-100 px-1 rounded">clientId</code> field in your telemetry data</li>
+          </ul>
+        </div>
+      
         <Tabs defaultValue="javascript" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="javascript">Browser JavaScript</TabsTrigger>

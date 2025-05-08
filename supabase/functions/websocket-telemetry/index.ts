@@ -27,10 +27,20 @@ serve(async (req) => {
     const url = new URL(req.url);
     const apiKey = req.headers.get("api-key") || url.searchParams.get("api-key");
     const robotId = url.searchParams.get("robotId");
+    
+    // Extract client info for logging
+    const clientInfo = req.headers.get("x-client-info") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    
+    // Create a client identifier for logging
+    const clientId = `${clientInfo} | ${userAgent.substring(0, 50)}`;
+    
+    console.log(`WebSocket connection request from client: ${clientId}`);
+    console.log(`Request URL: ${req.url}`);
 
     // Enhanced validation with more detailed error messages
     if (!apiKey) {
-      console.error("Missing API key in WebSocket connection attempt");
+      console.error(`Missing API key in WebSocket connection attempt from client: ${clientId}`);
       return new Response(JSON.stringify({ 
         error: "Authentication error", 
         details: "API Key is required. Please provide it in the 'api-key' header or as a query parameter."
@@ -41,7 +51,7 @@ serve(async (req) => {
     }
 
     if (!robotId) {
-      console.error("Missing robot ID in WebSocket connection attempt");
+      console.error(`Missing robot ID in WebSocket connection attempt from client: ${clientId}`);
       return new Response(JSON.stringify({ 
         error: "Missing parameter", 
         details: "Robot ID is required. Please provide it as the 'robotId' query parameter."
@@ -58,7 +68,7 @@ serve(async (req) => {
     );
 
     // Validate API key with enhanced error reporting
-    console.log(`Validating API key for WebSocket connection: ${apiKey.substring(0, 8)}...`);
+    console.log(`Validating API key for WebSocket connection: ${apiKey.substring(0, 8)}... | Client: ${clientId}`);
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id, custom_telemetry_types")
@@ -66,7 +76,7 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      console.error("Invalid API key in WebSocket connection:", profileError?.message || "No matching profile found");
+      console.error(`Invalid API key in WebSocket connection from client ${clientId}: ${profileError?.message || "No matching profile found"}`);
       return new Response(JSON.stringify({ 
         error: "Authentication failed", 
         details: "The provided API key is invalid or has been revoked. Please check your credentials."
@@ -76,10 +86,10 @@ serve(async (req) => {
       });
     }
 
-    console.log(`API key validated for user ID: ${profileData.id}`);
+    console.log(`API key validated for user ID: ${profileData.id} | Client: ${clientId}`);
 
     // Verify robot ownership with enhanced error reporting
-    console.log(`Verifying robot ownership: Robot ID ${robotId}, User ID ${profileData.id}`);
+    console.log(`Verifying robot ownership: Robot ID ${robotId}, User ID ${profileData.id} | Client: ${clientId}`);
     const { data: robot, error: robotError } = await supabaseClient
       .from("robots")
       .select("id, user_id")
@@ -88,7 +98,7 @@ serve(async (req) => {
       .single();
 
     if (robotError) {
-      console.error("Error verifying robot ownership:", robotError.message);
+      console.error(`Error verifying robot ownership for client ${clientId}: ${robotError.message}`);
       return new Response(
         JSON.stringify({ 
           error: "Database error", 
@@ -101,7 +111,7 @@ serve(async (req) => {
     }
 
     if (!robot) {
-      console.error(`Robot ownership verification failed: Robot ID ${robotId} does not belong to user ${profileData.id}`);
+      console.error(`Robot ownership verification failed for client ${clientId}: Robot ID ${robotId} does not belong to user ${profileData.id}`);
       return new Response(
         JSON.stringify({ 
           error: "Access denied", 
@@ -113,11 +123,11 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Robot ownership verified: Robot ID ${robotId} belongs to user ${profileData.id}`);
+    console.log(`Robot ownership verified for client ${clientId}: Robot ID ${robotId} belongs to user ${profileData.id}`);
 
     // If we got here, authentication is successful, upgrade to WebSocket
     const { socket, response } = Deno.upgradeWebSocket(req);
-    console.log(`WebSocket connection established for robot: ${robotId}`);
+    console.log(`WebSocket connection established for client ${clientId}, robot: ${robotId}`);
 
     // Process incoming messages
     socket.onopen = () => {
@@ -132,7 +142,7 @@ serve(async (req) => {
       try {
         // Parse the incoming telemetry data
         const telemetryData = JSON.parse(event.data);
-        console.log(`Received telemetry data for robot ${robotId}:`, telemetryData);
+        console.log(`Received telemetry data for robot ${robotId} from client ${clientId}:`, telemetryData);
 
         // Validate and extract the data
         const { batteryLevel, temperature, status, location, customTelemetry } = telemetryData;
@@ -171,8 +181,8 @@ serve(async (req) => {
           const incomingTypes = Object.keys(customTelemetry);
           
           // Log the custom telemetry data for debugging
-          console.log("Received custom telemetry via WebSocket:", JSON.stringify(customTelemetry));
-          console.log("User custom telemetry types:", JSON.stringify(userCustomTypes));
+          console.log(`Received custom telemetry via WebSocket from client ${clientId}:`, JSON.stringify(customTelemetry));
+          console.log(`User custom telemetry types for client ${clientId}:`, JSON.stringify(userCustomTypes));
           
           // Create alerts for any custom telemetry that exceeds thresholds
           const { data: alertsData } = await supabaseClient
@@ -182,16 +192,16 @@ serve(async (req) => {
             .single();
             
           if (alertsData?.custom_alerts && Array.isArray(alertsData.custom_alerts)) {
-            console.log("Custom alert settings:", JSON.stringify(alertsData.custom_alerts));
+            console.log(`Custom alert settings for client ${clientId}:`, JSON.stringify(alertsData.custom_alerts));
             
             for (const alert of alertsData.custom_alerts) {
               if (alert.enabled && incomingTypes.includes(alert.type)) {
                 const telemetryValue = customTelemetry[alert.type];
-                console.log(`Checking alert for ${alert.type}: value=${telemetryValue}, threshold=${alert.threshold}`);
+                console.log(`Checking alert for ${alert.type}: value=${telemetryValue}, threshold=${alert.threshold} | Client: ${clientId}`);
                 
                 // If this is a numeric value and exceeds threshold, create an alert
                 if (typeof telemetryValue === 'number' && telemetryValue >= alert.threshold) {
-                  console.log(`Creating alert for ${alert.type} with value ${telemetryValue}`);
+                  console.log(`Creating alert for ${alert.type} with value ${telemetryValue} | Client: ${clientId}`);
                   
                   const { data: alertInsert, error: alertError } = await supabaseClient
                     .from("alerts")
@@ -203,7 +213,7 @@ serve(async (req) => {
                     });
                     
                   if (alertError) {
-                    console.error("Error creating alert:", alertError);
+                    console.error(`Error creating alert for client ${clientId}:`, alertError);
                     socket.send(JSON.stringify({ 
                       warning: "Alert creation failed", 
                       details: "Failed to create alert for threshold violation",
@@ -226,7 +236,7 @@ serve(async (req) => {
               
               // Only create a default alert if there's no custom alert for this type
               if (!hasCustomAlert) {
-                console.log(`Creating default alert for ABCD with value ${abcdValue}`);
+                console.log(`Creating default alert for ABCD with value ${abcdValue} | Client: ${clientId}`);
                 await supabaseClient.from("alerts").insert({
                   robot_id: robotId,
                   type: 'ABCD',
@@ -244,7 +254,7 @@ serve(async (req) => {
           .insert([telemetry]);
 
         if (error) {
-          console.error("Telemetry insert error:", error);
+          console.error(`Telemetry insert error for client ${clientId}:`, error);
           socket.send(JSON.stringify({ 
             error: "Database error", 
             details: "Failed to insert telemetry data",
@@ -269,7 +279,7 @@ serve(async (req) => {
           .eq("id", robotId);
           
         if (updateError) {
-          console.error("Robot status update error:", updateError);
+          console.error(`Robot status update error for client ${clientId}:`, updateError);
           socket.send(JSON.stringify({ 
             warning: "Status update issue", 
             details: "Robot telemetry saved but status update failed",
@@ -285,7 +295,7 @@ serve(async (req) => {
         }));
 
       } catch (error) {
-        console.error("Error processing WebSocket message:", error);
+        console.error(`Error processing WebSocket message from client ${clientId}:`, error);
         socket.send(JSON.stringify({ 
           error: "Processing error", 
           details: "Failed to process telemetry data due to an error in the server",
@@ -296,17 +306,20 @@ serve(async (req) => {
     };
 
     socket.onerror = (e) => {
-      console.error("WebSocket error:", e);
+      console.error(`WebSocket error for client ${clientId}:`, e);
       // The socket.onerror handler cannot send messages as the connection may be broken
     };
 
     socket.onclose = () => {
-      console.log(`WebSocket connection closed for robot: ${robotId}`);
+      console.log(`WebSocket connection closed for client ${clientId}, robot: ${robotId}`);
     };
 
     return response;
   } catch (error) {
-    console.error("Error setting up WebSocket connection:", error);
+    const clientInfo = req.headers.get("x-client-info") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    const clientId = `${clientInfo} | ${userAgent.substring(0, 50)}`;
+    console.error(`Error setting up WebSocket connection for client ${clientId}:`, error);
     return new Response(JSON.stringify({ 
       error: "Server error", 
       details: "Failed to establish WebSocket connection due to a server error",
