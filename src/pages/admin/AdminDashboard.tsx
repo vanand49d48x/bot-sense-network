@@ -53,13 +53,17 @@ export default function AdminDashboard() {
         if (alertsError) throw alertsError;
 
         // Get active users (users with robots that pinged in the last 24h)
-        const { data: activeUsersData, error: activeUsersError } = await supabase
+        // Fix: Using a different approach to get unique user_ids
+        const { data: activeRobots, error: activeUsersError } = await supabase
           .from("robots")
           .select("user_id")
-          .gte("last_ping", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-          .unique();
+          .gte("last_ping", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
         if (activeUsersError) throw activeUsersError;
+
+        // Count unique active users
+        const activeUserIds = new Set(activeRobots?.map(robot => robot.user_id) || []);
+        const activeUsers = activeUserIds.size;
 
         // Get new users in the last 24h
         const { count: newUsers24h, error: newUsersError } = await supabase
@@ -73,7 +77,7 @@ export default function AdminDashboard() {
           totalUsers: totalUsers || 0,
           totalRobots: totalRobots || 0,
           totalAlerts: totalAlerts || 0,
-          activeUsers: activeUsersData?.length || 0,
+          activeUsers: activeUsers || 0,
           newUsers24h: newUsers24h || 0,
         });
       } catch (error) {
