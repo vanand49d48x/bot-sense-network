@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -257,7 +256,7 @@ ws.on('close', (code, reason) => {
     setHasError(false);
   };
 
-  // Example of common errors section
+  // Enhanced example of common errors section with improved error handling guidance
   const commonErrors = [
     {
       error: "Authentication failed",
@@ -273,6 +272,11 @@ ws.on('close', (code, reason) => {
       error: "Missing parameter",
       details: "Robot ID is required.",
       solution: "Include the robotId parameter in your WebSocket connection URL."
+    },
+    {
+      error: "502 Bad Gateway",
+      details: "This usually means there was a server-side error processing your request, often related to invalid parameters.",
+      solution: "Check your robot ID format - it must be a valid UUID. If you receive this error with a seemingly valid ID, the server may be unable to process your request due to an input format issue."
     }
   ];
 
@@ -381,7 +385,7 @@ ws.on('close', (code, reason) => {
           </div>
         </div>
         
-        {/* Common Errors Section */}
+        {/* Common Errors Section - Enhanced with 502 error explanation */}
         <div className="mt-6 border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle size={18} className="text-amber-500" />
@@ -396,6 +400,35 @@ ws.on('close', (code, reason) => {
                 <div className="text-sm mt-1"><span className="font-medium">Solution:</span> {error.solution}</div>
               </div>
             ))}
+          </div>
+        </div>
+        
+        {/* Error Handling Tips Section - New section */}
+        <div className="mt-6 border border-amber-200 bg-amber-50 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle size={18} className="text-amber-600" />
+            <h3 className="text-lg font-medium text-amber-800">WebSocket Error Handling Tips</h3>
+          </div>
+          
+          <div className="text-sm text-amber-800 space-y-3">
+            <p>
+              When implementing WebSocket clients, it's important to handle connection errors properly:
+            </p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>
+                <strong>502 Bad Gateway errors</strong> often indicate server-side validation failures. The server may 
+                have rejected your connection parameters (like an invalid UUID format) before the WebSocket could be established.
+              </li>
+              <li>
+                <strong>Implement reconnection logic</strong> with exponential backoff to handle temporary network issues.
+              </li>
+              <li>
+                <strong>Log both connection errors and message errors</strong> separately to help with debugging.
+              </li>
+              <li>
+                <strong>Consider implementing a health check mechanism</strong> to detect and recover from "zombie" connections.
+              </li>
+            </ul>
           </div>
         </div>
       </CardContent>
