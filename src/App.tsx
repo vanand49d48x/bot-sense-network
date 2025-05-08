@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,6 +37,14 @@ import ApiDocs from "./pages/ApiDocs";
 import Status from "./pages/Status";
 import Blog from "./pages/Blog";
 import ScrollToTop from "@/components/ScrollToTop";
+
+// Admin pages
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import RobotFleetManagement from "./pages/admin/RobotFleetManagement";
+import AnalyticsPage from "./pages/admin/AnalyticsPage";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +127,15 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="robots" element={<RobotFleetManagement />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
               
               {/* Legal Routes */}
               <Route path="/privacy" element={<Privacy />} />
