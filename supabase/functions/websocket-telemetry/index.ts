@@ -28,15 +28,24 @@ serve(async (req) => {
     const apiKey = req.headers.get("api-key") || url.searchParams.get("api-key");
     const robotId = url.searchParams.get("robotId");
 
+    // Enhanced validation with more detailed error messages
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "API Key is required" }), { 
+      console.error("Missing API key in WebSocket connection attempt");
+      return new Response(JSON.stringify({ 
+        error: "Authentication error", 
+        details: "API Key is required. Please provide it in the 'api-key' header or as a query parameter."
+      }), { 
         status: 401, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
     if (!robotId) {
-      return new Response(JSON.stringify({ error: "Robot ID is required" }), { 
+      console.error("Missing robot ID in WebSocket connection attempt");
+      return new Response(JSON.stringify({ 
+        error: "Missing parameter", 
+        details: "Robot ID is required. Please provide it as the 'robotId' query parameter."
+      }), { 
         status: 400, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
@@ -48,7 +57,8 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Validate API key
+    // Validate API key with enhanced error reporting
+    console.log(`Validating API key for WebSocket connection: ${apiKey.substring(0, 8)}...`);
     const { data: profileData, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id, custom_telemetry_types")
@@ -56,13 +66,20 @@ serve(async (req) => {
       .single();
 
     if (profileError || !profileData) {
-      return new Response(JSON.stringify({ error: "Invalid API key" }), { 
+      console.error("Invalid API key in WebSocket connection:", profileError?.message || "No matching profile found");
+      return new Response(JSON.stringify({ 
+        error: "Authentication failed", 
+        details: "The provided API key is invalid or has been revoked. Please check your credentials."
+      }), { 
         status: 401, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
-    // Verify robot ownership
+    console.log(`API key validated for user ID: ${profileData.id}`);
+
+    // Verify robot ownership with enhanced error reporting
+    console.log(`Verifying robot ownership: Robot ID ${robotId}, User ID ${profileData.id}`);
     const { data: robot, error: robotError } = await supabaseClient
       .from("robots")
       .select("id, user_id")
@@ -70,14 +87,33 @@ serve(async (req) => {
       .eq("user_id", profileData.id)
       .single();
 
-    if (robotError || !robot) {
+    if (robotError) {
+      console.error("Error verifying robot ownership:", robotError.message);
       return new Response(
-        JSON.stringify({ error: "Invalid robot ID or you don't have access to this robot" }), { 
-          status: 401, 
+        JSON.stringify({ 
+          error: "Database error", 
+          details: "Failed to verify robot ownership due to a database error. Please try again later."
+        }), { 
+          status: 500, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
     }
+
+    if (!robot) {
+      console.error(`Robot ownership verification failed: Robot ID ${robotId} does not belong to user ${profileData.id}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Access denied", 
+          details: "Invalid robot ID or you don't have access to this robot. Please check the robot ID and ensure it belongs to your account."
+        }), { 
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    console.log(`Robot ownership verified: Robot ID ${robotId} belongs to user ${profileData.id}`);
 
     // If we got here, authentication is successful, upgrade to WebSocket
     const { socket, response } = Deno.upgradeWebSocket(req);
@@ -85,7 +121,11 @@ serve(async (req) => {
 
     // Process incoming messages
     socket.onopen = () => {
-      socket.send(JSON.stringify({ status: "connected", message: "WebSocket connection established" }));
+      socket.send(JSON.stringify({ 
+        status: "connected", 
+        message: "WebSocket connection established",
+        robotId: robotId
+      }));
     };
 
     socket.onmessage = async (event) => {
@@ -164,7 +204,11 @@ serve(async (req) => {
                     
                   if (alertError) {
                     console.error("Error creating alert:", alertError);
-                    socket.send(JSON.stringify({ error: "Error creating alert", details: alertError }));
+                    socket.send(JSON.stringify({ 
+                      warning: "Alert creation failed", 
+                      details: "Failed to create alert for threshold violation",
+                      error: alertError.message
+                    }));
                   }
                 }
               }
@@ -201,7 +245,11 @@ serve(async (req) => {
 
         if (error) {
           console.error("Telemetry insert error:", error);
-          socket.send(JSON.stringify({ error: "Failed to insert telemetry", details: error }));
+          socket.send(JSON.stringify({ 
+            error: "Database error", 
+            details: "Failed to insert telemetry data",
+            message: error.message 
+          }));
           return;
         }
 
@@ -215,26 +263,41 @@ serve(async (req) => {
           telemetry_data: telemetryDataJson
         };
         
-        await supabaseClient
+        const { error: updateError } = await supabaseClient
           .from("robots")
           .update(robotUpdate)
           .eq("id", robotId);
+          
+        if (updateError) {
+          console.error("Robot status update error:", updateError);
+          socket.send(JSON.stringify({ 
+            warning: "Status update issue", 
+            details: "Robot telemetry saved but status update failed",
+            error: updateError.message
+          }));
+        }
 
         // Send confirmation back to client
         socket.send(JSON.stringify({ 
           success: true, 
-          message: "Telemetry data received", 
+          message: "Telemetry data received and processed successfully", 
           timestamp: new Date().toISOString() 
         }));
 
       } catch (error) {
         console.error("Error processing WebSocket message:", error);
-        socket.send(JSON.stringify({ error: "Failed to process telemetry data", details: error.message }));
+        socket.send(JSON.stringify({ 
+          error: "Processing error", 
+          details: "Failed to process telemetry data due to an error in the server",
+          message: error.message,
+          stack: error.stack
+        }));
       }
     };
 
     socket.onerror = (e) => {
       console.error("WebSocket error:", e);
+      // The socket.onerror handler cannot send messages as the connection may be broken
     };
 
     socket.onclose = () => {
@@ -244,7 +307,12 @@ serve(async (req) => {
     return response;
   } catch (error) {
     console.error("Error setting up WebSocket connection:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: "Server error", 
+      details: "Failed to establish WebSocket connection due to a server error",
+      message: error.message,
+      stack: error.stack
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
