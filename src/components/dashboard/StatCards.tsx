@@ -1,4 +1,3 @@
-
 import { 
   Battery, 
   MapPin, 
@@ -58,16 +57,16 @@ export function StatCards({ robots }: StatCardsProps) {
       {stats.map((stat) => (
         <Card 
           key={stat.title} 
-          className="animate-fade-in cursor-pointer hover:shadow-md transition-all"
+          className="animate-fade-in cursor-pointer hover:shadow-md transition-all dark:bg-card"
         >
           <Link to={stat.linkTo} className="block h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.className || ""}`} />
+              <CardTitle className="text-sm font-medium dark:text-card-foreground">{stat.title}</CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.className || "dark:text-card-foreground"}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
+              <div className="text-2xl font-bold dark:text-card-foreground">{stat.value}</div>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/80">{stat.description}</p>
             </CardContent>
           </Link>
         </Card>

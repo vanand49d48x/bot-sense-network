@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Robot, UserProfile } from "@/types/robot";
 import { RobotStatusCard } from "./RobotStatusCard";
@@ -176,9 +175,9 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
 
   if (robots.length === 0) {
     return (
-      <div className="text-center p-12 border border-dashed rounded-lg">
-        <h3 className="text-lg font-medium">No robots available</h3>
-        <p className="text-muted-foreground">Add robots to see their status here.</p>
+      <div className="text-center p-12 border border-dashed rounded-lg dark:border-muted-foreground/20">
+        <h3 className="text-lg font-medium dark:text-card-foreground">No robots available</h3>
+        <p className="text-muted-foreground dark:text-muted-foreground/80">Add robots to see their status here.</p>
       </div>
     );
   }
@@ -193,7 +192,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Robot Status</h2>
+      <h2 className="text-xl font-semibold mb-4 dark:text-card-foreground">Robot Status</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayRobots.map((robot) => (
@@ -204,7 +203,7 @@ export function RobotStatusGrid({ robots }: RobotStatusGridProps) {
       </div>
 
       <Dialog open={!!selectedRobot} onOpenChange={(open) => !open && setSelectedRobot(null)}>
-        <DialogContent className="sm:max-w-[800px] lg:max-w-[900px] w-[90vw]">
+        <DialogContent className="sm:max-w-[800px] lg:max-w-[900px] w-[90vw] dark:bg-card">
           {selectedRobot && userProfile && <RobotDetailView robot={selectedRobot} userProfile={userProfile} />}
         </DialogContent>
       </Dialog>

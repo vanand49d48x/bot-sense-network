@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Robot } from "@/types/robot";
 import { Progress } from "@/components/ui/progress";
@@ -83,12 +82,12 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
   const location = robot.location as { latitude: number, longitude: number } | null;
 
   return (
-    <Card className="animate-fade-in hover:shadow-md transition-shadow">
+    <Card className="animate-fade-in hover:shadow-md transition-shadow dark:bg-card">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">{robot.name}</CardTitle>
-            <div className="text-sm text-muted-foreground">{robot.model}</div>
+            <CardTitle className="text-lg font-bold dark:text-card-foreground">{robot.name}</CardTitle>
+            <div className="text-sm text-muted-foreground dark:text-muted-foreground/80">{robot.model}</div>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -96,7 +95,7 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
                 {robot.status === 'online' && (
                   <span className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 rounded-full bg-robot-online animate-ping-slow"></span>
                 )}
-                <span className="ml-2">{robot.status === 'online' ? 'Online' : robot.status === 'warning' ? 'Warning' : 'Offline'}</span>
+                <span className="ml-2 dark:text-card-foreground">{robot.status === 'online' ? 'Online' : robot.status === 'warning' ? 'Warning' : 'Offline'}</span>
               </Badge>
             </div>
             <AlertDialog>
@@ -105,21 +104,21 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  onClick={(e) => e.stopPropagation()} // Stop propagation to prevent detail view
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                  <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive dark:text-muted-foreground/80" />
                   <span className="sr-only">Delete robot</span>
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="dark:bg-card">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="dark:text-card-foreground">Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription className="dark:text-muted-foreground/80">
                     This will permanently delete {robot.name} and all associated data. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="dark:text-card-foreground">Cancel</AlertDialogCancel>
                   <AlertDialogAction 
                     onClick={handleDelete} 
                     disabled={isDeleting}
@@ -137,20 +136,20 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
         <div className="space-y-3">
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span>Battery</span>
-              <span className={getBatteryColor(robot.batteryLevel)}>{robot.batteryLevel}%</span>
+              <span className="dark:text-card-foreground">Battery</span>
+              <span className={`${getBatteryColor(robot.batteryLevel)} dark:text-opacity-90`}>{robot.batteryLevel}%</span>
             </div>
             <Progress value={robot.batteryLevel} className="h-1.5" />
           </div>
           
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Temperature</span>
-              <div className={getTemperatureColor(Number(robot.temperature))}>{robot.temperature}°C</div>
+              <span className="text-muted-foreground dark:text-muted-foreground/80">Temperature</span>
+              <div className={`${getTemperatureColor(Number(robot.temperature))} dark:text-opacity-90`}>{robot.temperature}°C</div>
             </div>
             <div>
-              <span className="text-muted-foreground">Last Heartbeat</span>
-              <div>{getLastHeartbeatText(robot.lastHeartbeat)}</div>
+              <span className="text-muted-foreground dark:text-muted-foreground/80">Last Heartbeat</span>
+              <div className="dark:text-card-foreground">{getLastHeartbeatText(robot.lastHeartbeat)}</div>
             </div>
           </div>
 
@@ -158,9 +157,9 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              className="w-full flex justify-between items-center text-xs" 
+              className="w-full flex justify-between items-center text-xs dark:text-card-foreground" 
               onClick={(e) => {
-                e.stopPropagation(); // Stop propagation to prevent detail view
+                e.stopPropagation();
                 setShowApiInfo(!showApiInfo);
               }}
             >
@@ -171,12 +170,12 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
             {showApiInfo && (
               <div 
                 className="mt-2 space-y-3"
-                onClick={(e) => e.stopPropagation()} // Stop propagation for the entire API section
+                onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-3 bg-muted/50 rounded-md">
-                  <div className="text-xs text-muted-foreground mb-1">Robot ID</div>
+                <div className="p-3 bg-muted/50 rounded-md dark:bg-muted/30">
+                  <div className="text-xs text-muted-foreground dark:text-muted-foreground/80 mb-1">Robot ID</div>
                   <div className="flex items-center gap-2">
-                    <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis">
+                    <code className="text-xs bg-background p-1 rounded border flex-1 overflow-hidden overflow-ellipsis dark:text-card-foreground">
                       {robot.id}
                     </code>
                     <Button 
@@ -185,13 +184,13 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
                       className="h-7 w-7 p-0" 
                       onClick={copyRobotId}
                     >
-                      <ClipboardCopy size={14} />
+                      <ClipboardCopy size={14} className="dark:text-card-foreground" />
                       <span className="sr-only">Copy Robot ID</span>
                     </Button>
                   </div>
                 </div>
 
-                <div className="text-xs text-muted-foreground mt-2 px-3">
+                <div className="text-xs text-muted-foreground dark:text-muted-foreground/80 mt-2 px-3">
                   Use the Robot ID and your account API key to send telemetry data via the API.
                 </div>
               </div>

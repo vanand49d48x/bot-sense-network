@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -35,10 +34,15 @@ export function RobotLimitAlert({ currentRobotCount }: RobotLimitAlertProps) {
     return null;
   }
   
+  // Custom dark mode classes for destructive and warning
+  const alertClass = isAtLimit
+    ? "bg-destructive/20 border-destructive text-destructive dark:bg-[#2a1515] dark:border-red-700 dark:text-red-300"
+    : "bg-amber-500/20 border-amber-500 text-amber-900 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-200";
+
   return (
-    <Alert variant="destructive" className={`mb-4 ${isAtLimit ? "bg-destructive/20" : "bg-amber-500/20"}`}>
+    <Alert variant="destructive" className={`mb-4 ${alertClass}`}>
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>
+      <AlertTitle className="font-bold">
         {isAtLimit ? "Robot Limit Reached" : "Approaching Robot Limit"}
       </AlertTitle>
       <AlertDescription className="flex flex-col gap-2">
@@ -52,7 +56,11 @@ export function RobotLimitAlert({ currentRobotCount }: RobotLimitAlertProps) {
             Either upgrade your plan or remove existing robots to add new ones.
           </p>
         )}
-        <Button asChild variant="outline" className="mt-2 w-full sm:w-auto">
+        <Button
+          asChild
+          variant="outline"
+          className="mt-2 w-full sm:w-auto border-destructive text-destructive dark:border-red-500 dark:text-red-200 dark:hover:bg-red-900/30 dark:hover:text-red-100"
+        >
           <Link to="/pricing">Upgrade Plan</Link>
         </Button>
       </AlertDescription>
