@@ -228,10 +228,10 @@ ws.on('close', (code, reason) => {
               "ERROR: Authentication failed - Details: The provided API key is invalid or has been revoked."
             ]);
             
-            // Fix: Change from toast({ title: ... }) to toast("Connection error", { description: ... })
+            // Fix: Using toast with compatible options (no variant property)
             toast("Connection error", {
               description: "Authentication failed. Invalid API key.",
-              variant: "destructive"
+              style: { backgroundColor: '#f44336', color: 'white' }
             });
 
             clearInterval(interval);
