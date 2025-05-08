@@ -1,7 +1,20 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 
 export default function AnalyticsPage() {
+  // Use state to control when components are mounted
+  const [isPageMounted, setIsPageMounted] = useState(false);
+  
+  // Control mounting/unmounting properly
+  useEffect(() => {
+    setIsPageMounted(true);
+    
+    return () => {
+      setIsPageMounted(false);
+    };
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>

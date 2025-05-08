@@ -8,11 +8,21 @@ import { useEffect, useState } from "react";
 
 export function AdminLayout() {
   const { user, loading: authLoading, isAdmin } = useAuth();
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const { toast } = useToast();
+  
+  // Control component mounting
+  useEffect(() => {
+    // Add a short delay to ensure all auth checks are completed
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [user, isAdmin, authLoading]);
 
-  // Don't render anything until auth is done loading
-  if (authLoading) {
+  // Don't render anything until auth is done loading and component is ready
+  if (authLoading || !isReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
