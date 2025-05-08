@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { ClipboardCopy, Play, AlertCircle } from "lucide-react";
 
 export function WebSocketExample() {
@@ -228,8 +228,8 @@ ws.on('close', (code, reason) => {
               "ERROR: Authentication failed - Details: The provided API key is invalid or has been revoked."
             ]);
             
-            toast({
-              title: "Connection error",
+            // Fix: Change from toast({ title: ... }) to toast("Connection error", { description: ... })
+            toast("Connection error", {
               description: "Authentication failed. Invalid API key.",
               variant: "destructive"
             });
