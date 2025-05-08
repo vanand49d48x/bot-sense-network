@@ -8,56 +8,36 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Robot } from "@/types/robot";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
 
 interface StatCardsProps {
   robots: Robot[];
 }
 
 export function StatCards({ robots }: StatCardsProps) {
-  // Create local state to ensure stable rendering
-  const [robotStats, setRobotStats] = useState({
-    totalRobots: 0,
-    onlineRobots: 0,
-    offlineRobots: 0,
-    warningRobots: 0
-  });
-
-  // Update stats when robots array changes
-  useEffect(() => {
-    if (robots.length > 0) {
-      const onlineCount = robots.filter(r => r.status === 'online').length;
-      const offlineCount = robots.filter(r => r.status === 'offline').length;
-      const warningCount = robots.filter(r => r.status === 'warning').length;
-      
-      setRobotStats({
-        totalRobots: robots.length,
-        onlineRobots: onlineCount,
-        offlineRobots: offlineCount,
-        warningRobots: warningCount
-      });
-    }
-  }, [robots]);
+  const totalRobots = robots.length;
+  const onlineRobots = robots.filter(r => r.status === 'online').length;
+  const offlineRobots = robots.filter(r => r.status === 'offline').length;
+  const warningRobots = robots.filter(r => r.status === 'warning').length;
   
   const stats = [
     {
       title: "Total Robots",
-      value: robotStats.totalRobots,
+      value: totalRobots,
       description: "Registered devices",
       icon: ArrowRight,
       linkTo: "/dashboard",
     },
     {
       title: "Online",
-      value: robotStats.onlineRobots,
-      description: `${robotStats.totalRobots ? Math.round((robotStats.onlineRobots / robotStats.totalRobots) * 100) : 0}% of fleet`,
+      value: onlineRobots,
+      description: `${totalRobots ? Math.round((onlineRobots / totalRobots) * 100) : 0}% of fleet`,
       icon: Battery,
       className: "text-robot-online",
       linkTo: "/fleet-status",
     },
     {
       title: "Warnings",
-      value: robotStats.warningRobots,
+      value: warningRobots,
       description: "Require attention",
       icon: Bell,
       className: "text-robot-warning",
@@ -65,7 +45,7 @@ export function StatCards({ robots }: StatCardsProps) {
     },
     {
       title: "Offline",
-      value: robotStats.offlineRobots,
+      value: offlineRobots,
       description: "Not responding",
       icon: MapPin,
       className: "text-robot-offline",

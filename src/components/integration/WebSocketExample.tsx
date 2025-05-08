@@ -3,28 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
-import { toast } from "sonner";
-import { ClipboardCopy, Play, AlertCircle } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
+import { ClipboardCopy, Play } from "lucide-react";
 
 export function WebSocketExample() {
   const [activeTab, setActiveTab] = useState("javascript");
   const [isLiveDemo, setIsLiveDemo] = useState(false);
   const [demoStatus, setDemoStatus] = useState<string | null>(null);
   const [demoLogs, setDemoLogs] = useState<string[]>([]);
-  const [hasError, setHasError] = useState(false);
 
   const javascriptExample = `// Browser WebSocket Example
 const apiKey = 'YOUR_API_KEY';
 const robotId = 'YOUR_ROBOT_ID';
-const clientId = 'my-client-app-v1.0'; // Add a client identifier
 
 // Connect to the WebSocket server
 const wsUrl = 'wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId=' + robotId + '&api-key=' + apiKey;
 const ws = new WebSocket(wsUrl);
 
-// Define headers for the WebSocket connection
-// Note: Custom headers in WebSockets are limited by browser support
-// So we include client info as an HTTP header during the initial request
 ws.onopen = () => {
   console.log('WebSocket connection established');
   
@@ -43,8 +38,7 @@ ws.onopen = () => {
         errorCount: 0,
         armPosition: "extended"
       },
-      timestamp: new Date().toISOString(),
-      clientId: clientId // Include client ID in the data payload
+      timestamp: new Date().toISOString()
     };
     
     ws.send(JSON.stringify(telemetryData));
@@ -54,15 +48,6 @@ ws.onopen = () => {
 ws.onmessage = (event) => {
   const response = JSON.parse(event.data);
   console.log('Received response:', response);
-  
-  // Check for errors or warnings
-  if (response.error) {
-    console.error('Error from server:', response.error, response.details);
-  }
-  
-  if (response.warning) {
-    console.warn('Warning from server:', response.warning, response.details);
-  }
 };
 
 ws.onerror = (error) => {
@@ -86,59 +71,40 @@ from datetime import datetime
 
 API_KEY = "YOUR_API_KEY"
 ROBOT_ID = "YOUR_ROBOT_ID"
-CLIENT_ID = "python-client-v2.1"  # Add a client identifier
 
 async def send_telemetry():
     # Connect to WebSocket server
     ws_url = f"wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId={ROBOT_ID}&api-key={API_KEY}"
     
-    # Custom headers to help with client identification
-    extra_headers = {
-        "User-Agent": f"PythonRobotClient/{CLIENT_ID}",
-        "X-Client-Info": CLIENT_ID
-    }
-    
-    try:
-        async with websockets.connect(ws_url, extra_headers=extra_headers) as websocket:
-            print("WebSocket connection established")
+    async with websockets.connect(ws_url) as websocket:
+        print("WebSocket connection established")
+        
+        # Send telemetry data every 5 seconds
+        while True:
+            telemetry_data = {
+                "batteryLevel": random.randint(50, 100),
+                "temperature": 25 + (random.random() * 10),
+                "status": "OK",
+                "location": {
+                    "latitude": 37.7749,
+                    "longitude": -122.4194 + (random.random() * 0.01)
+                },
+                "customTelemetry": {
+                    "motorSpeed": 1200 + random.randint(0, 100),
+                    "errorCount": 0,
+                    "armPosition": "extended"
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
             
-            # Send telemetry data every 5 seconds
-            while True:
-                telemetry_data = {
-                    "batteryLevel": random.randint(50, 100),
-                    "temperature": 25 + (random.random() * 10),
-                    "status": "OK",
-                    "location": {
-                        "latitude": 37.7749,
-                        "longitude": -122.4194 + (random.random() * 0.01)
-                    },
-                    "customTelemetry": {
-                        "motorSpeed": 1200 + random.randint(0, 100),
-                        "errorCount": 0,
-                        "armPosition": "extended"
-                    },
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "clientId": CLIENT_ID  # Include client ID in the data payload
-                }
-                
-                await websocket.send(json.dumps(telemetry_data))
-                print(f"Sent telemetry data: {telemetry_data}")
-                
-                # Wait for response
-                response = await websocket.recv()
-                response_data = json.loads(response)
-                print(f"Received response: {response}")
-                
-                # Handle errors or warnings
-                if "error" in response_data:
-                    print(f"ERROR: {response_data['error']} - {response_data.get('details', '')}")
-                
-                if "warning" in response_data:
-                    print(f"WARNING: {response_data['warning']} - {response_data.get('details', '')}")
-                
-                await asyncio.sleep(5)
-    except Exception as e:
-        print(f"Connection error: {str(e)}")
+            await websocket.send(json.dumps(telemetry_data))
+            print(f"Sent telemetry data: {telemetry_data}")
+            
+            # Wait for response
+            response = await websocket.recv()
+            print(f"Received response: {response}")
+            
+            await asyncio.sleep(5)
 
 asyncio.run(send_telemetry())`;
 
@@ -147,16 +113,10 @@ const WebSocket = require('ws');
 
 const API_KEY = 'YOUR_API_KEY';
 const ROBOT_ID = 'YOUR_ROBOT_ID';
-const CLIENT_ID = 'nodejs-client-v1.5';  // Add a client identifier
 
-// Connect to the WebSocket server with client identification headers
+// Connect to the WebSocket server
 const wsUrl = \`wss://uwmbdporlrduzthgdmcg.supabase.co/functions/v1/websocket-telemetry?robotId=\${ROBOT_ID}&api-key=\${API_KEY}\`;
-const ws = new WebSocket(wsUrl, {
-  headers: {
-    'User-Agent': \`NodeRobotClient/\${CLIENT_ID}\`,
-    'X-Client-Info': CLIENT_ID
-  }
-});
+const ws = new WebSocket(wsUrl);
 
 ws.on('open', () => {
   console.log('WebSocket connection established');
@@ -176,8 +136,7 @@ ws.on('open', () => {
         errorCount: 0,
         armPosition: "extended"
       },
-      timestamp: new Date().toISOString(),
-      clientId: CLIENT_ID  // Include client ID in the data payload
+      timestamp: new Date().toISOString()
     };
     
     ws.send(JSON.stringify(telemetryData));
@@ -186,27 +145,15 @@ ws.on('open', () => {
 });
 
 ws.on('message', (data) => {
-  const response = JSON.parse(data);
-  console.log('Received response:', response);
-  
-  // Handle errors or warnings
-  if (response.error) {
-    console.error('Error from server:', response.error);
-    console.error('Details:', response.details || 'No details provided');
-  }
-  
-  if (response.warning) {
-    console.warn('Warning from server:', response.warning);
-    console.warn('Details:', response.details || 'No details provided');
-  }
+  console.log('Received response:', JSON.parse(data));
 });
 
 ws.on('error', (error) => {
   console.error('WebSocket error:', error);
 });
 
-ws.on('close', (code, reason) => {
-  console.log(\`WebSocket connection closed: \${code} - \${reason || 'No reason provided'}\`);
+ws.on('close', () => {
+  console.log('WebSocket connection closed');
 });`;
 
   const copyToClipboard = (text: string) => {
@@ -219,7 +166,6 @@ ws.on('close', (code, reason) => {
   const startLiveDemo = () => {
     setIsLiveDemo(true);
     setDemoLogs(["Starting WebSocket connection simulation..."]);
-    setHasError(false);
     
     // Simulate WebSocket connection
     setTimeout(() => {
@@ -240,29 +186,10 @@ ws.on('close', (code, reason) => {
         ]);
 
         setTimeout(() => {
-          if (counter === 2) {
-            // Simulate an error on the second packet for demonstration
-            setHasError(true);
-            setDemoLogs(prev => [
-              ...prev, 
-              "ERROR: Authentication failed - Details: The provided API key is invalid or has been revoked."
-            ]);
-            
-            // Fix: Using toast with compatible options (no variant property)
-            toast("Connection error", {
-              description: "Authentication failed. Invalid API key.",
-              style: { backgroundColor: '#f44336', color: 'white' }
-            });
-
-            clearInterval(interval);
-            setDemoLogs(prev => [...prev, "Connection terminated due to authentication error.", "Please check your API key and try again."]);
-            setDemoStatus("error");
-          } else {
-            setDemoLogs(prev => [...prev, "Server response: Data received successfully"]);
-          }
+          setDemoLogs(prev => [...prev, "Server response: Data received successfully"]);
         }, 500);
         
-        if (counter >= 3 && !hasError) {
+        if (counter >= 3) {
           clearInterval(interval);
           setDemoLogs(prev => [...prev, "Demo completed. In a real implementation, this connection would stay open."]);
         }
@@ -274,32 +201,7 @@ ws.on('close', (code, reason) => {
     setIsLiveDemo(false);
     setDemoStatus(null);
     setDemoLogs([]);
-    setHasError(false);
   };
-
-  // Enhanced example of common errors section with improved error handling guidance
-  const commonErrors = [
-    {
-      error: "Authentication failed",
-      details: "The provided API key is invalid or has been revoked.",
-      solution: "Check that your API key is correct and still active in your account settings."
-    },
-    {
-      error: "Access denied",
-      details: "Invalid robot ID or you don't have access to this robot.",
-      solution: "Verify the robot ID is correct and belongs to your account."
-    },
-    {
-      error: "Missing parameter",
-      details: "Robot ID is required.",
-      solution: "Include the robotId parameter in your WebSocket connection URL."
-    },
-    {
-      error: "502 Bad Gateway",
-      details: "This usually means there was a server-side error processing your request, often related to invalid parameters.",
-      solution: "Check your robot ID format - it must be a valid UUID. If you receive this error with a seemingly valid ID, the server may be unable to process your request due to an input format issue."
-    }
-  ];
 
   return (
     <Card>
@@ -311,18 +213,6 @@ ws.on('close', (code, reason) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <h3 className="text-blue-800 font-medium mb-2">Client Identification</h3>
-          <p className="text-blue-700 text-sm">
-            For better debugging and tracking, always include a client identifier in your requests. This helps us
-            diagnose issues specific to your implementation. You can do this in two ways:
-          </p>
-          <ul className="list-disc pl-5 mt-2 text-sm text-blue-700 space-y-1">
-            <li>Set a <code className="bg-blue-100 px-1 rounded">X-Client-Info</code> header during connection</li>
-            <li>Include a <code className="bg-blue-100 px-1 rounded">clientId</code> field in your telemetry data</li>
-          </ul>
-        </div>
-      
         <Tabs defaultValue="javascript" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="javascript">Browser JavaScript</TabsTrigger>
@@ -394,13 +284,9 @@ ws.on('close', (code, reason) => {
           
           {demoStatus && (
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-3 h-3 rounded-full ${
-                demoStatus === 'connected' ? 'bg-green-500' : 
-                demoStatus === 'error' ? 'bg-red-500' : 'bg-amber-500'
-              }`}></div>
+              <div className={`w-3 h-3 rounded-full ${demoStatus === 'connected' ? 'bg-green-500' : 'bg-amber-500'}`}></div>
               <span className="text-sm font-medium">
-                {demoStatus === 'connected' ? 'Connected' : 
-                 demoStatus === 'error' ? 'Connection Error' : 'Connecting...'}
+                {demoStatus === 'connected' ? 'Connected' : 'Connecting...'}
               </span>
             </div>
           )}
@@ -408,7 +294,7 @@ ws.on('close', (code, reason) => {
           <div className="bg-black/90 text-green-400 p-3 rounded font-mono text-xs h-40 overflow-y-auto">
             {demoLogs.length > 0 ? (
               demoLogs.map((log, index) => (
-                <div key={index} className={`mb-1 ${log.includes("ERROR:") ? "text-red-400" : ""}`}>
+                <div key={index} className="mb-1">
                   {`> ${log}`}
                 </div>
               ))
@@ -417,64 +303,13 @@ ws.on('close', (code, reason) => {
             )}
           </div>
         </div>
-        
-        {/* Common Errors Section - Enhanced with 502 error explanation */}
-        <div className="mt-6 border rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle size={18} className="text-amber-500" />
-            <h3 className="text-lg font-medium">Common Error Responses</h3>
-          </div>
-          
-          <div className="space-y-4">
-            {commonErrors.map((error, index) => (
-              <div key={index} className="bg-muted/50 p-3 rounded">
-                <div className="font-medium text-red-500">{error.error}</div>
-                <div className="text-sm text-muted-foreground mt-1">{error.details}</div>
-                <div className="text-sm mt-1"><span className="font-medium">Solution:</span> {error.solution}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Error Handling Tips Section - New section */}
-        <div className="mt-6 border border-amber-200 bg-amber-50 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle size={18} className="text-amber-600" />
-            <h3 className="text-lg font-medium text-amber-800">WebSocket Error Handling Tips</h3>
-          </div>
-          
-          <div className="text-sm text-amber-800 space-y-3">
-            <p>
-              When implementing WebSocket clients, it's important to handle connection errors properly:
-            </p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>
-                <strong>502 Bad Gateway errors</strong> often indicate server-side validation failures. The server may 
-                have rejected your connection parameters (like an invalid UUID format) before the WebSocket could be established.
-              </li>
-              <li>
-                <strong>Implement reconnection logic</strong> with exponential backoff to handle temporary network issues.
-              </li>
-              <li>
-                <strong>Log both connection errors and message errors</strong> separately to help with debugging.
-              </li>
-              <li>
-                <strong>Consider implementing a health check mechanism</strong> to detect and recover from "zombie" connections.
-              </li>
-            </ul>
-          </div>
-        </div>
       </CardContent>
       <CardFooter className="flex flex-col items-start text-sm text-muted-foreground">
         <p className="mb-2">
           WebSocket connections maintain an open connection for bidirectional, real-time data transfer.
         </p>
-        <p className="mb-2">
-          This is ideal for robotics applications requiring continuous telemetry streams or low-latency communication.
-        </p>
         <p>
-          <strong>Error Handling:</strong> The WebSocket API provides detailed error messages to help you troubleshoot connection issues.
-          Check the response for error and details fields when a message is received.
+          This is ideal for robotics applications requiring continuous telemetry streams or low-latency communication.
         </p>
       </CardFooter>
     </Card>
