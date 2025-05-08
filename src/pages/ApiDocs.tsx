@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import PlaceholderLayout from "@/components/layout/PlaceholderLayout";
 import { Code } from "@/components/ui/code";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const ApiDocs = () => {
   useEffect(() => {
@@ -291,13 +291,13 @@ ws.onclose = () => {
           <p className="text-muted-foreground mb-6">
             Check out our integration guide for more examples and detailed documentation.
           </p>
-          <a 
-            href="/integration-guide" 
+          <Link 
+            to="/integration" 
             className="inline-flex items-center text-primary hover:underline"
           >
             View Integration Guide
             <ArrowRight className="ml-2 h-4 w-4" />
-          </a>
+          </Link>
         </div>
       </div>
     </PlaceholderLayout>

@@ -35,6 +35,7 @@ import Features from "./pages/Features";
 import ApiDocs from "./pages/ApiDocs";
 import Status from "./pages/Status";
 import Blog from "./pages/Blog";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
           <Sonner />
           <CookieConsent />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
