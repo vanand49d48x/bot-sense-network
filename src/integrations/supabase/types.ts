@@ -9,24 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      admin_users: {
-        Row: {
-          granted_at: string | null
-          granted_by: string | null
-          id: string
-        }
-        Insert: {
-          granted_at?: string | null
-          granted_by?: string | null
-          id: string
-        }
-        Update: {
-          granted_at?: string | null
-          granted_by?: string | null
-          id?: string
-        }
-        Relationships: []
-      }
       alerts: {
         Row: {
           created_at: string
@@ -294,14 +276,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_first_admin: {
-        Args: { admin_email: string }
-        Returns: undefined
-      }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
