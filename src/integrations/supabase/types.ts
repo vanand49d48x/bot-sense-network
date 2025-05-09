@@ -305,6 +305,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_if_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       create_first_admin: {
         Args: { admin_email: string }
         Returns: undefined

@@ -16,6 +16,7 @@ export function useRobots() {
   // Define fetchRobots here so it can be exported and used in Dashboard.tsx
   const fetchRobots = async () => {
     if (!session) {
+      setRobots([]);
       setLoading(false);
       return;
     }
@@ -29,10 +30,19 @@ export function useRobots() {
         .select('*')
         .eq('user_id', session.user.id);
 
-      if (error) throw error;
-      
-      console.log("Robots data fetched:", data?.length || 0, "robots");
-      setRobots(data || []);
+      if (error) {
+        console.error("Error fetching robots:", error);
+        toast({
+          title: "Error fetching robots",
+          description: error.message,
+          variant: "destructive",
+        });
+        // Still set empty array to prevent infinite loading
+        setRobots([]);
+      } else {
+        console.log("Robots data fetched:", data?.length || 0, "robots");
+        setRobots(data || []);
+      }
       
       // Fetch API key from profiles
       try {
@@ -42,7 +52,10 @@ export function useRobots() {
           .eq('id', session.user.id)
           .single();
           
-        if (!profileError) {
+        if (profileError) {
+          console.error("Error fetching API key:", profileError);
+          // Don't set toast here to avoid multiple errors for users
+        } else {
           setApiKey(profileData?.api_key || null);
           
           // If no API key exists, generate one
@@ -64,19 +77,13 @@ export function useRobots() {
               console.error("Error generating API key:", keyError);
             }
           }
-        } else {
-          console.error("Error fetching API key:", profileError);
         }
       } catch (profileFetchError) {
         console.error("Error in profile fetch:", profileFetchError);
       }
     } catch (error: any) {
       console.error("Error fetching robots:", error.message);
-      toast({
-        title: "Error fetching robots",
-        description: error.message,
-        variant: "destructive",
-      });
+      setRobots([]); // Set empty array to prevent infinite loading
     } finally {
       setLoading(false);
     }
@@ -85,6 +92,7 @@ export function useRobots() {
   // Fetch robots data and set up real-time subscription
   useEffect(() => {
     if (!session) {
+      setRobots([]);
       setLoading(false);
       return;
     }

@@ -16,15 +16,19 @@ import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function AppSidebar() {
   const { session } = useAuth();
+  const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
       checkAdminStatus();
+    } else {
+      setIsAdmin(false);
     }
   }, [session]);
 
@@ -33,18 +37,28 @@ export function AppSidebar() {
 
     try {
       setIsCheckingAdmin(true);
-      // Use the is_admin function instead of directly querying the admin_users table
+      // Use the is_admin security definer function to safely check admin status
       const { data, error } = await supabase
         .rpc('is_admin', { user_id: session.user.id });
 
       if (error) {
         console.error('Error checking admin status:', error);
+        toast({
+          title: "Error checking admin status",
+          description: error.message,
+          variant: "destructive",
+        });
         setIsAdmin(false);
       } else {
         setIsAdmin(!!data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in admin status check:', error);
+      toast({
+        title: "Error in admin status check",
+        description: error.message,
+        variant: "destructive",
+      });
       setIsAdmin(false);
     } finally {
       setIsCheckingAdmin(false);
