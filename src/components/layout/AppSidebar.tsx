@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -11,47 +10,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar";
-import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2, Shield } from "lucide-react";
+import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2 } from "lucide-react";
 import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 export function AppSidebar() {
   const { session } = useAuth();
-  const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!session?.user) {
-      setIsAdmin(false);
-      setIsLoading(false);
-      return;
-    }
-    
-    const checkAdminStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .rpc('check_if_admin', { user_id: session.user.id });
-
-        if (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(!!data);
-        }
-      } catch (error) {
-        console.error('Error in admin status check:', error);
-        setIsAdmin(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkAdminStatus();
-  }, [session]);
   
   const mainMenuItems = [
     {
@@ -85,15 +49,6 @@ export function AppSidebar() {
       url: "/profile",
     }
   ];
-
-  // Add admin link if user is admin
-  if (isAdmin) {
-    mainMenuItems.push({
-      title: "Admin",
-      icon: Shield,
-      url: "/admin",
-    });
-  }
 
   return (
     <Sidebar>

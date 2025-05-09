@@ -9,24 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      admin_users: {
-        Row: {
-          granted_at: string | null
-          granted_by: string | null
-          id: string
-        }
-        Insert: {
-          granted_at?: string | null
-          granted_by?: string | null
-          id: string
-        }
-        Update: {
-          granted_at?: string | null
-          granted_by?: string | null
-          id?: string
-        }
-        Relationships: []
-      }
       alerts: {
         Row: {
           created_at: string
@@ -60,7 +42,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_alerts_robotid"
+            foreignKeyName: "alerts_robot_id_fkey"
             columns: ["robot_id"]
             isOneToOne: false
             referencedRelation: "robots"
@@ -118,7 +100,6 @@ export type Database = {
           custom_alerts: Json[] | null
           custom_robot_types: string[] | null
           custom_telemetry_types: string[] | null
-          email: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -131,7 +112,6 @@ export type Database = {
           custom_alerts?: Json[] | null
           custom_robot_types?: string[] | null
           custom_telemetry_types?: string[] | null
-          email?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
@@ -144,7 +124,6 @@ export type Database = {
           custom_alerts?: Json[] | null
           custom_robot_types?: string[] | null
           custom_telemetry_types?: string[] | null
-          email?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -201,15 +180,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_robots_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -257,15 +228,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_subscriptions_user"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       telemetry: {
         Row: {
@@ -298,25 +261,22 @@ export type Database = {
           robot_id?: string
           temperature?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "telemetry_robot_id_fkey"
+            columns: ["robot_id"]
+            isOneToOne: false
+            referencedRelation: "robots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_if_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      create_first_admin: {
-        Args: { admin_email: string }
-        Returns: undefined
-      }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

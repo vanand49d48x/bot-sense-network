@@ -36,7 +36,6 @@ import ApiDocs from "./pages/ApiDocs";
 import Status from "./pages/Status";
 import Blog from "./pages/Blog";
 import ScrollToTop from "@/components/ScrollToTop";
-import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -116,14 +115,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <IntegrationGuide />
-                  </ProtectedRoute>
-                }
-              />
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute>
-                    <AdminDashboard />
                   </ProtectedRoute>
                 }
               />
