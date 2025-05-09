@@ -16,6 +16,7 @@ const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     checkAdminStatus();
@@ -25,12 +26,10 @@ const AdminDashboard = () => {
     if (!user) return;
 
     try {
-      // Using maybeSingle() instead of single() to handle the case where no row is returned
+      setIsLoading(true);
+      // Use the is_admin RPC function instead of querying the table directly
       const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
+        .rpc('is_admin', { user_id: user.id });
 
       if (error) throw error;
       setIsAdmin(!!data);
@@ -41,6 +40,8 @@ const AdminDashboard = () => {
         variant: "destructive",
       });
       setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,7 +49,7 @@ const AdminDashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (isAdmin === null) {
+  if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
@@ -122,4 +123,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;

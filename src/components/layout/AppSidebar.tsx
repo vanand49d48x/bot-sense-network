@@ -20,26 +20,34 @@ import { supabase } from "@/integrations/supabase/client";
 export function AppSidebar() {
   const { session } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
+    if (session?.user) {
+      checkAdminStatus();
+    }
   }, [session]);
 
   const checkAdminStatus = async () => {
     if (!session?.user) return;
 
     try {
+      setIsCheckingAdmin(true);
+      // Use the is_admin function instead of directly querying the admin_users table
       const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
+        .rpc('is_admin', { user_id: session.user.id });
 
-      if (error) throw error;
-      setIsAdmin(!!data);
+      if (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(!!data);
+      }
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('Error in admin status check:', error);
       setIsAdmin(false);
+    } finally {
+      setIsCheckingAdmin(false);
     }
   };
   

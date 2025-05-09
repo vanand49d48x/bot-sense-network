@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +15,10 @@ export function useRobots() {
 
   // Define fetchRobots here so it can be exported and used in Dashboard.tsx
   const fetchRobots = async () => {
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -31,36 +35,43 @@ export function useRobots() {
       setRobots(data || []);
       
       // Fetch API key from profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('api_key')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (profileError) {
-        console.error("Error fetching API key:", profileError);
-        // If there's an error, we'll try to set it anyway
-        setApiKey(null);
-      } else {
-        setApiKey(profileData?.api_key || null);
-      }
-      
-      // If no API key exists, generate one
-      if (!profileData?.api_key) {
-        const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-        
-        const { error: updateError } = await supabase
+      try {
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .update({ api_key: newApiKey })
-          .eq('id', session.user.id);
+          .select('api_key')
+          .eq('id', session.user.id)
+          .single();
           
-        if (!updateError) {
-          setApiKey(newApiKey);
+        if (!profileError) {
+          setApiKey(profileData?.api_key || null);
+          
+          // If no API key exists, generate one
+          if (!profileData?.api_key) {
+            try {
+              const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+              
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ api_key: newApiKey })
+                .eq('id', session.user.id);
+                
+              if (!updateError) {
+                setApiKey(newApiKey);
+              } else {
+                console.error("Error setting API key:", updateError);
+              }
+            } catch (keyError) {
+              console.error("Error generating API key:", keyError);
+            }
+          }
         } else {
-          console.error("Error setting API key:", updateError);
+          console.error("Error fetching API key:", profileError);
         }
+      } catch (profileFetchError) {
+        console.error("Error in profile fetch:", profileFetchError);
       }
     } catch (error: any) {
+      console.error("Error fetching robots:", error.message);
       toast({
         title: "Error fetching robots",
         description: error.message,
@@ -73,7 +84,10 @@ export function useRobots() {
 
   // Fetch robots data and set up real-time subscription
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     
     fetchRobots();
     
