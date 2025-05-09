@@ -10,37 +10,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar";
-import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2, Shield } from "lucide-react";
+import { Battery, MapPin, Bell, ArrowRight, Key, BarChart3, UserCog, Link2 } from "lucide-react";
 import { ApiKeySettings } from "./ApiKeySettings";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 export function AppSidebar() {
   const { session } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    checkAdminStatus();
-  }, [session]);
-
-  const checkAdminStatus = async () => {
-    if (!session?.user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) throw error;
-      setIsAdmin(!!data);
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-      setIsAdmin(false);
-    }
-  };
   
   const mainMenuItems = [
     {
@@ -74,15 +49,6 @@ export function AppSidebar() {
       url: "/profile",
     }
   ];
-
-  // Add admin link if user is admin
-  if (isAdmin) {
-    mainMenuItems.push({
-      title: "Admin",
-      icon: Shield,
-      url: "/admin",
-    });
-  }
 
   return (
     <Sidebar>
