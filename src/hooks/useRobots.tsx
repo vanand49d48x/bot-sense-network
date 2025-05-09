@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,41 +32,53 @@ export function useRobots() {
       setRobots(data || []);
       
       // Fetch API key from profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('api_key')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (profileError) {
-        console.error("Error fetching API key:", profileError);
-        // If there's an error, we'll try to set it anyway
-        setApiKey(null);
-      } else {
-        setApiKey(profileData?.api_key || null);
-      }
-      
-      // If no API key exists, generate one
-      if (!profileData?.api_key) {
-        const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-        
-        const { error: updateError } = await supabase
+      try {
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .update({ api_key: newApiKey })
-          .eq('id', session.user.id);
+          .select('api_key')
+          .eq('id', session.user.id)
+          .single();
           
-        if (!updateError) {
-          setApiKey(newApiKey);
+        if (profileError) {
+          console.error("Error fetching API key:", profileError);
+          // Don't throw error here, just log it and continue
+          setApiKey(null);
         } else {
-          console.error("Error setting API key:", updateError);
+          setApiKey(profileData?.api_key || null);
         }
+        
+        // If no API key exists, generate one
+        if (!profileData?.api_key) {
+          const newApiKey = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+          
+          try {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ api_key: newApiKey })
+              .eq('id', session.user.id);
+              
+            if (!updateError) {
+              setApiKey(newApiKey);
+            } else {
+              console.error("Error setting API key:", updateError);
+            }
+          } catch (updateErr) {
+            console.error("Exception when setting API key:", updateErr);
+          }
+        }
+      } catch (profileErr) {
+        console.error("Exception in profile handling:", profileErr);
+        // Continue execution even if profile API key handling fails
       }
     } catch (error: any) {
+      console.error("Error in fetchRobots:", error);
       toast({
         title: "Error fetching robots",
         description: error.message,
         variant: "destructive",
       });
+      // Set robots to empty array on error to prevent infinite loading
+      setRobots([]);
     } finally {
       setLoading(false);
     }
