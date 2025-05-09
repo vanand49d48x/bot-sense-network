@@ -59,14 +59,13 @@ export function Dashboard() {
   
   // Initialize local robots when the data from useRobots changes
   useEffect(() => {
-    if (supabaseRobots.length > 0 && !isInitialized) {
-      console.log("Initializing local robots state with", supabaseRobots.length, "robots");
+    if (!loading) {
       const mapped = supabaseRobots.map(mapSupabaseRobotToAppRobot);
       setLocalRobots(mapped);
       setFilteredRobots(mapped);
       setIsInitialized(true);
     }
-  }, [supabaseRobots, isInitialized]);
+  }, [supabaseRobots, loading]);
   
   // Handle refresh button click
   const handleRefresh = () => {
