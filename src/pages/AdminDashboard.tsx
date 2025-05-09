@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -24,11 +25,12 @@ const AdminDashboard = () => {
     if (!user) return;
 
     try {
+      // Using maybeSingle() instead of single() to handle the case where no row is returned
       const { data, error } = await supabase
         .from('admin_users')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setIsAdmin(!!data);

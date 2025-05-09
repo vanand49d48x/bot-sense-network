@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -32,7 +33,7 @@ export function AppSidebar() {
         .from('admin_users')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setIsAdmin(!!data);
