@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,11 +14,7 @@ export function useRobots() {
 
   // Define fetchRobots here so it can be exported and used in Dashboard.tsx
   const fetchRobots = async () => {
-    if (!session) {
-      console.log("No session available, cannot fetch robots");
-      setLoading(false);
-      return;
-    }
+    if (!session) return;
     
     try {
       setLoading(true);
@@ -30,10 +25,7 @@ export function useRobots() {
         .select('*')
         .eq('user_id', session.user.id);
 
-      if (error) {
-        console.error("Error fetching robots:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       console.log("Robots data fetched:", data?.length || 0, "robots");
       setRobots(data || []);
@@ -47,7 +39,7 @@ export function useRobots() {
         
       if (profileError) {
         console.error("Error fetching API key:", profileError);
-        // Don't throw error here, just set apiKey to null
+        // If there's an error, we'll try to set it anyway
         setApiKey(null);
       } else {
         setApiKey(profileData?.api_key || null);
@@ -68,29 +60,21 @@ export function useRobots() {
           console.error("Error setting API key:", updateError);
         }
       }
-      
-      // Set loading to false once everything is done
-      setLoading(false);
     } catch (error: any) {
-      console.error("Error in useRobots hook:", error);
       toast({
         title: "Error fetching robots",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
 
-  // Fetch robots data and set up real-time subscription whenever session changes
+  // Fetch robots data and set up real-time subscription
   useEffect(() => {
-    if (!session) {
-      console.log("No active session, skipping robot fetch");
-      setLoading(false);
-      return;
-    }
+    if (!session) return;
     
-    // Fetch initial data
     fetchRobots();
     
     // Set up realtime subscription for robot updates
@@ -140,7 +124,7 @@ export function useRobots() {
       console.log("Cleaning up realtime subscription in useRobots hook");
       supabase.removeChannel(robotsChannel);
     };
-  }, [session]);
+  }, [session, toast]);
 
   const addRobot = async (robot: Omit<Database['public']['Tables']['robots']['Insert'], 'user_id'>) => {
     try {
