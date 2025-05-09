@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -74,19 +75,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {session && (
-          <SidebarGroup className="mt-6">
-            <SidebarGroupLabel className="flex items-center gap-1">
-              <Key className="h-4 w-4" />
-              <span>API Integration</span>
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="p-2">
-                <ApiKeySettings />
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="flex items-center gap-1">
+            <Key className="h-4 w-4" />
+            <span>API Integration</span>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="p-2">
+              <ApiKeySettings />
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );

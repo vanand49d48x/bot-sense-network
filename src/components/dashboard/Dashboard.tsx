@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "./DashboardHeader";
 import { StatCards } from "./StatCards";
@@ -59,17 +60,18 @@ export function Dashboard() {
   
   // Initialize local robots when the data from useRobots changes
   useEffect(() => {
-    if (supabaseRobots.length > 0 && !isInitialized) {
+    if (!loading && supabaseRobots) {
       console.log("Initializing local robots state with", supabaseRobots.length, "robots");
       const mapped = supabaseRobots.map(mapSupabaseRobotToAppRobot);
       setLocalRobots(mapped);
       setFilteredRobots(mapped);
       setIsInitialized(true);
     }
-  }, [supabaseRobots, isInitialized]);
+  }, [supabaseRobots, loading]);
   
   // Handle refresh button click
   const handleRefresh = () => {
+    setIsInitialized(false);
     toast('Refreshing robot data...', {
       description: 'Fetching the latest robot status and telemetry',
       duration: 2000,
@@ -84,7 +86,7 @@ export function Dashboard() {
   
   // Set up realtime subscription for robot and telemetry updates
   useEffect(() => {
-    if (!isInitialized) return; // Don't set up subscriptions until initial data is loaded
+    if (!isInitialized || !user?.id) return; // Don't set up subscriptions until initial data is loaded
     
     console.log("Setting up realtime subscriptions...");
     
@@ -191,9 +193,11 @@ export function Dashboard() {
       console.log("Cleaning up realtime subscriptions");
       supabase.removeChannel(channel);
     };
-  }, [isInitialized]); // Only set up subscriptions after initialization
+  }, [isInitialized, user?.id]); // Only set up subscriptions after initialization
   
-  if (loading || !isInitialized) {
+  const showEmptyState = !loading && isInitialized && localRobots.length === 0;
+  
+  if (loading && !isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -235,7 +239,13 @@ export function Dashboard() {
         />
       )}
       
-      {localRobots.length > 0 ? (
+      {showEmptyState ? (
+        <div className="text-center py-8 mt-8 border border-dashed rounded-lg p-6">
+          <h3 className="text-lg font-medium mb-2">No robots found</h3>
+          <p className="text-muted-foreground mb-4">Add your first robot to get started monitoring your fleet.</p>
+          <AddRobotModal disabled={isAtRobotLimit} variant="default" />
+        </div>
+      ) : (
         <>
           <StatCards robots={displayRobots} />
           <div className="mt-4">
@@ -245,10 +255,6 @@ export function Dashboard() {
             <MapView robots={allowedRobots} />
           </div>
         </>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No robots found. Add your first robot to get started.</p>
-        </div>
       )}
     </div>
   );
