@@ -45,14 +45,41 @@ serve(async (req) => {
     // Authenticate the user with the provided token
     const token = authHeader.replace("Bearer ", "");
     logStep("Authenticating user with token");
-    
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData.user) {
       throw new Error("User not authenticated");
     }
-
     const user = userData.user;
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    logStep("User authenticated", {
+      userId: user.id,
+      email: user.email
+    });
+
+    // --- NEW: Check for Free Tier subscription in DB first ---
+    const { data: dbSub, error: dbSubError } = await supabaseClient
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (dbSub && dbSub.plan_name === "Free Tier" && dbSub.status === "active") {
+      logStep("Found active Free Tier subscription in DB", dbSub);
+      return new Response(
+        JSON.stringify({
+          active: true,
+          plan: "Free Tier",
+          trial_status: dbSub.trial_status,
+          subscription_end: dbSub.trial_ended_at,
+          // ...other fields as needed
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
 
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
