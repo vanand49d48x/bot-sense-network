@@ -10,8 +10,36 @@ export function useRobots() {
   const [robots, setRobots] = useState<SupabaseRobot[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const { session } = useAuth();
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!session?.user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .rpc('check_if_admin', { user_id: session.user.id });
+        
+        if (error) {
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!data);
+        }
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdmin();
+  }, [session]);
 
   // Define fetchRobots here so it can be exported and used in Dashboard.tsx
   const fetchRobots = async () => {
@@ -25,10 +53,18 @@ export function useRobots() {
       setLoading(true);
       console.log("Fetching robots data...");
       
-      const { data, error } = await supabase
-        .from('robots')
-        .select('*')
-        .eq('user_id', session.user.id);
+      let robotQuery;
+      
+      // Admin can see all robots, regular users only see their own
+      if (isAdmin) {
+        robotQuery = supabase.from('robots').select('*');
+      } else {
+        robotQuery = supabase.from('robots')
+          .select('*')
+          .eq('user_id', session.user.id);
+      }
+      
+      const { data, error } = await robotQuery;
 
       if (error) {
         console.error("Error fetching robots:", error);
@@ -37,7 +73,6 @@ export function useRobots() {
           description: error.message,
           variant: "destructive",
         });
-        // Still set empty array to prevent infinite loading
         setRobots([]);
       } else {
         console.log("Robots data fetched:", data?.length || 0, "robots");
@@ -54,7 +89,6 @@ export function useRobots() {
           
         if (profileError) {
           console.error("Error fetching API key:", profileError);
-          // Don't set toast here to avoid multiple errors for users
         } else {
           setApiKey(profileData?.api_key || null);
           
@@ -108,8 +142,8 @@ export function useRobots() {
           console.log("Robots change detected in useRobots hook:", payload.eventType, payload);
           
           if (payload.eventType === 'INSERT') {
-            // Only add if the robot belongs to the current user
-            if (payload.new.user_id === session.user.id) {
+            // Only add if admin or if the robot belongs to the current user
+            if (isAdmin || payload.new.user_id === session.user.id) {
               // Add new robot to the state
               setRobots(prev => [...prev, payload.new as SupabaseRobot]);
               console.log(`Robot inserted: ${payload.new.name}`);
@@ -146,7 +180,7 @@ export function useRobots() {
       console.log("Cleaning up realtime subscription in useRobots hook");
       supabase.removeChannel(robotsChannel);
     };
-  }, [session, toast]);
+  }, [session, toast, isAdmin]);
 
   const addRobot = async (robot: Omit<Database['public']['Tables']['robots']['Insert'], 'user_id'>) => {
     try {
@@ -202,5 +236,5 @@ export function useRobots() {
   };
 
   // Export the fetchRobots function along with other values
-  return { robots, loading, apiKey, addRobot, deleteRobot, fetchRobots };
+  return { robots, loading, apiKey, isAdmin, addRobot, deleteRobot, fetchRobots };
 }

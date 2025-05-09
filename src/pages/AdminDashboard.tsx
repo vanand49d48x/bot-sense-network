@@ -27,9 +27,9 @@ const AdminDashboard = () => {
 
     try {
       setIsLoading(true);
-      // Use the is_admin RPC function instead of querying the table directly
+      // Use the check_if_admin RPC function instead of is_admin
       const { data, error } = await supabase
-        .rpc('is_admin', { user_id: user.id });
+        .rpc('check_if_admin', { user_id: user.id });
 
       if (error) throw error;
       setIsAdmin(!!data);

@@ -22,48 +22,36 @@ export function AppSidebar() {
   const { session } = useAuth();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (session?.user) {
-      checkAdminStatus();
-    } else {
+    if (!session?.user) {
       setIsAdmin(false);
+      setIsLoading(false);
+      return;
     }
-  }, [session]);
+    
+    const checkAdminStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .rpc('check_if_admin', { user_id: session.user.id });
 
-  const checkAdminStatus = async () => {
-    if (!session?.user) return;
-
-    try {
-      setIsCheckingAdmin(true);
-      // Use the is_admin security definer function to safely check admin status
-      const { data, error } = await supabase
-        .rpc('is_admin', { user_id: session.user.id });
-
-      if (error) {
-        console.error('Error checking admin status:', error);
-        toast({
-          title: "Error checking admin status",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!data);
+        }
+      } catch (error) {
+        console.error('Error in admin status check:', error);
         setIsAdmin(false);
-      } else {
-        setIsAdmin(!!data);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error: any) {
-      console.error('Error in admin status check:', error);
-      toast({
-        title: "Error in admin status check",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsAdmin(false);
-    } finally {
-      setIsCheckingAdmin(false);
-    }
-  };
+    };
+    
+    checkAdminStatus();
+  }, [session]);
   
   const mainMenuItems = [
     {
