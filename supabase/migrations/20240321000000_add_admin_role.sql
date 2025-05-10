@@ -1,5 +1,16 @@
 -- Add admin role column to profiles table
-ALTER TABLE profiles ADD COLUMN is_admin BOOLEAN DEFAULT false;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_name = 'profiles'
+  ) THEN
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+  END IF;
+END
+$$;
+
+
 
 -- Create a policy to allow admins to access all data
 CREATE POLICY "Admins can access all data" ON profiles
