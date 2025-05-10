@@ -22,13 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type User = {
-  id: string;
+  admin_user_id: string;
   email: string;
   created_at: string;
-  last_sign_in_at: string | null;
   first_name: string | null;
   last_name: string | null;
-  avatar_url: string | null;
 };
 
 const UserManagement = () => {
@@ -44,7 +42,7 @@ const UserManagement = () => {
     try {
       setLoading(true);
       const { data: users, error } = await supabase
-        .from('profiles')
+        .from('user_admin_view')
         .select('*');
 
       if (error) throw error;
@@ -115,31 +113,25 @@ const UserManagement = () => {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Created</TableHead>
-            <TableHead>Last Sign In</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.map((user) => (
-            <TableRow key={user.id}>
+            <TableRow key={user.admin_user_id}>
               <TableCell>
-                {user.first_name} {user.last_name}
+                {user.first_name || ''} {user.last_name || ''}
               </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>
                 {new Date(user.created_at).toLocaleDateString()}
               </TableCell>
               <TableCell>
-                {user.last_sign_in_at
-                  ? new Date(user.last_sign_in_at).toLocaleDateString()
-                  : 'Never'}
-              </TableCell>
-              <TableCell>
                 <div className="space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteUser(user.id)}
+                    onClick={() => handleDeleteUser(user.admin_user_id)}
                   >
                     Delete
                   </Button>

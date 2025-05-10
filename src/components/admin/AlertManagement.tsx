@@ -11,6 +11,15 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useDebounce } from "../../hooks/useDebounce";
 
 type Alert = {
   id: string;
@@ -33,6 +42,16 @@ type User = {
   id: string;
   first_name: string | null;
   last_name: string | null;
+  email?: string;
+};
+
+type SupabaseUser = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  user: {
+    email: string;
+  } | null;
 };
 
 const AlertManagement = () => {
@@ -41,52 +60,57 @@ const AlertManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [filter, setFilter] = useState({ userId: 'all', robotId: 'all', type: 'all' });
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [filter, debouncedSearch]);
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
       // Step 1: Fetch alerts
-      const { data: alerts, error: alertsError } = await supabase
+      let alertQuery = supabase
         .from('alerts')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      if (filter.userId && filter.userId !== 'all') {
+        alertQuery = alertQuery.eq('user_id', filter.userId);
+      }
+      if (filter.robotId && filter.robotId !== 'all') {
+        alertQuery = alertQuery.eq('robot_id', filter.robotId);
+      }
+      if (filter.type && filter.type !== 'all') {
+        alertQuery = alertQuery.eq('type', filter.type);
+      }
+      if (debouncedSearch) {
+        alertQuery = alertQuery.ilike('message', `%${debouncedSearch}%`);
+      }
+
+      const { data: alerts, error: alertsError } = await alertQuery;
       if (alertsError) throw alertsError;
+
+      // Step 2: Fetch robots for the dropdown
+      const { data: robots, error: robotsError } = await supabase
+        .from('robots')
+        .select('id, name, type, user_id');
+      if (robotsError) throw robotsError;
+
+      // Step 3: Fetch users for the dropdown
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email');
+      if (usersError) throw usersError;
+
       setAlerts(alerts || []);
-
-      // Step 2: Fetch robots for those alerts
-      const robotIds = Array.from(new Set((alerts || []).map(a => a.robot_id).filter(Boolean)));
-      let robots: Robot[] = [];
-      if (robotIds.length > 0) {
-        const { data: robotsData, error: robotsError } = await supabase
-          .from('robots')
-          .select('id, name, type, user_id')
-          .in('id', robotIds);
-        if (robotsError) throw robotsError;
-        robots = robotsData || [];
-        setRobots(robots);
-      } else {
-        setRobots([]);
-      }
-
-      // Step 3: Fetch users for those robots
-      const userIds = Array.from(new Set((robots || []).map(r => r.user_id).filter(Boolean)));
-      if (userIds.length > 0) {
-        const { data: usersData, error: usersError } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name')
-          .in('id', userIds);
-        if (usersError) throw usersError;
-        setUsers(usersData || []);
-      } else {
-        setUsers([]);
-      }
+      setRobots(robots || []);
+      setUsers(users || []);
     } catch (error: any) {
       toast({
-        title: "Error fetching alerts",
+        title: "Error fetching data",
         description: error.message,
         variant: "destructive",
       });
@@ -150,8 +174,65 @@ const AlertManagement = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h2 className="text-2xl font-bold">Alerts</h2>
+        <div className="flex flex-wrap gap-2 items-center bg-muted/50 p-3 rounded-md shadow-sm">
+          <Select value={filter.userId} onValueChange={v => setFilter(f => ({ ...f, userId: v }))}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by User" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map(u => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.first_name} {u.last_name} ({u.email || 'No email'})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filter.robotId} onValueChange={v => setFilter(f => ({ ...f, robotId: v }))}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by Robot" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Robots</SelectItem>
+              {robots.map(r => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.name} ({r.type})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filter.type} onValueChange={v => setFilter(f => ({ ...f, type: v }))}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Alert Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="error">Error</SelectItem>
+              <SelectItem value="warning">Warning</SelectItem>
+              <SelectItem value="info">Info</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Input
+            className="w-48"
+            placeholder="Search by Message"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <Button 
+            variant="outline" 
+            onClick={() => { 
+              setFilter({ userId: 'all', robotId: 'all', type: 'all' }); 
+              setSearch(''); 
+            }}
+          >
+            Clear
+          </Button>
+        </div>
       </div>
 
       <Table>

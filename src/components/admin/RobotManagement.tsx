@@ -21,6 +21,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDebounce } from "../../hooks/useDebounce";
+import type { ReactNode } from 'react';
 
 type Robot = {
   id: string;
@@ -45,25 +48,40 @@ const RobotManagement = () => {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [users, setUsers] = useState<any[]>([]);
+  const [robotTypes, setRobotTypes] = useState<string[]>([]);
+  const [filter, setFilter] = useState({ userId: 'all', name: '', type: 'all' });
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+
+  useEffect(() => {
+    fetchUsersAndTypes();
+  }, []);
 
   useEffect(() => {
     fetchRobots();
-  }, []);
+  }, [filter, debouncedSearch]);
+
+  const fetchUsersAndTypes = async () => {
+    // Fetch all users for dropdown
+    const { data: profiles } = await supabase.from('profiles').select('id, email, first_name, last_name');
+    setUsers(profiles || []);
+    // Fetch all robot types for dropdown
+    const { data: robots } = await supabase.from('robots').select('type');
+    const types = Array.from(new Set((robots || []).map((r: any) => r.type))).filter(Boolean);
+    setRobotTypes(types);
+  };
 
   const fetchRobots = async () => {
     try {
       setLoading(true);
-      const { data: robots, error } = await supabase
+      let query = supabase
         .from('robots')
-        .select(`
-          *,
-          user:user_id (
-            id,
-            first_name,
-            last_name
-          )
-        `);
-
+        .select(`*, user:profiles!inner(id, email, first_name, last_name)`);
+      if (filter.userId && filter.userId !== 'all') query = query.eq('user_id', filter.userId);
+      if (filter.type && filter.type !== 'all') query = query.eq('type', filter.type);
+      if (debouncedSearch) query = query.ilike('name', `%${debouncedSearch}%`);
+      const { data: robots, error } = await query;
       if (error) throw error;
       setRobots(robots || []);
     } catch (error: any) {
@@ -119,8 +137,39 @@ const RobotManagement = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h2 className="text-2xl font-bold">Robots</h2>
+        <div className="flex flex-wrap gap-2 items-center bg-muted/50 p-3 rounded-md shadow-sm">
+          <Select value={filter.userId} onValueChange={v => setFilter(f => ({ ...f, userId: v }))}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by User" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              {users.map(u => (
+                <SelectItem key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.email})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filter.type} onValueChange={v => setFilter(f => ({ ...f, type: v }))}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Robot Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {robotTypes.map(type => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            className="w-48"
+            placeholder="Search by Name"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <Button variant="outline" onClick={() => { setFilter({ userId: 'all', name: '', type: 'all' }); setSearch(''); }}>Clear</Button>
+        </div>
         <Dialog>
           <DialogTrigger asChild>
             <Button>Add Robot</Button>
@@ -175,9 +224,25 @@ const RobotManagement = () => {
                 </Badge>
               </TableCell>
               <TableCell>
-                {robot.user?.profile?.first_name} {robot.user?.profile?.last_name}
-                <br />
-                <span className="text-sm text-gray-500">{robot.user?.email}</span>
+                {robot.user && typeof robot.user === 'object' ? (
+                  'first_name' in robot.user || 'last_name' in robot.user ? (
+                    <>
+                      {('first_name' in robot.user ? robot.user.first_name : '') as ReactNode} {('last_name' in robot.user ? robot.user.last_name : '') as ReactNode}
+                      <br />
+                      <span className="text-sm text-gray-500">{robot.user.email as ReactNode}</span>
+                    </>
+                  ) : ('profile' in robot.user && robot.user.profile) ? (
+                    <>
+                      {robot.user.profile.first_name as ReactNode || ''} {robot.user.profile.last_name as ReactNode || ''}
+                      <br />
+                      <span className="text-sm text-gray-500">{robot.user.email as ReactNode}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-gray-400">Unknown</span>
+                  )
+                ) : (
+                  <span className="text-sm text-gray-400">Unknown</span>
+                )}
               </TableCell>
               <TableCell>
                 {robot.last_ping
