@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [email, setEmail] = React.useState("");
@@ -31,6 +32,11 @@ const Auth = () => {
   const fullReturnUrl = priceId ? 
     `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}priceId=${priceId}` : 
     returnUrl;
+
+  const [showForgot, setShowForgot] = React.useState(false);
+  const [forgotEmail, setForgotEmail] = React.useState("");
+  const [forgotLoading, setForgotLoading] = React.useState(false);
+  const [forgotMessage, setForgotMessage] = React.useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -70,6 +76,23 @@ const Auth = () => {
       // Redirection will be handled by the auth state change
     } catch (error) {
       console.error("Error signing in with Google:", error);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotMessage(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: window.location.origin + "/reset-password"
+      });
+      if (error) throw error;
+      setForgotMessage("Password reset email sent! Check your inbox.");
+    } catch (err: any) {
+      setForgotMessage(err.message || "Failed to send reset email.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -146,6 +169,33 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
+                  </div>
+                  <div className="flex justify-end">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button type="button" className="text-xs text-primary underline hover:opacity-80" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                          Forgot Password?
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Reset Password</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                          <Input
+                            type="email"
+                            placeholder="Enter your email"
+                            value={forgotEmail}
+                            onChange={e => setForgotEmail(e.target.value)}
+                            required
+                          />
+                          <Button type="submit" disabled={forgotLoading} className="w-full">
+                            {forgotLoading ? "Sending..." : "Send Reset Link"}
+                          </Button>
+                          {forgotMessage && <div className="text-sm text-center text-muted-foreground">{forgotMessage}</div>}
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}

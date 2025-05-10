@@ -79,6 +79,9 @@ export default function ProfilePage() {
   const [additionalConditionType, setAdditionalConditionType] = useState<AlertType>("temperature");
   const [additionalThreshold, setAdditionalThreshold] = useState<number>(35);
   const [isOpenConditions, setIsOpenConditions] = useState<{[key: string]: boolean}>({});
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   
   // Define standard alert types metadata
   const alertTypeMetadata: Record<string, AlertTypeMetadata> = {
@@ -617,6 +620,22 @@ export default function ProfilePage() {
     return [...standardTypes, ...customTelemetryTypes];
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordLoading(true);
+    setPasswordMessage(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMessage("Password updated successfully!");
+      setNewPassword("");
+    } catch (err: any) {
+      setPasswordMessage(err.message || "Failed to update password.");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto py-6 space-y-8">
@@ -1007,6 +1026,28 @@ export default function ProfilePage() {
             </Card>
           </div>
         </div>
+
+        <Card className="max-w-xl mx-auto mt-8">
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+            <CardDescription>Set a new password for your account.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <Input
+                type="password"
+                placeholder="New password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                required
+              />
+              <Button type="submit" disabled={passwordLoading} className="w-full">
+                {passwordLoading ? "Updating..." : "Update Password"}
+              </Button>
+              {passwordMessage && <div className="text-sm text-center text-muted-foreground">{passwordMessage}</div>}
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );
