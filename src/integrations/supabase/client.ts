@@ -8,24 +8,23 @@ type EnvironmentConfig = {
   key: string;
 };
 
+// Default Supabase connection values - these will be used if environment variables are not set
+const DEFAULT_SUPABASE_URL = "https://uwmbdporlrduzthgdmcg.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3bWJkcG9ybHJkdXp0aGdkbWNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NzQ4NzcsImV4cCI6MjA2MTQ1MDg3N30.lkMYbGV9yid6e09hbts9zqwVPZ_DQLW_RNJY_zZ3UWo";
+
 // Get Supabase URL and key from environment variables
 const getEnvironmentConfig = (): EnvironmentConfig => {
   // Check for environment variables
   const envUrl = import.meta.env.VITE_SUPABASE_URL;
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  // Throw error if environment variables are not set
-  if (!envUrl || !envKey) {
-    throw new Error(
-      'Missing Supabase environment variables. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
-    );
-  }
+  // Use environment variables if available, otherwise use default values
+  const url = envUrl || DEFAULT_SUPABASE_URL;
+  const key = envKey || DEFAULT_SUPABASE_ANON_KEY;
 
-  // Return configuration from environment variables
-  return {
-    url: envUrl,
-    key: envKey
-  };
+  console.log(`Using Supabase URL: ${url.substring(0, 10)}...`);
+  
+  return { url, key };
 };
 
 // Get the config for current environment
@@ -50,5 +49,5 @@ export const supabaseEnv = {
   activeEnvironment: import.meta.env.MODE === "production" ? "prod" : "dev",
   isProduction: import.meta.env.MODE === "production",
   isDevelopment: import.meta.env.MODE !== "production",
-  isUsingEnvVars: true // All connections now use environment variables
+  isUsingEnvVars: !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
 };
