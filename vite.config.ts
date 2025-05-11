@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     componentTagger(),
   ].filter(Boolean),
   define: {
-    // Make sure the environment mode is available in the application
+    // Make sure the environment mode and variables are available in the application
     'import.meta.env.MODE': JSON.stringify(mode),
   },
   resolve: {

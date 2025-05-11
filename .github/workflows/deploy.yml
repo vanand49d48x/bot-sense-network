@@ -28,9 +28,13 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "ACTIVE_ENVIRONMENT=dev" >> $GITHUB_ENV
+            echo "VITE_SUPABASE_URL=${{ secrets.DEV_SUPABASE_URL }}" >> $GITHUB_ENV
+            echo "VITE_SUPABASE_ANON_KEY=${{ secrets.DEV_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
             echo "Deploying to DEVELOPMENT environment"
           elif [[ "${{ github.ref }}" == "refs/heads/production" ]]; then
             echo "ACTIVE_ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "VITE_SUPABASE_URL=${{ secrets.PROD_SUPABASE_URL }}" >> $GITHUB_ENV
+            echo "VITE_SUPABASE_ANON_KEY=${{ secrets.PROD_SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
             echo "Deploying to PRODUCTION environment"
           fi
           
@@ -43,6 +47,9 @@ jobs:
           echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
           # Deploy functions to development project
           SUPABASE_PROJECT_ID=rtcspemkxqiecoqeeuai supabase functions deploy --project-ref rtcspemkxqiecoqeeuai
+        env:
+          VITE_SUPABASE_URL: ${{ env.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ env.VITE_SUPABASE_ANON_KEY }}
           
       - name: Deploy to Production Environment
         if: github.ref == 'refs/heads/production'
@@ -53,11 +60,16 @@ jobs:
           echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
           # Deploy functions to production project
           SUPABASE_PROJECT_ID=uwmbdporlrduzthgdmcg supabase functions deploy --project-ref uwmbdporlrduzthgdmcg
+        env:
+          VITE_SUPABASE_URL: ${{ env.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ env.VITE_SUPABASE_ANON_KEY }}
           
       - name: Build application
         run: npm run build
         env:
-          # Pass the active environment to the build process
+          # Pass the environment variables to the build process
+          VITE_SUPABASE_URL: ${{ env.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ env.VITE_SUPABASE_ANON_KEY }}
           VITE_ACTIVE_ENVIRONMENT: ${{ env.ACTIVE_ENVIRONMENT }}
           
       # Add your deployment steps here (e.g., to Vercel, Netlify, etc.)
