@@ -4,7 +4,7 @@ import { supabaseEnv } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 
 export default function EnvironmentIndicator() {
-  const { activeEnvironment, isProduction, isUsingEnvVars } = supabaseEnv;
+  const { activeEnvironment, isProduction } = supabaseEnv;
   
   if (!import.meta.env.DEV) return null; // Only show in development
   
@@ -15,12 +15,6 @@ export default function EnvironmentIndicator() {
       >
         {isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} Environment
       </Badge>
-      
-      {!isUsingEnvVars && (
-        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-400">
-          Using Default Supabase Connection
-        </Badge>
-      )}
     </div>
   );
 }
