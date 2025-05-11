@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import ProfilePage from "./pages/ProfilePage";
 import Pricing from "./pages/Pricing";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
+import EnvironmentIndicator from "@/components/layout/EnvironmentIndicator";
 
 // Legal pages
 import Privacy from "./pages/legal/Privacy";
@@ -63,6 +65,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CookieConsent />
+          <EnvironmentIndicator />
           <BrowserRouter>
             <ScrollToTop />
             <Routes>

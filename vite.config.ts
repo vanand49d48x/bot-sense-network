@@ -16,6 +16,10 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  define: {
+    // Make sure the environment mode is available in the application
+    'import.meta.env.MODE': JSON.stringify(mode),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

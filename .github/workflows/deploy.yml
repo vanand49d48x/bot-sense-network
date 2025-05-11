@@ -1,0 +1,63 @@
+
+name: Environment-Specific Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Set environment variables based on branch
+        id: set-env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "ACTIVE_ENVIRONMENT=dev" >> $GITHUB_ENV
+            echo "Deploying to DEVELOPMENT environment"
+          elif [[ "${{ github.ref }}" == "refs/heads/production" ]]; then
+            echo "ACTIVE_ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "Deploying to PRODUCTION environment"
+          fi
+          
+      - name: Deploy to Development Environment
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Setup Supabase CLI
+          npm install -g supabase
+          # Login to Supabase
+          echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
+          # Deploy functions to development project
+          SUPABASE_PROJECT_ID=rtcspemkxqiecoqeeuai supabase functions deploy --project-ref rtcspemkxqiecoqeeuai
+          
+      - name: Deploy to Production Environment
+        if: github.ref == 'refs/heads/production'
+        run: |
+          # Setup Supabase CLI 
+          npm install -g supabase
+          # Login to Supabase
+          echo "${{ secrets.SUPABASE_ACCESS_TOKEN }}" | supabase login
+          # Deploy functions to production project
+          SUPABASE_PROJECT_ID=uwmbdporlrduzthgdmcg supabase functions deploy --project-ref uwmbdporlrduzthgdmcg
+          
+      - name: Build application
+        run: npm run build
+        env:
+          # Pass the active environment to the build process
+          VITE_ACTIVE_ENVIRONMENT: ${{ env.ACTIVE_ENVIRONMENT }}
+          
+      # Add your deployment steps here (e.g., to Vercel, Netlify, etc.)
