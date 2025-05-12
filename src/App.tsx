@@ -114,14 +114,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route 
-                path="/integration" 
-                element={
-                  <ProtectedRoute>
-                    <IntegrationGuide />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Changed these two routes to be publicly accessible */}
+              <Route path="/integration" element={<IntegrationGuide />} />
+              <Route path="/api-docs" element={<ApiDocs />} />
               <Route 
                 path="/admin" 
                 element={
@@ -144,7 +139,6 @@ const App = () => (
               {/* New Routes */}
               <Route path="/about" element={<About />} />
               <Route path="/features" element={<Features />} />
-              <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/status" element={<Status />} />
               <Route path="/blog" element={<Blog />} />
               
