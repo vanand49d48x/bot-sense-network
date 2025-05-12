@@ -17,8 +17,8 @@ const getEnvironmentConfig = (): EnvironmentConfig => {
 
   // For development in Lovable preview environment, provide default values
   // These are only used in development and should be replaced with proper env vars in production
-  const defaultUrl = 'https://uwmbdporlrduzthgdmcg.supabase.co';
-  const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3bWJkcG9ybHJkdXp0aGdkbWNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU4NzQ4NzcsImV4cCI6MjA2MTQ1MDg3N30.lkMYbGV9yid6e09hbts9zqwVPZ_DQLW_RNJY_zZ3UWo';
+  const defaultUrl = 'https://rtcspemkxqiecoqeeuai.supabase.co';
+  const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y3NwZW1reHFpZWNvcWVldWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4OTk1NjUsImV4cCI6MjA2MjQ3NTU2NX0.mxBM9OzA4kK1XjK5NjoIFLNEylHRLCmGqz6omBPLVJk';
 
   // Use environment variables if available, otherwise use defaults
   const isUsingDefaults = !envUrl || !envKey;
