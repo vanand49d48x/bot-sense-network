@@ -4,10 +4,10 @@ import { supabaseEnv } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 
 export default function EnvironmentIndicator() {
-  const { activeEnvironment, isProduction, isUsingDefaults } = supabaseEnv;
+  const { activeEnvironment, isProduction } = supabaseEnv;
   
-  // Show in development and when using defaults in any environment
-  if (!import.meta.env.DEV && !isUsingDefaults) return null;
+  // Only show in development environment
+  if (!import.meta.env.DEV) return null;
   
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
@@ -16,12 +16,6 @@ export default function EnvironmentIndicator() {
       >
         {isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} Environment
       </Badge>
-      
-      {isUsingDefaults && (
-        <Badge className="bg-yellow-500">
-          Using Default Supabase Credentials
-        </Badge>
-      )}
     </div>
   );
 }
