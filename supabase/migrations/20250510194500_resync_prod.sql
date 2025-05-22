@@ -36,7 +36,7 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 -- Name: auto_start_free_trial(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.auto_start_free_trial() RETURNS trigger
+CREATE OR REPLACE FUNCTION public.auto_start_free_trial() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -72,7 +72,7 @@ ALTER FUNCTION public.auto_start_free_trial() OWNER TO postgres;
 -- Name: check_if_admin(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.check_if_admin(user_id uuid) RETURNS boolean
+CREATE OR REPLACE FUNCTION public.check_if_admin(user_id uuid) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
@@ -92,7 +92,7 @@ ALTER FUNCTION public.check_if_admin(user_id uuid) OWNER TO postgres;
 -- Name: create_first_admin(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.create_first_admin(admin_email text) RETURNS void
+CREATE OR REPLACE FUNCTION public.create_first_admin(admin_email text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
@@ -118,7 +118,7 @@ ALTER FUNCTION public.create_first_admin(admin_email text) OWNER TO postgres;
 -- Name: get_alerts_by_robot(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_alerts_by_robot(in_robot_id uuid) RETURNS TABLE(id uuid, robot_id uuid, type text, message text, created_at timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.get_alerts_by_robot(in_robot_id uuid) RETURNS TABLE(id uuid, robot_id uuid, type text, message text, created_at timestamp with time zone)
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -137,7 +137,7 @@ ALTER FUNCTION public.get_alerts_by_robot(in_robot_id uuid) OWNER TO postgres;
 -- Name: get_plan_limits(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_plan_limits() RETURNS TABLE(id uuid, plan text, limit_name text, value integer)
+CREATE OR REPLACE FUNCTION public.get_plan_limits() RETURNS TABLE(id uuid, plan text, limit_name text, value integer)
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -155,7 +155,7 @@ ALTER FUNCTION public.get_plan_limits() OWNER TO postgres;
 -- Name: get_profile_by_id(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_profile_by_id(profile_id uuid) RETURNS TABLE(id uuid, first_name text, last_name text, email text)
+CREATE OR REPLACE FUNCTION public.get_profile_by_id(profile_id uuid) RETURNS TABLE(id uuid, first_name text, last_name text, email text)
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -174,7 +174,7 @@ ALTER FUNCTION public.get_profile_by_id(profile_id uuid) OWNER TO postgres;
 -- Name: get_robots_by_user(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_robots_by_user(in_user_id uuid) RETURNS TABLE(id uuid, name text, type text, user_id uuid)
+CREATE OR REPLACE FUNCTION public.get_robots_by_user(in_user_id uuid) RETURNS TABLE(id uuid, name text, type text, user_id uuid)
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -193,7 +193,7 @@ ALTER FUNCTION public.get_robots_by_user(in_user_id uuid) OWNER TO postgres;
 -- Name: get_subscriptions_by_user(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_subscriptions_by_user(in_user_id uuid) RETURNS TABLE(id uuid, user_id uuid, status text, plan text, created_at timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.get_subscriptions_by_user(in_user_id uuid) RETURNS TABLE(id uuid, user_id uuid, status text, plan text, created_at timestamp with time zone)
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -212,7 +212,7 @@ ALTER FUNCTION public.get_subscriptions_by_user(in_user_id uuid) OWNER TO postgr
 -- Name: get_telemetry_by_robot(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_telemetry_by_robot(in_robot_id uuid) RETURNS TABLE(id uuid, robot_id uuid, data jsonb, created_at timestamp with time zone)
+CREATE OR REPLACE FUNCTION public.get_telemetry_by_robot(in_robot_id uuid) RETURNS TABLE(id uuid, robot_id uuid, data jsonb, created_at timestamp with time zone)
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -231,7 +231,7 @@ ALTER FUNCTION public.get_telemetry_by_robot(in_robot_id uuid) OWNER TO postgres
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.handle_new_user() RETURNS trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -249,7 +249,7 @@ ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
 -- Name: is_admin(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.is_admin(in_uid uuid) RETURNS boolean
+CREATE OR REPLACE FUNCTION public.is_admin(in_uid uuid) RETURNS boolean
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -265,7 +265,7 @@ ALTER FUNCTION public.is_admin(in_uid uuid) OWNER TO postgres;
 -- Name: update_robot_status(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_robot_status() RETURNS trigger
+CREATE OR REPLACE FUNCTION public.update_robot_status() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
@@ -290,7 +290,7 @@ ALTER FUNCTION public.update_robot_status() OWNER TO postgres;
 -- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_updated_at_column() RETURNS trigger
+CREATE OR REPLACE FUNCTION public.update_updated_at_column() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
