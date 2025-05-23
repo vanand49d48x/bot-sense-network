@@ -100,8 +100,11 @@ export function AddRobotModal({ disabled = false }: { disabled?: boolean }) {
     setIsSubmitting(true);
 
     try {
+      // Get the base URL from the client's configuration
+      const supabaseUrl = new URL(supabase.getUrl()).origin;
+      
       // Use the edge function to create robot with API key
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-robot-with-api-key`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-robot-with-api-key`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

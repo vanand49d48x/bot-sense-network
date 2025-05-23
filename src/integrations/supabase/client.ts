@@ -50,6 +50,9 @@ export const supabase = createClient<Database>(config.url, config.key, {
   }
 });
 
+// Export the Supabase URL as a constant for edge function calls
+export const SUPABASE_URL = config.url;
+
 // Export environment info to allow components to know which environment is active
 export const supabaseEnv = {
   activeEnvironment: import.meta.env.MODE === "production" ? "prod" : "dev",
