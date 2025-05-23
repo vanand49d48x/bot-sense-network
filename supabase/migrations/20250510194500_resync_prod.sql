@@ -311,7 +311,7 @@ SET default_table_access_method = heap;
 -- Name: admin_users; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.admin_users (
+CREATE  TABLE IF NOT EXISTS public.admin_users (
     id uuid NOT NULL,
     granted_at timestamp with time zone DEFAULT now(),
     granted_by text
@@ -324,7 +324,7 @@ ALTER TABLE public.admin_users OWNER TO postgres;
 -- Name: alerts; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.alerts (
+CREATE  TABLE IF NOT EXISTS public.alerts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     robot_id uuid NOT NULL,
     type text NOT NULL,
@@ -344,7 +344,7 @@ ALTER TABLE public.alerts OWNER TO postgres;
 -- Name: plan_limits; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.plan_limits (
+CREATE  TABLE IF NOT EXISTS public.plan_limits (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     plan_name text NOT NULL,
     robot_limit integer,
@@ -372,7 +372,7 @@ COMMENT ON TABLE public.plan_limits IS 'Configurable limits for subscription pla
 -- Name: profiles; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.profiles (
+CREATE  TABLE IF NOT EXISTS public.profiles (
     id uuid NOT NULL,
     first_name text,
     last_name text,
@@ -393,7 +393,7 @@ ALTER TABLE public.profiles OWNER TO postgres;
 -- Name: robots; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.robots (
+CREATE  TABLE IF NOT EXISTS public.robots (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     type text NOT NULL,
@@ -419,7 +419,7 @@ ALTER TABLE public.robots OWNER TO postgres;
 -- Name: subscriptions; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.subscriptions (
+CREATE  TABLE IF NOT EXISTS public.subscriptions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     stripe_customer_id text,
@@ -443,7 +443,7 @@ ALTER TABLE public.subscriptions OWNER TO postgres;
 -- Name: telemetry; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.telemetry (
+CREATE  TABLE IF NOT EXISTS public.telemetry (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     robot_id uuid NOT NULL,
     battery_level integer,
