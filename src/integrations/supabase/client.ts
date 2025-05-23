@@ -15,7 +15,7 @@ const getEnvironmentConfig = (): EnvironmentConfig => {
   const envUrl = import.meta.env.VITE_SUPABASE_URL;
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  // For development in Lovable preview environment, provide default values
+  // For development in preview environment, provide default values
   // These are only used in development and should be replaced with proper env vars in production
   const defaultUrl = 'https://rtcspemkxqiecoqeeuai.supabase.co';
   const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y3NwZW1reHFpZWNvcWVldWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4OTk1NjUsImV4cCI6MjA2MjQ3NTU2NX0.mxBM9OzA4kK1XjK5NjoIFLNEylHRLCmGqz6omBPLVJk';
@@ -41,16 +41,20 @@ const config = getEnvironmentConfig();
 console.log(`Using Supabase environment: ${import.meta.env.MODE === "production" ? "prod" : "dev"}`);
 console.log(`Supabase URL: ${config.isUsingDefaults ? 'using default credentials' : 'configured from environment variables'}`);
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
-export const supabase = createClient<Database>(config.url, config.key, {
+// Create the supabase client
+const supabaseClient = createClient<Database>(config.url, config.key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     storage: localStorage
   }
 });
+
+// Export the client plus the URL for edge function calls
+export const supabase = {
+  ...supabaseClient,
+  supabaseUrl: config.url
+};
 
 // Export environment info to allow components to know which environment is active
 export const supabaseEnv = {

@@ -18,7 +18,7 @@ export default function EnvironmentIndicator() {
       </Badge>
       
       {isUsingDefaults && (
-        <Badge className="bg-yellow-500">
+        <Badge className="bg-yellow-500 hover:bg-yellow-400">
           Using Default Supabase Credentials
         </Badge>
       )}

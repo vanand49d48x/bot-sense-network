@@ -34,9 +34,9 @@ export function AddRobotModal({ disabled = false }: { disabled?: boolean }) {
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customRobotTypes, setCustomRobotTypes] = useState<string[]>([]);
-  const { addRobot } = useRobots();
+  const { fetchRobots } = useRobots(); // Changed from addRobot to fetchRobots
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session } = useAuth(); // Added session to get auth token
 
   // Default robot types
   const defaultRobotTypes = [
@@ -88,29 +88,57 @@ export function AddRobotModal({ disabled = false }: { disabled?: boolean }) {
       return;
     }
     
+    if (!session?.access_token) {
+      toast({
+        title: "Authentication error",
+        description: "Please log in to add a robot",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
-      await addRobot({
-        name,
-        type,
-        description,
+      // Use the edge function to create robot with API key
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-robot-with-api-key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          name,
+          type,
+          description: description || null
+        })
       });
-
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create robot");
+      }
+      
+      const result = await response.json();
+      
       // Reset form and close dialog
       setName("");
       setType("");
       setDescription("");
       setOpen(false);
       
+      // Refresh the robots list
+      fetchRobots();
+      
       toast({
         title: "Robot added",
         description: `${name} has been successfully added.`
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error adding robot:", error);
       toast({
         title: "Error",
-        description: "Failed to add robot. Please try again.",
+        description: error.message || "Failed to add robot. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -161,8 +189,6 @@ export function AddRobotModal({ disabled = false }: { disabled?: boolean }) {
                     <SelectValue placeholder="Select robot type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* Fixed: Removed the placeholder SelectItem with empty value */}
-                    
                     {/* Default robot types */}
                     <SelectItem value="delivery">Delivery Bot</SelectItem>
                     <SelectItem value="warehouse">Warehouse Bot</SelectItem>

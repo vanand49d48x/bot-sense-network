@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +62,7 @@ export function useRobots() {
         }
       }
     } catch (error: any) {
+      console.error("Error fetching robots:", error);
       toast({
         title: "Error fetching robots",
         description: error.message,
@@ -126,40 +128,6 @@ export function useRobots() {
     };
   }, [session, toast]);
 
-  const addRobot = async (robot: Omit<Database['public']['Tables']['robots']['Insert'], 'user_id'>) => {
-    try {
-      if (!session?.user?.id) throw new Error("User not authenticated");
-      
-      // Create a new robot with required api_key
-      const { data, error } = await supabase
-        .from('robots')
-        .insert([
-          {
-            ...robot,
-            user_id: session.user.id,
-            api_key: crypto.randomUUID().replace(/-/g, '')
-          }
-        ])
-        .select();
-
-      if (error) throw error;
-      
-      toast({
-        title: "Robot added",
-        description: `${robot.name} has been successfully added.`
-      });
-      
-      return data?.[0];
-    } catch (error: any) {
-      toast({
-        title: "Error adding robot",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
   const deleteRobot = async (robotId: string) => {
     try {
       if (!session?.user?.id) throw new Error("User not authenticated");
@@ -180,5 +148,5 @@ export function useRobots() {
   };
 
   // Export the fetchRobots function along with other values
-  return { robots, loading, apiKey, addRobot, deleteRobot, fetchRobots };
+  return { robots, loading, apiKey, deleteRobot, fetchRobots };
 }
