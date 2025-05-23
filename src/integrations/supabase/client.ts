@@ -42,19 +42,13 @@ console.log(`Using Supabase environment: ${import.meta.env.MODE === "production"
 console.log(`Supabase URL: ${config.isUsingDefaults ? 'using default credentials' : 'configured from environment variables'}`);
 
 // Create the supabase client
-const supabaseClient = createClient<Database>(config.url, config.key, {
+export const supabase = createClient<Database>(config.url, config.key, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     storage: localStorage
   }
 });
-
-// Export the client plus the URL for edge function calls
-export const supabase = {
-  ...supabaseClient,
-  supabaseUrl: config.url
-};
 
 // Export environment info to allow components to know which environment is active
 export const supabaseEnv = {

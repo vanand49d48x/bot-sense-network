@@ -79,8 +79,8 @@ export function useRobots() {
     
     fetchRobots();
     
-    // Set up realtime subscription for robot updates
-    const robotsChannel = supabase
+    // Set up realtime subscription for robot updates using Supabase Realtime
+    const robotsSubscription = supabase
       .channel('robots-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'robots' }, 
@@ -124,7 +124,7 @@ export function useRobots() {
 
     return () => {
       console.log("Cleaning up realtime subscription in useRobots hook");
-      supabase.removeChannel(robotsChannel);
+      supabase.removeChannel(robotsSubscription);
     };
   }, [session, toast]);
 
