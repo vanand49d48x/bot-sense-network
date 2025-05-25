@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,7 +18,6 @@ import ProfilePage from "./pages/ProfilePage";
 import Pricing from "./pages/Pricing";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import CheckoutCancel from "./pages/CheckoutCancel";
-import EnvironmentIndicator from "@/components/layout/EnvironmentIndicator";
 
 // Legal pages
 import Privacy from "./pages/legal/Privacy";
@@ -65,7 +63,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CookieConsent />
-          <EnvironmentIndicator />
           <BrowserRouter>
             <ScrollToTop />
             <Routes>
@@ -114,9 +111,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              {/* Changed these two routes to be publicly accessible */}
               <Route path="/integration" element={<IntegrationGuide />} />
               <Route path="/api-docs" element={<ApiDocs />} />
+              <Route path="/status" element={<Status />} />
               <Route 
                 path="/admin" 
                 element={
@@ -139,7 +136,6 @@ const App = () => (
               {/* New Routes */}
               <Route path="/about" element={<About />} />
               <Route path="/features" element={<Features />} />
-              <Route path="/status" element={<Status />} />
               <Route path="/blog" element={<Blog />} />
               
               <Route path="*" element={<NotFound />} />

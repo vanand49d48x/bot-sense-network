@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { TelemetryExample } from "@/components/integration/TelemetryExample";
 import { WebSocketExample } from "@/components/integration/WebSocketExample";
@@ -14,18 +15,10 @@ import { ArrowRight, ChevronDown, ChevronUp, Code, Cpu, Link2, MapPin, MessageSq
 
 export default function IntegrationGuide() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => 
-      prev.includes(section) 
-        ? prev.filter(s => s !== section) 
-        : [...prev, section]
-    );
-  };
-
-  const isSectionExpanded = (section: string) => {
-    return expandedSections.includes(section);
+    setExpandedSection(expandedSection === section ? null : section);
   };
 
   return (
@@ -205,10 +198,10 @@ export default function IntegrationGuide() {
                         <MapPin className="h-5 w-5 text-primary" />
                         <h3 className="text-lg font-medium">Live Map View</h3>
                       </div>
-                      {isSectionExpanded("map") ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                      {expandedSection === "map" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                     
-                    {isSectionExpanded("map") && (
+                    {expandedSection === "map" && (
                       <div className="mt-4 pl-7">
                         <p className="text-muted-foreground mb-2">
                           The platform provides real-time visualization of all your robots on an interactive map. To enable this feature:
@@ -231,10 +224,10 @@ export default function IntegrationGuide() {
                         <MessageSquare className="h-5 w-5 text-primary" />
                         <h3 className="text-lg font-medium">Email Notifications</h3>
                       </div>
-                      {isSectionExpanded("notifications") ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                      {expandedSection === "notifications" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                     
-                    {isSectionExpanded("notifications") && (
+                    {expandedSection === "notifications" && (
                       <div className="mt-4 pl-7">
                         <p className="text-muted-foreground mb-2">
                           Receive email notifications when your robots require attention:
@@ -269,10 +262,10 @@ export default function IntegrationGuide() {
                         <Link2 className="h-5 w-5 text-primary" />
                         <h3 className="text-lg font-medium">API Access</h3>
                       </div>
-                      {isSectionExpanded("api") ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                      {expandedSection === "api" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                     
-                    {isSectionExpanded("api") && (
+                    {expandedSection === "api" && (
                       <div className="mt-4 pl-7">
                         <p className="text-muted-foreground mb-2">
                           Access robot data and control functionality via our REST API:
@@ -306,10 +299,10 @@ export default function IntegrationGuide() {
                         <Zap className="h-5 w-5 text-primary" />
                         <h3 className="text-lg font-medium">Real-time Communication</h3>
                       </div>
-                      {isSectionExpanded("realtime") ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                      {expandedSection === "realtime" ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                     
-                    {isSectionExpanded("realtime") && (
+                    {expandedSection === "realtime" && (
                       <div className="mt-4 pl-7">
                         <p className="text-muted-foreground mb-2">
                           Choose the communication method that best fits your use case:

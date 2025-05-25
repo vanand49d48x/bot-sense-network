@@ -1,8 +1,7 @@
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Mail, FileText, Book, Calendar, Github, Twitter, Linkedin, Info, LogIn } from "lucide-react";
+import { LogOut, Mail, FileText, Book, Calendar, Github, Twitter, Linkedin, Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
@@ -31,29 +30,33 @@ export function MainLayout({ children }: MainLayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full flex-col">
         <div className="flex flex-1 w-full">
-          <AppSidebar />
+          {user && <AppSidebar />}
           <div className="flex-1 flex flex-col min-h-screen">
-            <header className="border-b border-border/40 p-4 flex justify-between items-center">
-              <SidebarTrigger />
-              <div className="flex items-center gap-4">
-                <ThemeToggle />
+            <header className="border-b border-border/40 p-4">
+              <div className="container mx-auto flex justify-between items-center">
                 {user ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      {user.email}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
-                      <LogOut size={16} />
-                      <span>Sign Out</span>
-                    </Button>
-                  </div>
+                  <>
+                    <SidebarTrigger />
+                    <div className="flex items-center gap-4">
+                      <ThemeToggle />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {user.email}
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
+                          <LogOut size={16} />
+                          <span>Sign Out</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/auth" className="flex items-center gap-2">
-                      <LogIn size={16} />
-                      <span>Sign In</span>
+                  <>
+                    <Link to="/" className="flex items-center gap-2">
+                      <span className="text-xl font-bold">RoboMetrics</span>
                     </Link>
-                  </Button>
+                    <ThemeToggle />
+                  </>
                 )}
               </div>
             </header>

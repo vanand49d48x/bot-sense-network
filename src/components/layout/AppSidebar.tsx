@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import {
   Sidebar,
@@ -48,43 +47,31 @@ export function AppSidebar() {
       title: "Dashboard",
       icon: ArrowRight,
       url: "/dashboard",
-      requiresAuth: true,
     },
     {
       title: "Fleet Status",
       icon: BarChart3,
       url: "/fleet-status",
-      requiresAuth: true,
     },
     {
       title: "Map View",
       icon: MapPin,
       url: "/map",
-      requiresAuth: true,
     },
     {
       title: "Alerts",
       icon: Bell,
       url: "/alerts",
-      requiresAuth: true,
     },
     {
       title: "Integration",
       icon: Link2,
       url: "/integration",
-      requiresAuth: false,
-    },
-    {
-      title: "API Docs",
-      icon: Key,
-      url: "/api-docs",
-      requiresAuth: false,
     },
     {
       title: "Profile",
       icon: UserCog,
       url: "/profile",
-      requiresAuth: true,
     }
   ];
 
@@ -94,28 +81,20 @@ export function AppSidebar() {
       title: "Admin",
       icon: Shield,
       url: "/admin",
-      requiresAuth: true,
     });
   }
-
-  // Filter items based on authentication status
-  const visibleMenuItems = mainMenuItems.filter(item => 
-    !item.requiresAuth || (item.requiresAuth && session?.user)
-  );
 
   return (
     <Sidebar>
       <SidebarHeader className="py-6 px-4 border-b border-sidebar-border">
-        <Link to="/">
-          <h1 className="text-xl font-bold">RoboMetrics</h1>
-        </Link>
+        <h1 className="text-xl font-bold">RoboMetrics</h1>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Monitoring</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {visibleMenuItems.map((item) => (
+              {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link to={item.url} className="flex items-center space-x-2">
