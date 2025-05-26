@@ -49,81 +49,97 @@ serve(async (req) => {
       email: user.email
     });
 
-    // FIRST: Check database for existing subscription
+    // FIRST: Check database for existing subscription with detailed logging
+    logStep("Querying database for subscription", { userId: user.id });
+    
     const { data: dbSubscription, error: dbError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    logStep("Database subscription check", { 
-      found: !!dbSubscription, 
-      planName: dbSubscription?.plan_name,
-      status: dbSubscription?.status,
-      error: dbError?.message 
+    logStep("Database subscription query result", { 
+      subscriptions: dbSubscription,
+      error: dbError?.message,
+      queryUserId: user.id,
+      recordCount: dbSubscription?.length || 0
     });
 
-    // If we have a database subscription, prioritize it over Stripe
-    if (dbSubscription && dbSubscription.status === "active") {
-      logStep("Found active subscription in database", {
-        planName: dbSubscription.plan_name,
-        status: dbSubscription.status,
-        trialStatus: dbSubscription.trial_status
+    // Check if we have any records at all
+    if (dbSubscription && dbSubscription.length > 0) {
+      const subscription = dbSubscription[0];
+      logStep("Found subscription record", {
+        id: subscription.id,
+        userId: subscription.user_id,
+        status: subscription.status,
+        planName: subscription.plan_name,
+        trialStatus: subscription.trial_status
       });
 
-      // Calculate days remaining for trials
-      let daysRemaining = null;
-      if (dbSubscription.trial_status === 'active' && dbSubscription.trial_ended_at) {
-        const trialEnd = new Date(dbSubscription.trial_ended_at);
-        const now = new Date();
-        const diffTime = trialEnd.getTime() - now.getTime();
-        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (daysRemaining < 0) {
-          daysRemaining = 0;
-          // Update trial status to expired if past end date
-          await supabaseClient
-            .from("subscriptions")
-            .update({ 
-              trial_status: 'expired',
-              status: 'inactive',
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", dbSubscription.id);
-          
-          logStep("Trial expired, updated status");
-          
-          return new Response(
-            JSON.stringify({
-              active: false,
-              plan: dbSubscription.plan_name,
-              trial_status: 'expired',
-              subscription_end: dbSubscription.trial_ended_at,
-              days_remaining: 0,
-            }),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 200,
-            }
-          );
-        }
-      }
+      if (subscription.status === "active") {
+        logStep("Found active subscription in database", {
+          planName: subscription.plan_name,
+          status: subscription.status,
+          trialStatus: subscription.trial_status
+        });
 
-      return new Response(
-        JSON.stringify({
-          active: true,
-          plan: dbSubscription.plan_name,
-          trial_status: dbSubscription.trial_status,
-          subscription_end: dbSubscription.trial_ended_at || dbSubscription.current_period_end,
-          days_remaining: daysRemaining,
-          subscription_id: dbSubscription.stripe_subscription_id,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
+        // Calculate days remaining for trials
+        let daysRemaining = null;
+        if (subscription.trial_status === 'active' && subscription.trial_ended_at) {
+          const trialEnd = new Date(subscription.trial_ended_at);
+          const now = new Date();
+          const diffTime = trialEnd.getTime() - now.getTime();
+          daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (daysRemaining < 0) {
+            daysRemaining = 0;
+            // Update trial status to expired if past end date
+            await supabaseClient
+              .from("subscriptions")
+              .update({ 
+                trial_status: 'expired',
+                status: 'inactive',
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", subscription.id);
+            
+            logStep("Trial expired, updated status");
+            
+            return new Response(
+              JSON.stringify({
+                active: false,
+                plan: subscription.plan_name,
+                trial_status: 'expired',
+                subscription_end: subscription.trial_ended_at,
+                days_remaining: 0,
+              }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                status: 200,
+              }
+            );
+          }
         }
-      );
+
+        return new Response(
+          JSON.stringify({
+            active: true,
+            plan: subscription.plan_name,
+            trial_status: subscription.trial_status,
+            subscription_end: subscription.trial_ended_at || subscription.current_period_end,
+            days_remaining: daysRemaining,
+            subscription_id: subscription.stripe_subscription_id,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      } else {
+        logStep("Subscription found but not active", { status: subscription.status });
+      }
+    } else {
+      logStep("No subscription records found in database");
     }
 
     // If no active database subscription, check Stripe
