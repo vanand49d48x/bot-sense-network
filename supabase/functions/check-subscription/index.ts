@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
@@ -20,13 +21,6 @@ serve(async (req) => {
 
   try {
     logStep("Function started");
-
-    // Get the Stripe secret key from environment
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY not set");
-    }
-    logStep("Stripe key verified");
 
     // Get the authorization header
     const authHeader = req.headers.get("Authorization");
@@ -55,24 +49,101 @@ serve(async (req) => {
       email: user.email
     });
 
-    // --- NEW: Check for Free Tier subscription in DB first ---
+    // Check for subscription in DB first (including Free Tier)
     const { data: dbSub, error: dbSubError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (dbSub && dbSub.plan_name === "Free Tier" && dbSub.status === "active") {
-      logStep("Found active Free Tier subscription in DB", dbSub);
+    logStep("Database subscription query result", { 
+      data: dbSub, 
+      error: dbSubError,
+      userIdFromToken: user.id 
+    });
+
+    if (dbSubError) {
+      logStep("Error fetching subscription from database", dbSubError);
+    }
+
+    // If we have a subscription record in the database
+    if (dbSub && dbSub.length > 0) {
+      const subscription = dbSub[0];
+      logStep("Found subscription in database", subscription);
+
+      // Handle Free Tier subscription
+      if (subscription.plan_name === "Free Tier") {
+        const now = new Date();
+        const trialEndDate = subscription.trial_ended_at ? new Date(subscription.trial_ended_at) : null;
+        
+        let trialStatus = subscription.trial_status;
+        let isActive = subscription.status === "active";
+        
+        // Check if trial has expired
+        if (trialEndDate && now > trialEndDate && trialStatus === "active") {
+          trialStatus = "expired";
+          isActive = false;
+          
+          // Update the database to reflect expired status
+          await supabaseClient
+            .from("subscriptions")
+            .update({ 
+              trial_status: "expired", 
+              status: "inactive",
+              updated_at: new Date().toISOString() 
+            })
+            .eq("id", subscription.id);
+            
+          logStep("Updated expired Free Tier subscription");
+        }
+        
+        // Calculate days remaining for active trials
+        let daysRemaining = null;
+        if (trialStatus === "active" && trialEndDate) {
+          const timeDiff = trialEndDate.getTime() - now.getTime();
+          daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+        }
+        
+        logStep("Returning Free Tier subscription", {
+          active: isActive,
+          trial_status: trialStatus,
+          days_remaining: daysRemaining
+        });
+
+        return new Response(
+          JSON.stringify({
+            active: isActive,
+            plan: "Free Tier",
+            trial_status: trialStatus,
+            subscription_end: subscription.trial_ended_at,
+            days_remaining: daysRemaining,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+    }
+
+    // If no subscription found in database, check Stripe
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("No Stripe key found, returning inactive");
+      
+      // Update subscription record in database as inactive
+      await supabaseClient.from("subscriptions").upsert({
+        user_id: user.id,
+        status: "inactive",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
       return new Response(
-        JSON.stringify({
-          active: true,
-          plan: "Free Tier",
-          trial_status: dbSub.trial_status,
-          subscription_end: dbSub.trial_ended_at,
-          // ...other fields as needed
+        JSON.stringify({ 
+          active: false, 
+          plan: null,
+          subscription_end: null
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,7 +159,7 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, updating as unsubscribed");
+      logStep("No Stripe customer found, updating as unsubscribed");
       
       // Update subscription record in database as inactive
       await supabaseClient.from("subscriptions").upsert({
@@ -121,7 +192,7 @@ serve(async (req) => {
     });
 
     if (subscriptions.data.length === 0) {
-      logStep("No active subscription found");
+      logStep("No active Stripe subscription found");
       
       // Update subscription record in database as inactive
       await supabaseClient.from("subscriptions").upsert({
