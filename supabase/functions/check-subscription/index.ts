@@ -49,10 +49,8 @@ serve(async (req) => {
       email: user.email
     });
 
-    // FIRST: Check database for existing subscription with detailed logging
-    logStep("Querying database for subscription", { userId: user.id });
-    
-    const { data: dbSubscription, error: dbError } = await supabaseClient
+    // Check for subscription in DB first (including Free Tier)
+    const { data: dbSub, error: dbSubError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
@@ -60,95 +58,87 @@ serve(async (req) => {
       .limit(1);
 
     logStep("Database subscription query result", { 
-      subscriptions: dbSubscription,
-      error: dbError?.message,
-      queryUserId: user.id,
-      recordCount: dbSubscription?.length || 0
+      data: dbSub, 
+      error: dbSubError,
+      userIdFromToken: user.id 
     });
 
-    // Check if we have any records at all
-    if (dbSubscription && dbSubscription.length > 0) {
-      const subscription = dbSubscription[0];
-      logStep("Found subscription record", {
-        id: subscription.id,
-        userId: subscription.user_id,
-        status: subscription.status,
-        planName: subscription.plan_name,
-        trialStatus: subscription.trial_status
-      });
+    if (dbSubError) {
+      logStep("Error fetching subscription from database", dbSubError);
+    }
 
-      if (subscription.status === "active") {
-        logStep("Found active subscription in database - returning immediately", {
-          planName: subscription.plan_name,
-          status: subscription.status,
-          trialStatus: subscription.trial_status
+    // If we have a subscription record in the database
+    if (dbSub && dbSub.length > 0) {
+      const subscription = dbSub[0];
+      logStep("Found subscription in database", subscription);
+
+      // Handle Free Tier subscription
+      if (subscription.plan_name === "Free Tier") {
+        const now = new Date();
+        const trialEndDate = subscription.trial_ended_at ? new Date(subscription.trial_ended_at) : null;
+        
+        let trialStatus = subscription.trial_status;
+        let isActive = subscription.status === "active";
+        
+        // Check if trial has expired
+        if (trialEndDate && now > trialEndDate && trialStatus === "active") {
+          trialStatus = "expired";
+          isActive = false;
+          
+          // Update the database to reflect expired status
+          await supabaseClient
+            .from("subscriptions")
+            .update({ 
+              trial_status: "expired", 
+              status: "inactive",
+              updated_at: new Date().toISOString() 
+            })
+            .eq("id", subscription.id);
+            
+          logStep("Updated expired Free Tier subscription");
+        }
+        
+        // Calculate days remaining for active trials
+        let daysRemaining = null;
+        if (trialStatus === "active" && trialEndDate) {
+          const timeDiff = trialEndDate.getTime() - now.getTime();
+          daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+        }
+        
+        logStep("Returning Free Tier subscription", {
+          active: isActive,
+          trial_status: trialStatus,
+          days_remaining: daysRemaining
         });
 
-        // Calculate days remaining for trials
-        let daysRemaining = null;
-        if (subscription.trial_status === 'active' && subscription.trial_ended_at) {
-          const trialEnd = new Date(subscription.trial_ended_at);
-          const now = new Date();
-          const diffTime = trialEnd.getTime() - now.getTime();
-          daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (daysRemaining < 0) {
-            daysRemaining = 0;
-            // Update trial status to expired if past end date
-            await supabaseClient
-              .from("subscriptions")
-              .update({ 
-                trial_status: 'expired',
-                status: 'inactive',
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", subscription.id);
-            
-            logStep("Trial expired, updated status");
-            
-            return new Response(
-              JSON.stringify({
-                active: false,
-                plan: subscription.plan_name,
-                trial_status: 'expired',
-                subscription_end: subscription.trial_ended_at,
-                days_remaining: 0,
-              }),
-              {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 200,
-              }
-            );
-          }
-        }
-
-        // Return active subscription from database - don't check Stripe
         return new Response(
           JSON.stringify({
-            active: true,
-            plan: subscription.plan_name,
-            trial_status: subscription.trial_status,
-            subscription_end: subscription.trial_ended_at || subscription.current_period_end,
+            active: isActive,
+            plan: "Free Tier",
+            trial_status: trialStatus,
+            subscription_end: subscription.trial_ended_at,
             days_remaining: daysRemaining,
-            subscription_id: subscription.stripe_subscription_id,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
           }
         );
-      } else {
-        logStep("Subscription found but not active, will check Stripe", { status: subscription.status });
       }
-    } else {
-      logStep("No subscription records found in database, will check Stripe");
     }
 
-    // Only check Stripe if no active database subscription exists
-    logStep("No active database subscription found, checking Stripe");
-    
+    // If no subscription found in database, check Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      logStep("No Stripe key, returning inactive status");
+      logStep("No Stripe key found, returning inactive");
+      
+      // Update subscription record in database as inactive
+      await supabaseClient.from("subscriptions").upsert({
+        user_id: user.id,
+        status: "inactive",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
       return new Response(
         JSON.stringify({ 
           active: false, 
@@ -162,7 +152,7 @@ serve(async (req) => {
       );
     }
 
-    logStep("Stripe key verified, checking Stripe subscriptions");
+    // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check if a Stripe customer exists for this user
@@ -225,7 +215,7 @@ serve(async (req) => {
       );
     }
 
-    // We have an active Stripe subscription
+    // We have an active subscription
     const subscription = subscriptions.data[0];
     const price = subscription.items.data[0].price;
     
@@ -237,7 +227,7 @@ serve(async (req) => {
     // Check if subscription is canceled but still in current period
     const isCanceled = subscription.cancel_at_period_end;
     
-    logStep("Active Stripe subscription found", { 
+    logStep("Active subscription found", { 
       subscriptionId: subscription.id, 
       planName, 
       endDate: subscriptionEnd,
@@ -256,7 +246,7 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
 
-    logStep("Updated database with Stripe subscription info");
+    logStep("Updated database with subscription info");
     
     return new Response(
       JSON.stringify({

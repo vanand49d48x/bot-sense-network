@@ -67,27 +67,37 @@ export const DEFAULT_LIMITS: PlanLimits = DEFAULT_PLAN_LIMITS["Free Tier"];
 
 // Hook to get the current user's subscription plan and limits
 export function useSubscriptionLimits() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['subscription-check'],
     queryFn: async () => {
       try {
-        console.log("Fetching subscription data from edge function...");
+        console.log("Calling check-subscription edge function...");
+        
         // Call the check-subscription edge function to get subscription data
         const { data, error } = await supabase.functions.invoke('check-subscription');
         
         if (error) {
-          console.error("Error from check-subscription function:", error);
+          console.error("Edge function error:", error);
           throw error;
         }
+        
         console.log("Subscription data from edge function:", data);
+        
+        // Ensure we have a valid response
+        if (!data) {
+          console.warn("No data returned from edge function, using default");
+          return { active: false, plan: "Free Tier" };
+        }
+        
         return data;
       } catch (err) {
         console.error("Error checking subscription:", err);
+        // Return default Free Tier for errors to prevent blocking the UI
         return { active: false, plan: "Free Tier" };
       }
     },
-    refetchInterval: 60000 * 2, // Refresh every 2 minutes instead of 5 to pick up changes faster
-    staleTime: 30000, // Consider data stale after 30 seconds
+    refetchInterval: 60000 * 5, // Refresh every 5 minutes
+    retry: 2, // Retry failed requests twice
   });
 
   // Get plan limits from database or fall back to defaults
@@ -95,16 +105,12 @@ export function useSubscriptionLimits() {
     queryKey: ['plan-limits'],
     queryFn: async () => {
       try {
-        console.log("Fetching plan limits from database...");
         // Fetch plan limits from the database
         const { data, error } = await supabase
           .from('plan_limits')
           .select('*');
           
-        if (error) {
-          console.error("Error fetching plan limits:", error);
-          throw error;
-        }
+        if (error) throw error;
         
         console.log("Plan limits from database:", data);
         
@@ -143,10 +149,19 @@ export function useSubscriptionLimits() {
     staleTime: 300000, // Consider data fresh for 5 minutes
   });
 
-  // Get the current plan name from subscription check
+  // Get the current plan name from subscription check (normalize case to match database)
   let planName = (data?.plan || "Free Tier");
   
-  // Normalize the plan name case
+  // Debug logging
+  console.log("useSubscriptionLimits debug:", {
+    rawPlan: data?.plan,
+    normalizedPlan: planName,
+    subscriptionData: data,
+    isLoading,
+    error
+  });
+  
+  // Normalize the plan name case (e.g., "STARTER" to "Starter")
   if (planName && typeof planName === 'string') {
     // Handle special case for exact match "STARTER"
     if (planName === "STARTER") {
@@ -165,7 +180,7 @@ export function useSubscriptionLimits() {
   
   // Log the plan name for debugging purposes
   console.log("Current plan name:", planName, "Original from API:", data?.plan);
-  console.log("Available plans in limits:", Object.keys(planLimitsData || {}));
+  console.log("Available plans in DB:", Object.keys(planLimitsData || {}));
   
   // Use database limits if available, otherwise use defaults
   const planLimits = planLimitsData || DEFAULT_PLAN_LIMITS;
@@ -190,8 +205,7 @@ export function useSubscriptionLimits() {
     isTrialActive,
     isTrialExpired,
     remainingDays,
-    error,
-    refetch // Expose refetch function to manually refresh subscription data
+    error
   };
 }
 
