@@ -78,7 +78,7 @@ serve(async (req) => {
       });
 
       if (subscription.status === "active") {
-        logStep("Found active subscription in database", {
+        logStep("Found active subscription in database - returning immediately", {
           planName: subscription.plan_name,
           status: subscription.status,
           trialStatus: subscription.trial_status
@@ -121,6 +121,7 @@ serve(async (req) => {
           }
         }
 
+        // Return active subscription from database - don't check Stripe
         return new Response(
           JSON.stringify({
             active: true,
@@ -136,13 +137,15 @@ serve(async (req) => {
           }
         );
       } else {
-        logStep("Subscription found but not active", { status: subscription.status });
+        logStep("Subscription found but not active, will check Stripe", { status: subscription.status });
       }
     } else {
-      logStep("No subscription records found in database");
+      logStep("No subscription records found in database, will check Stripe");
     }
 
-    // If no active database subscription, check Stripe
+    // Only check Stripe if no active database subscription exists
+    logStep("No active database subscription found, checking Stripe");
+    
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       logStep("No Stripe key, returning inactive status");
