@@ -33,8 +33,8 @@ DO $$
 DECLARE
     r RECORD;
 BEGIN
-    FOR r IN (SELECT polname, tablename FROM pg_policies WHERE schemaname = 'public') LOOP
-        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.polname) || ' ON public.' || quote_ident(r.tablename) || ';';
+    FOR r IN (SELECT policy_name, tablename FROM pg_policies WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policy_name) || ' ON public.' || quote_ident(r.tablename) || ';';
     END LOOP;
 END $$;
 
