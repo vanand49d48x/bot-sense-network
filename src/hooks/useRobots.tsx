@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -88,21 +89,31 @@ export function useRobots() {
           if (payload.eventType === 'INSERT') {
             // Only add if the robot belongs to the current user
             if (payload.new.user_id === session.user.id) {
-              // Add new robot to the state
-              setRobots(prev => [...prev, payload.new as SupabaseRobot]);
-              console.log(`Robot inserted: ${payload.new.name}`);
+              // Add new robot to the state immediately
+              setRobots(prev => {
+                // Check if robot already exists to prevent duplicates
+                const exists = prev.some(robot => robot.id === payload.new.id);
+                if (exists) {
+                  console.log(`Robot ${payload.new.name} already exists in state`);
+                  return prev;
+                }
+                console.log(`Robot inserted: ${payload.new.name}`);
+                return [...prev, payload.new as SupabaseRobot];
+              });
             }
           } else if (payload.eventType === 'UPDATE') {
-            // Update existing robot in the state
-            setRobots(prev => 
-              prev.map(robot => {
-                if (robot.id === payload.new.id) {
-                  console.log(`Robot updated: ${payload.new.name}`);
-                  return payload.new as SupabaseRobot;
-                }
-                return robot;
-              })
-            );
+            // Only update if the robot belongs to the current user
+            if (payload.new.user_id === session.user.id) {
+              setRobots(prev => 
+                prev.map(robot => {
+                  if (robot.id === payload.new.id) {
+                    console.log(`Robot updated: ${payload.new.name}`);
+                    return payload.new as SupabaseRobot;
+                  }
+                  return robot;
+                })
+              );
+            }
           } else if (payload.eventType === 'DELETE') {
             // Remove deleted robot from the state
             setRobots(prev => {
@@ -143,6 +154,9 @@ export function useRobots() {
         .select();
 
       if (error) throw error;
+      
+      // The real-time subscription will handle adding the robot to the state
+      // so we don't need to manually update the state here
       
       toast({
         title: "Robot added",
