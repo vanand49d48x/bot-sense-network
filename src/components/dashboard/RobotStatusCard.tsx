@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Robot } from "@/types/robot";
 import { Progress } from "@/components/ui/progress";
@@ -53,7 +54,8 @@ export function RobotStatusCard({ robot, onRobotClick }: RobotStatusCardProps) {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the detail dialog
     try {
       setIsDeleting(true);
       await deleteRobot(robot.id);
