@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
@@ -20,13 +21,6 @@ serve(async (req) => {
 
   try {
     logStep("Function started");
-
-    // Get the Stripe secret key from environment
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY not set");
-    }
-    logStep("Stripe key verified");
 
     // Get the authorization header
     const authHeader = req.headers.get("Authorization");
@@ -55,8 +49,8 @@ serve(async (req) => {
       email: user.email
     });
 
-    // --- NEW: Check for Free Tier subscription in DB first ---
-    const { data: dbSub, error: dbSubError } = await supabaseClient
+    // FIRST: Check database for existing subscription
+    const { data: dbSubscription, error: dbError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
@@ -64,15 +58,66 @@ serve(async (req) => {
       .limit(1)
       .single();
 
-    if (dbSub && dbSub.plan_name === "Free Tier" && dbSub.status === "active") {
-      logStep("Found active Free Tier subscription in DB", dbSub);
+    logStep("Database subscription check", { 
+      found: !!dbSubscription, 
+      planName: dbSubscription?.plan_name,
+      status: dbSubscription?.status,
+      error: dbError?.message 
+    });
+
+    // If we have a database subscription, prioritize it over Stripe
+    if (dbSubscription && dbSubscription.status === "active") {
+      logStep("Found active subscription in database", {
+        planName: dbSubscription.plan_name,
+        status: dbSubscription.status,
+        trialStatus: dbSubscription.trial_status
+      });
+
+      // Calculate days remaining for trials
+      let daysRemaining = null;
+      if (dbSubscription.trial_status === 'active' && dbSubscription.trial_ended_at) {
+        const trialEnd = new Date(dbSubscription.trial_ended_at);
+        const now = new Date();
+        const diffTime = trialEnd.getTime() - now.getTime();
+        daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (daysRemaining < 0) {
+          daysRemaining = 0;
+          // Update trial status to expired if past end date
+          await supabaseClient
+            .from("subscriptions")
+            .update({ 
+              trial_status: 'expired',
+              status: 'inactive',
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", dbSubscription.id);
+          
+          logStep("Trial expired, updated status");
+          
+          return new Response(
+            JSON.stringify({
+              active: false,
+              plan: dbSubscription.plan_name,
+              trial_status: 'expired',
+              subscription_end: dbSubscription.trial_ended_at,
+              days_remaining: 0,
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        }
+      }
+
       return new Response(
         JSON.stringify({
           active: true,
-          plan: "Free Tier",
-          trial_status: dbSub.trial_status,
-          subscription_end: dbSub.trial_ended_at,
-          // ...other fields as needed
+          plan: dbSubscription.plan_name,
+          trial_status: dbSubscription.trial_status,
+          subscription_end: dbSubscription.trial_ended_at || dbSubscription.current_period_end,
+          days_remaining: daysRemaining,
+          subscription_id: dbSubscription.stripe_subscription_id,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -81,14 +126,31 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Stripe
+    // If no active database subscription, check Stripe
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("No Stripe key, returning inactive status");
+      return new Response(
+        JSON.stringify({ 
+          active: false, 
+          plan: null,
+          subscription_end: null
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    logStep("Stripe key verified, checking Stripe subscriptions");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check if a Stripe customer exists for this user
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, updating as unsubscribed");
+      logStep("No Stripe customer found, updating as unsubscribed");
       
       // Update subscription record in database as inactive
       await supabaseClient.from("subscriptions").upsert({
@@ -121,7 +183,7 @@ serve(async (req) => {
     });
 
     if (subscriptions.data.length === 0) {
-      logStep("No active subscription found");
+      logStep("No active Stripe subscription found");
       
       // Update subscription record in database as inactive
       await supabaseClient.from("subscriptions").upsert({
@@ -144,7 +206,7 @@ serve(async (req) => {
       );
     }
 
-    // We have an active subscription
+    // We have an active Stripe subscription
     const subscription = subscriptions.data[0];
     const price = subscription.items.data[0].price;
     
@@ -156,7 +218,7 @@ serve(async (req) => {
     // Check if subscription is canceled but still in current period
     const isCanceled = subscription.cancel_at_period_end;
     
-    logStep("Active subscription found", { 
+    logStep("Active Stripe subscription found", { 
       subscriptionId: subscription.id, 
       planName, 
       endDate: subscriptionEnd,
@@ -175,7 +237,7 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
 
-    logStep("Updated database with subscription info");
+    logStep("Updated database with Stripe subscription info");
     
     return new Response(
       JSON.stringify({
